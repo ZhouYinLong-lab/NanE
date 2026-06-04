@@ -1,0 +1,71 @@
+.header {
+  padding: 8rpx 4rpx 24rpx;
+}
+
+.title {
+  color: #183f32;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.sub {
+  margin-top: 10rpx;
+  color: #6d766f;
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
+.empty {
+  padding: 40rpx;
+  text-align: center;
+  color: #7b877f;
+}
+
+.item {
+  margin-bottom: 18rpx;
+  padding: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  color: #20231f;
+  font-size: 31rpx;
+  font-weight: 800;
+}
+
+.meta,
+.time {
+  margin-top: 8rpx;
+  color: #7b877f;
+  font-size: 24rpx;
+}
+
+.status {
+  padding: 9rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.online {
+  background: #e2f5ea;
+  color: #25735a;
+}
+
+.reviewing {
+  background: #fff3cf;
+  color: #8b6422;
+}
+
+.rejected,
+.expired {
+  background: #f3e6e1;
+  color: #8b3b2e;
+}

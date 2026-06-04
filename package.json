@@ -1,0 +1,13 @@
+{
+  "name": "nane-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NanE (南易) campus mutual-aid demo: WeChat Mini Program client plus deployable API.",
+  "scripts": {
+    "dev:api": "node server/index.js",
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,41 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty panel">正在读取详情...</view>
+
+  <view wx:elif="{{item}}" class="detail">
+    <view class="cover panel">
+      <view class="scope {{item.distanceScope}}">{{item.distanceLabel}}</view>
+      <view class="cover-title">{{item.title}}</view>
+      <view class="cover-sub">{{item.category}} · 余 {{item.quantity}}{{item.unit}}</view>
+    </view>
+
+    <view class="panel block">
+      <view class="row">
+        <text class="label">位置</text>
+        <text>{{item.campus}} · {{item.building}}</text>
+      </view>
+      <view class="row">
+        <text class="label">有效期</text>
+        <text>{{item.expireDate}}</text>
+      </view>
+      <view class="row">
+        <text class="label">发布者</text>
+        <text>{{item.ownerName}}</text>
+      </view>
+      <view class="desc">{{item.description}}</view>
+    </view>
+
+    <view class="panel safety">
+      <view class="safety-title">领取前提示</view>
+      <view>平台仅做信息撮合，不介入线下交接。请自行确认包装、有效期和适用风险；处方药、管控药物不允许发布。</view>
+    </view>
+
+    <button wx:if="{{!contact}}" class="primary-btn" bindtap="revealContact">我要领取，查看联系方式</button>
+
+    <view wx:else class="panel contact">
+      <view class="contact-title">联系方式</view>
+      <view class="contact-row">微信：{{contact.wechat}}</view>
+      <view class="contact-row">QQ：{{contact.qq}}</view>
+      <view class="remaining">今日剩余查看次数：{{remaining}}</view>
+    </view>
+  </view>
+</view>

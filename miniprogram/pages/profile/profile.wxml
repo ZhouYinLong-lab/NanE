@@ -1,0 +1,43 @@
+<view class="page">
+  <view class="profile-card">
+    <view class="avatar">南</view>
+    <view>
+      <view class="name">{{user.name || 'Demo 用户'}}</view>
+      <view class="campus">{{user.campus || '仙林校区'}} · {{user.building || '南苑 A 栋'}}</view>
+    </view>
+  </view>
+
+  <view class="stats">
+    <view class="stat panel">
+      <view class="num">{{contactLimit.remaining}}</view>
+      <view class="text">今日剩余查看</view>
+    </view>
+    <view class="stat panel">
+      <view class="num">{{contactLimit.used}}</view>
+      <view class="text">今日已查看</view>
+    </view>
+    <view class="stat panel">
+      <view class="num">{{apiStatus}}</view>
+      <view class="text">API 状态</view>
+    </view>
+  </view>
+
+  <view class="panel menu">
+    <view class="menu-row" bindtap="openMyItems">
+      <text>我的发布</text>
+      <text>查看审核和上架状态</text>
+    </view>
+    <view class="menu-row">
+      <text>校园身份</text>
+      <text class="ok">南哪助手认证 Demo</text>
+    </view>
+    <view class="menu-row">
+      <text>联系方式</text>
+      <text>{{user.wechat || 'nane_demo'}}</text>
+    </view>
+    <view class="menu-row">
+      <text>隐私策略</text>
+      <text>查看后展示，每日限 {{contactLimit.daily}} 次</text>
+    </view>
+  </view>
+</view>

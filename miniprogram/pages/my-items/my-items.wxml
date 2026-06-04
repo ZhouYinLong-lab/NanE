@@ -1,0 +1,18 @@
+<view class="page">
+  <view class="header">
+    <view class="title">我的发布</view>
+    <view class="sub">审核中物品不会进入首页，后续接入管理员后台后可一键通过。</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty panel">正在读取发布记录...</view>
+  <view wx:elif="{{items.length === 0}}" class="empty panel">还没有发布记录</view>
+
+  <view wx:for="{{items}}" wx:key="id" class="item panel" data-id="{{item.id}}" bindtap="openDetail">
+    <view class="main">
+      <view class="name">{{item.title}}</view>
+      <view class="meta">{{item.category}} · {{item.building}} · {{item.quantity}}{{item.unit}}</view>
+      <view class="time">有效期 {{item.expireDate}}</view>
+    </view>
+    <view class="status {{item.status}}">{{item.statusText}}</view>
+  </view>
+</view>

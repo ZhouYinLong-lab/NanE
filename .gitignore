@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+*.log
+.env
+dist/
+coverage/
+miniprogram/miniprogram_npm/
+server/data/*.local.json

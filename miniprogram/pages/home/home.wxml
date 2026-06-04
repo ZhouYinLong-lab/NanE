@@ -1,0 +1,48 @@
+<view class="page">
+  <view class="hero">
+    <view>
+      <view class="eyebrow">NJU campus mutual aid</view>
+      <view class="title">NanE 南易</view>
+      <view class="subtitle">把宿舍里用不完的应急耗材，交给正需要的人。</view>
+    </view>
+    <view class="badge">{{viewer.building || '南苑 A 栋'}}</view>
+  </view>
+
+  <view class="search panel">
+    <input value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" placeholder="搜索退烧贴、碘伏、创可贴" />
+    <button bindtap="onSearch">搜索</button>
+  </view>
+
+  <scroll-view scroll-x class="chips">
+    <view
+      wx:for="{{categories}}"
+      wx:key="*this"
+      class="chip {{category === item ? 'active' : ''}}"
+      data-category="{{item}}"
+      bindtap="chooseCategory"
+    >{{item}}</view>
+  </scroll-view>
+
+  <view class="section-head">
+    <text>附近互助</text>
+    <text class="hint">同楼栋优先排序</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty panel">正在连接 NanE API...</view>
+  <view wx:elif="{{items.length === 0}}" class="empty panel">暂时没有符合条件的物品</view>
+
+  <view wx:for="{{items}}" wx:key="id" class="item panel" data-id="{{item.id}}" bindtap="openDetail">
+    <view class="item-main">
+      <view class="item-title">{{item.title}}</view>
+      <view class="item-desc">{{item.description}}</view>
+      <view class="meta">
+        <text>{{item.category}}</text>
+        <text>{{item.campus}} · {{item.building}}</text>
+      </view>
+    </view>
+    <view class="item-side">
+      <view class="scope {{item.distanceScope}}">{{item.distanceLabel}}</view>
+      <view class="qty">{{item.quantity}}{{item.unit}}</view>
+    </view>
+  </view>
+</view>

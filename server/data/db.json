@@ -1,0 +1,72 @@
+{
+  "users": [
+    {
+      "id": "u_demo",
+      "name": "周同学",
+      "campus": "仙林校区",
+      "building": "南苑 A 栋",
+      "wechat": "nane_demo",
+      "qq": "123456789"
+    }
+  ],
+  "items": [
+    {
+      "id": "item_iodine",
+      "title": "碘伏棉签 10 支",
+      "category": "消毒护理",
+      "description": "开学囤多了，独立包装未拆封，适合处理小伤口。",
+      "quantity": 10,
+      "unit": "支",
+      "campus": "仙林校区",
+      "building": "南苑 A 栋",
+      "expireDate": "2026-12-31",
+      "status": "online",
+      "ownerId": "u_demo",
+      "ownerName": "周同学",
+      "contact": {
+        "wechat": "nane_demo",
+        "qq": "123456789"
+      },
+      "createdAt": "2026-06-04T12:00:00.000Z"
+    },
+    {
+      "id": "item_patch",
+      "title": "创可贴 8 片",
+      "category": "外伤处理",
+      "description": "普通透气款，剩余 8 片，同楼栋可自取。",
+      "quantity": 8,
+      "unit": "片",
+      "campus": "仙林校区",
+      "building": "南苑 A 栋",
+      "expireDate": "2027-01-20",
+      "status": "online",
+      "ownerId": "u_demo",
+      "ownerName": "周同学",
+      "contact": {
+        "wechat": "nane_demo",
+        "qq": "123456789"
+      },
+      "createdAt": "2026-06-03T19:30:00.000Z"
+    },
+    {
+      "id": "item_cooling",
+      "title": "退烧贴 3 片",
+      "category": "退烧降温",
+      "description": "未拆封，夜间应急优先。",
+      "quantity": 3,
+      "unit": "片",
+      "campus": "仙林校区",
+      "building": "南苑 B 栋",
+      "expireDate": "2026-08-15",
+      "status": "online",
+      "ownerId": "u_demo",
+      "ownerName": "林同学",
+      "contact": {
+        "wechat": "lin_help",
+        "qq": "987654321"
+      },
+      "createdAt": "2026-06-02T22:10:00.000Z"
+    }
+  ],
+  "contactViews": []
+}
