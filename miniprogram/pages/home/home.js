@@ -7,7 +7,8 @@ Page({
     categories: ["全部", "退烧降温", "消毒护理", "外伤处理", "防护用品"],
     items: [],
     viewer: {},
-    loading: true
+    loading: true,
+    errorMessage: ""
   },
 
   onShow() {
@@ -15,7 +16,7 @@ Page({
   },
 
   async loadItems() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, errorMessage: "" });
     try {
       const data = await api.getItems({
         keyword: this.data.keyword,
@@ -24,11 +25,14 @@ Page({
       this.setData({
         items: data.items,
         viewer: data.viewer,
-        loading: false
+        loading: false,
+        errorMessage: ""
       });
     } catch (error) {
-      this.setData({ loading: false });
-      wx.showToast({ title: "API 未连接", icon: "none" });
+      this.setData({
+        loading: false,
+        errorMessage: error.message || "无法连接 NanE API，请确认后端服务或合法域名配置"
+      });
     }
   },
 

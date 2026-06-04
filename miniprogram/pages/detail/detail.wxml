@@ -26,7 +26,7 @@
 
     <view class="panel safety">
       <view class="safety-title">领取前提示</view>
-      <view>平台仅做信息撮合，不介入线下交接。请自行确认包装、有效期和适用风险；处方药、管控药物不允许发布。</view>
+      <view>平台仅做校园互助信息撮合，不介入线下交接。所有物品应为免费共享；请自行确认包装、有效期和适用风险；处方药、管控药物不允许发布或领取。</view>
     </view>
 
     <button wx:if="{{!contact}}" class="primary-btn" bindtap="revealContact">我要领取，查看联系方式</button>

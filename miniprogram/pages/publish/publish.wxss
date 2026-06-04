@@ -21,6 +21,28 @@
   padding: 26rpx;
 }
 
+.rules {
+  margin-top: 22rpx;
+  padding: 24rpx;
+  background: #fff9e9;
+  color: #6f5b2c;
+  font-size: 25rpx;
+  line-height: 1.55;
+}
+
+.rules-title {
+  margin-bottom: 8rpx;
+  color: #20231f;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.rules-warn {
+  margin-top: 8rpx;
+  color: #9f3d33;
+  font-weight: 700;
+}
+
 .field {
   margin-bottom: 24rpx;
 }
@@ -64,4 +86,12 @@ textarea {
 
 .primary-btn {
   margin-top: 24rpx;
+}
+
+.disclaimer {
+  display: flex;
+  gap: 12rpx;
+  color: #52605a;
+  font-size: 24rpx;
+  line-height: 1.55;
 }

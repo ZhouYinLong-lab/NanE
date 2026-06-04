@@ -4,7 +4,8 @@ const statusText = {
   online: "上架中",
   reviewing: "审核中",
   rejected: "未通过",
-  expired: "已下架"
+  expired: "已下架",
+  taken_down: "已下架"
 };
 
 Page({

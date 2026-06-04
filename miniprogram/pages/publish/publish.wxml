@@ -4,6 +4,12 @@
     <view class="intro-sub">只开放白名单药品/耗材，提交后进入审核，避免处方药和过期物品流入。</view>
   </view>
 
+  <view class="rules panel">
+    <view class="rules-title">发布白名单</view>
+    <view>退烧降温、消毒护理、外伤处理、防护用品、其他低风险应急耗材。</view>
+    <view class="rules-warn">禁止处方药、管控药、拆封不明物品和任何形式的收费交易。</view>
+  </view>
+
   <view class="form panel">
     <view class="field">
       <view class="label">物品名称 *</view>
@@ -48,6 +54,13 @@
       <view class="label">补充说明</view>
       <textarea data-key="description" value="{{form.description}}" bindinput="updateField" placeholder="包装状态、领取时间、注意事项" />
     </view>
+
+    <checkbox-group bindchange="toggleDisclaimer">
+      <label class="disclaimer">
+        <checkbox value="accepted" checked="{{form.disclaimerAccepted}}" color="#25735a" />
+        <text>我确认本次发布为免费校园互助信息，物品不属于处方药/管控药，信息真实且愿意接受人工审核。</text>
+      </label>
+    </checkbox-group>
   </view>
 
   <button class="primary-btn" loading="{{submitting}}" bindtap="submit">提交审核</button>

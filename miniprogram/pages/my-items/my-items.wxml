@@ -12,6 +12,7 @@
       <view class="name">{{item.title}}</view>
       <view class="meta">{{item.category}} · {{item.building}} · {{item.quantity}}{{item.unit}}</view>
       <view class="time">有效期 {{item.expireDate}}</view>
+      <view wx:if="{{item.rejectReason}}" class="reason">原因：{{item.rejectReason}}</view>
     </view>
     <view class="status {{item.status}}">{{item.statusText}}</view>
   </view>

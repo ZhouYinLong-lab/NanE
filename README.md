@@ -1,6 +1,6 @@
 # NanE 南易互助平台
 
-NanE（南易）是面向南京大学校园场景的药品/医疗耗材互助平台。当前版本是一版可运行的初始 Demo，用于打通微信小程序端浏览、发布、查看联系方式，以及后端 API 数据流。
+NanE（南易）是面向南京大学校园场景的应急耗材互助信息平台。当前工程包含微信小程序、Node.js API、PostgreSQL 数据库和轻量 Web 管理后台，用于打通发布、审核、展示、联系方式限流和后台管理链路。
 
 ## 当前打通的链路
 
@@ -9,10 +9,23 @@ NanE（南易）是面向南京大学校园场景的药品/医疗耗材互助平
 - 小程序端：发布页提交物品，后端写入审核队列
 - 小程序端：我的页显示校园身份、联系方式查看额度、API 连接状态
 - 后端 API：健康检查、登录 Demo、物品列表、物品详情、发布物品、联系方式限流
+- 管理后台：管理员登录、待审列表、通过/驳回/下架、统计
+
+## 环境变量
+
+复制 `.env.example` 中的变量到服务器环境：
+
+```text
+PORT=3000
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/nane
+JWT_SECRET=replace-with-a-long-random-secret
+ADMIN_PASSWORD=replace-with-a-strong-admin-password
+```
 
 ## 本地运行
 
 ```bash
+npm install
 npm run dev:api
 ```
 
@@ -27,6 +40,15 @@ http://localhost:3000
 ```text
 http://localhost:3000/api
 ```
+
+本地或服务器需要先准备 PostgreSQL 数据库，例如：
+
+```bash
+createdb nane
+cp .env.example .env
+```
+
+然后按实际账号密码修改 `.env` 中的 `DATABASE_URL`。
 
 如部署到服务器，请修改 `miniprogram/config.js` 中的 `prod.apiBase` 为服务器 HTTPS 域名，并把 `env` 改为 `prod`，例如：
 
@@ -85,17 +107,64 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
 
 ### POST `/api/items/:id/contact`
 
-查看发布者联系方式。Demo 中每人每天最多 5 次，记录保存在 `server/data/db.json`。
+查看发布者联系方式。当前每人每天最多 5 次，记录保存在 PostgreSQL 的 `contact_views` 表。
+
+### POST `/api/admin/login`
+
+管理员登录。返回用于管理接口的 Bearer token。
+
+### GET `/api/admin/items`
+
+管理员查询物品列表。可选参数：
+
+- `status`: 默认 `reviewing`，可传 `online`、`rejected`、`taken_down`、`all`
+
+### POST `/api/admin/items/:id/approve`
+
+审核通过物品，状态变为 `online`。
+
+### POST `/api/admin/items/:id/reject`
+
+驳回物品，状态变为 `rejected`。请求体可传 `reason`。
+
+### POST `/api/admin/items/:id/take-down`
+
+管理员下架物品，状态变为 `taken_down`。
+
+### GET `/api/admin/stats`
+
+返回待审核、上架中、已下架和今日联系方式查看次数统计。
+
+## 数据库初始化
+
+首次启动会自动执行 `server/schema.sql` 并插入 Demo 用户、管理员和种子物品。
+
+默认管理员：
+
+```text
+用户名：admin
+密码：使用 ADMIN_PASSWORD；未设置时为 nane-admin-demo
+```
+
+## 管理后台
+
+本地访问：
+
+```text
+http://localhost:3000/admin
+```
+
+管理后台与小程序共用 PostgreSQL 数据。管理员审核通过后，小程序首页刷新即可看到新物品。
 
 ## 部署建议
 
-当前后端无外部依赖，可直接用 Node 18+ 运行。服务器部署时建议：
+当前后端依赖 Node 18+ 和 PostgreSQL。服务器部署时建议：
 
 - 使用 Nginx 反向代理到 Node 服务
 - 配置 HTTPS，小程序正式环境必须使用合法 HTTPS 域名
 - 在微信公众平台配置 `request 合法域名`
-- 将 `server/data/db.json` 替换为 PostgreSQL
-- 将联系方式查看限流迁移到 Redis
+- 使用 PostgreSQL 存储用户、物品、审核记录和联系方式查看记录
+- 后续可将联系方式查看限流迁移到 Redis
 - 将 `/api/auth/wx-login` 替换为真实微信登录与校园认证
 
 ### 服务器启动示例
@@ -123,11 +192,17 @@ server {
 
 ## 后续工程化路线
 
-1. 数据库：用户、物品、审核记录、联系方式查看记录表
-2. 审核后台：白名单分类、通过/驳回、过期自动下架
-3. 登录认证：微信 OpenID + 南哪助手身份校验
-4. 安全：接口鉴权、字段校验、联系方式脱敏、频控
-5. 小程序：图片上传、我的发布、收藏、审核状态通知
+1. 登录认证：微信 OpenID + 南哪助手身份校验
+2. 审核后台：白名单分类、过期自动下架、管理员账号管理
+3. 安全：接口鉴权、字段校验、联系方式脱敏、频控
+4. 小程序：图片上传、收藏、审核状态通知
+5. 部署：公网 HTTPS API、Nginx Proxy Manager、微信 request 合法域名
+
+## 配套文档
+
+- 微信小程序上线配置清单：`docs/miniprogram-release-checklist.md`
+- 隐私保护指引草稿：`docs/privacy-guideline-draft.md`
+- 演示脚本：`docs/demo-script.md`
 
 ## 开发日志
 

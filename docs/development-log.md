@@ -48,3 +48,30 @@
 - 增加管理员审核后台。
 - 增加图片上传与内容安全审核。
 - 准备小程序隐私保护指引和药品/耗材发布规范。
+
+### 第二轮：可上线工程化改造
+
+- 后端从 JSON Demo 改为 PostgreSQL 数据层。
+- 新增 `server/schema.sql`，启动时自动初始化核心表：
+  - `users`
+  - `items`
+  - `contact_views`
+  - `review_logs`
+  - `admins`
+- 新增轻量 Web 管理后台 `/admin`。
+- 新增管理员接口：
+  - `POST /api/admin/login`
+  - `GET /api/admin/items`
+  - `POST /api/admin/items/:id/approve`
+  - `POST /api/admin/items/:id/reject`
+  - `POST /api/admin/items/:id/take-down`
+  - `GET /api/admin/stats`
+- 小程序发布页增加白名单说明、免费互助声明和字段校验。
+- 小程序首页增加合规说明、API 错误态和重试入口。
+- 详情页强化免费互助、禁止处方药/管控药、自行判断风险提示。
+- 我的发布页支持驳回原因和下架状态展示。
+- 新增文档：
+  - `.env.example`
+  - `docs/miniprogram-release-checklist.md`
+  - `docs/privacy-guideline-draft.md`
+  - `docs/demo-script.md`

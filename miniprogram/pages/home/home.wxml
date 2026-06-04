@@ -23,12 +23,20 @@
     >{{item}}</view>
   </scroll-view>
 
+  <view class="notice panel">
+    NanE 仅做校园互助信息撮合。所有物品免费共享，禁止处方药、管控药和任何形式的收费转让，发布内容需人工审核。
+  </view>
+
   <view class="section-head">
     <text>附近互助</text>
     <text class="hint">同楼栋优先排序</text>
   </view>
 
   <view wx:if="{{loading}}" class="empty panel">正在连接 NanE API...</view>
+  <view wx:elif="{{errorMessage}}" class="empty panel">
+    <view>{{errorMessage}}</view>
+    <button class="retry" bindtap="loadItems">重试</button>
+  </view>
   <view wx:elif="{{items.length === 0}}" class="empty panel">暂时没有符合条件的物品</view>
 
   <view wx:for="{{items}}" wx:key="id" class="item panel" data-id="{{item.id}}" bindtap="openDetail">

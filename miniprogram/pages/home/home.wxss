@@ -90,6 +90,15 @@
   border-color: #183f32;
 }
 
+.notice {
+  margin-top: 20rpx;
+  padding: 22rpx;
+  color: #6f5b2c;
+  background: #fff9e9;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
 .section-head {
   margin: 34rpx 4rpx 16rpx;
   display: flex;
@@ -110,6 +119,17 @@
   color: #7b877f;
   text-align: center;
   font-size: 27rpx;
+}
+
+.retry {
+  width: 160rpx;
+  height: 64rpx;
+  margin-top: 22rpx;
+  border-radius: 12rpx;
+  background: #25735a;
+  color: #ffffff;
+  font-size: 25rpx;
+  line-height: 64rpx;
 }
 
 .item {

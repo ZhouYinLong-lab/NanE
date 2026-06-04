@@ -41,10 +41,15 @@
 }
 
 .meta,
-.time {
+.time,
+.reason {
   margin-top: 8rpx;
   color: #7b877f;
   font-size: 24rpx;
+}
+
+.reason {
+  color: #9f3d33;
 }
 
 .status {
@@ -65,7 +70,8 @@
 }
 
 .rejected,
-.expired {
+.expired,
+.taken_down {
   background: #f3e6e1;
   color: #8b3b2e;
 }
