@@ -6,3 +6,4 @@ dist/
 coverage/
 miniprogram/miniprogram_npm/
 server/data/*.local.json
+project.private.config.json
