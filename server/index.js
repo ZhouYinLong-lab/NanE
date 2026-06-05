@@ -9,7 +9,7 @@ const {
   query
 } = require("./db");
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 37878);
 const JWT_SECRET = process.env.JWT_SECRET || "nane-dev-secret";
 const DAILY_CONTACT_LIMIT = 5;
 const ALLOWED_CATEGORIES = ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"];

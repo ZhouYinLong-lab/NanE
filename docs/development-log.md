@@ -42,7 +42,7 @@
 
 - 替换真实微信小程序 AppID。
 - 将 `miniprogram/config.js` 生产 API 域名改为服务器 HTTPS 域名。
-- 后端替换 Demo 登录为微信 `code2Session` 和南哪助手认证。
+- 后端替换 Demo 登录为微信 `code2Session` 和校园身份认证；NanE 不占用“南哪小帮手”服务。
 - 后端数据源从 JSON 替换为 PostgreSQL。
 - 联系方式限流从 JSON 记录替换为 Redis。
 - 增加管理员审核后台。

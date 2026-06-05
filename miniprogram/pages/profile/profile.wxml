@@ -29,7 +29,7 @@
     </view>
     <view class="menu-row">
       <text>校园身份</text>
-      <text class="ok">南哪助手认证 Demo</text>
+      <text class="ok">校园身份认证 Demo</text>
     </view>
     <view class="menu-row">
       <text>联系方式</text>

@@ -16,7 +16,7 @@ NanE（南易）是面向南京大学校园场景的应急耗材互助信息平�
 复制 `.env.example` 中的变量到服务器环境：
 
 ```text
-PORT=3000
+PORT=37878
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/nane
 JWT_SECRET=replace-with-a-long-random-secret
 ADMIN_PASSWORD=replace-with-a-strong-admin-password
@@ -32,13 +32,13 @@ npm run dev:api
 服务默认启动在：
 
 ```text
-http://localhost:3000
+http://localhost:37878
 ```
 
 微信开发者工具导入本目录，项目配置已写在 `project.config.json`。小程序端默认请求：
 
 ```text
-http://localhost:3000/api
+http://localhost:37878/api
 ```
 
 本地或服务器需要先准备 PostgreSQL 数据库，例如：
@@ -66,7 +66,7 @@ const env = "prod";
 
 ### POST `/api/auth/wx-login`
 
-Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换为微信 `code2Session` + 南哪助手认证。
+Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换为微信 `code2Session` + 校园身份认证。注意：NanE 不占用“南哪小帮手”服务，只预留未来对接能力。
 
 ### GET `/api/me`
 
@@ -151,7 +151,7 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
 本地访问：
 
 ```text
-http://localhost:3000/admin
+http://localhost:37878/admin
 ```
 
 管理后台与小程序共用 PostgreSQL 数据。管理员审核通过后，小程序首页刷新即可看到新物品。
@@ -170,7 +170,7 @@ http://localhost:3000/admin
 ### 服务器启动示例
 
 ```bash
-PORT=3000 npm start
+PORT=37878 npm start
 ```
 
 Nginx 反向代理示例：
@@ -181,7 +181,7 @@ server {
   server_name api.example.com;
 
   location / {
-    proxy_pass http://127.0.0.1:3000;
+    proxy_pass http://127.0.0.1:37878;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -192,7 +192,7 @@ server {
 
 ## 后续工程化路线
 
-1. 登录认证：微信 OpenID + 南哪助手身份校验
+1. 登录认证：微信 OpenID + 校园身份认证
 2. 审核后台：白名单分类、过期自动下架、管理员账号管理
 3. 安全：接口鉴权、字段校验、联系方式脱敏、频控
 4. 小程序：图片上传、收藏、审核状态通知
