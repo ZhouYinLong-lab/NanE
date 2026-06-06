@@ -22,6 +22,13 @@
   font-weight: 900;
 }
 
+.label-hint {
+  margin-left: 8rpx;
+  color: #666666;
+  font-size: 22rpx;
+  font-weight: 400;
+}
+
 input,
 textarea,
 .picker {
@@ -50,6 +57,27 @@ textarea {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18rpx;
+}
+
+.location-parse {
+  display: flex;
+  gap: 12rpx;
+}
+
+.location-parse input {
+  flex: 1;
+}
+
+.location-parse button {
+  width: 128rpx;
+  height: 78rpx;
+  margin: 0;
+  border-radius: 14rpx;
+  background: #222222;
+  color: #f4f2eb;
+  font-size: 27rpx;
+  font-weight: 800;
+  line-height: 78rpx;
 }
 
 .primary-btn {

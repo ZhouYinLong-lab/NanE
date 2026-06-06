@@ -104,7 +104,9 @@ function dateOnly(value) {
   return String(value).slice(0, 10);
 }
 
-function itemFromRow(row, viewer, includeContact = false) {
+function itemFromRow(row, viewer, options = {}) {
+  const includeContact = Boolean(options.includeContact);
+  const includeRoom = Boolean(options.includeRoom);
   const distanceScope =
     row.building === viewer.building
       ? "same_building"
@@ -121,6 +123,7 @@ function itemFromRow(row, viewer, includeContact = false) {
     unit: row.unit,
     campus: row.campus,
     building: row.building,
+    room: includeRoom ? row.room || "" : undefined,
     expireDate: dateOnly(row.expire_date),
     status: row.status,
     rejectReason: row.reject_reason || "",
@@ -219,10 +222,10 @@ async function createItem(req, res, viewer) {
   const itemId = makeId("item");
   const { rows } = await query(
     `INSERT INTO items (
-      id, title, category, description, quantity, unit, campus, building,
+      id, title, category, description, quantity, unit, campus, building, room,
       expire_date, status, owner_id, owner_name, contact_wechat, contact_qq
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'reviewing', $10, $11, $12, $13)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'reviewing', $11, $12, $13, $14)
     RETURNING *`,
     [
       itemId,
@@ -233,6 +236,7 @@ async function createItem(req, res, viewer) {
       String(input.unit).trim(),
       String(input.campus).trim(),
       String(input.building).trim(),
+      String(input.room || "").trim() || null,
       input.expireDate,
       viewer.id,
       viewer.name,
@@ -242,7 +246,7 @@ async function createItem(req, res, viewer) {
   );
 
   json(res, 201, {
-    item: itemFromRow(rows[0], viewer),
+    item: itemFromRow(rows[0], viewer, { includeRoom: true }),
     message: "已提交审核，审核通过后会进入首页列表"
   });
 }
@@ -314,7 +318,7 @@ async function adminItems(req, res) {
   }
   const { rows } = await query(`SELECT * FROM items ${where} ORDER BY created_at DESC`, params);
   const viewer = await demoViewer();
-  json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, true)) });
+  json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, { includeContact: true, includeRoom: true })) });
 }
 
 async function reviewItem(req, res, itemId, action) {
@@ -341,7 +345,7 @@ async function reviewItem(req, res, itemId, action) {
     [makeId("log"), itemId, admin.sub, action, reason || null]
   );
   const viewer = await demoViewer();
-  json(res, 200, { item: itemFromRow(rows[0], viewer, true) });
+  json(res, 200, { item: itemFromRow(rows[0], viewer, { includeContact: true, includeRoom: true }) });
 }
 
 async function adminStats(req, res) {
@@ -445,7 +449,7 @@ function adminPage() {
       const data = await api("/api/admin/items?status=" + status.value);
       items.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + item.title +
         ' <span class="pill">' + item.status + '</span></h3><p>' + item.description +
-        '</p><p class="muted">' + item.category + ' · ' + item.campus + ' · ' + item.building +
+        '</p><p class="muted">' + item.category + ' · ' + item.campus + ' · ' + item.building + (item.room ? ' · ' + item.room : '') +
         ' · 余 ' + item.quantity + item.unit + ' · 有效期 ' + item.expireDate +
         '</p><p class="muted">发布者：' + item.ownerName + ' · 微信 ' + item.contact.wechat + ' · QQ ' + item.contact.qq +
         (item.rejectReason ? '</p><p>驳回原因：' + item.rejectReason : '') +
@@ -511,7 +515,7 @@ async function handle(req, res) {
 
   if (req.method === "GET" && pathname === "/api/me/items") {
     const { rows } = await query("SELECT * FROM items WHERE owner_id = $1 ORDER BY created_at DESC", [viewer.id]);
-    json(res, 200, { items: rows.map(row => itemFromRow(row, viewer)) });
+    json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, { includeRoom: true })) });
     return;
   }
 

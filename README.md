@@ -100,6 +100,7 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
   "unit": "支",
   "campus": "仙林校区",
   "building": "南苑 A 栋",
+  "room": "321",
   "expireDate": "2026-12-31",
   "description": "未拆封，晚上可自取"
 }

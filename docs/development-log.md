@@ -75,3 +75,11 @@
   - `docs/miniprogram-release-checklist.md`
   - `docs/privacy-guideline-draft.md`
   - `docs/demo-script.md`
+
+### 第三轮：校区/楼栋/宿舍号数据接入
+
+- 从 `nju_electric_rooms_fixed.json` 生成小程序精简位置数据。
+- 发布表单新增校区/楼栋/宿舍号三级选择，宿舍号可不填。
+- 发布表单新增快速识别输入，支持类似“鼓楼 南二 321”“仙林 4 321”的位置解析。
+- 后端 `items` 增加可空 `room` 字段，管理员后台和本人发布列表可见，普通首页/详情不公开。
+- 隐私说明补充宿舍号仅供发布者本人和管理员核对。

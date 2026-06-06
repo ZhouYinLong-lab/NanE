@@ -37,15 +37,25 @@
       </view>
     </view>
 
-    <view class="grid">
-      <view class="field">
-        <view class="label">校区</view>
-        <input data-key="campus" value="{{form.campus}}" bindinput="updateField" />
+    <view class="field">
+      <view class="label">快速识别位置 <text class="label-hint">如：鼓楼 南二 321</text></view>
+      <view class="location-parse">
+        <input value="{{locationText}}" bindinput="updateLocationText" placeholder="输入校区 楼栋 宿舍号" />
+        <button bindtap="parseLocation">识别</button>
       </view>
-      <view class="field">
-        <view class="label">楼栋 *</view>
-        <input data-key="building" value="{{form.building}}" bindinput="updateField" />
-      </view>
+    </view>
+
+    <view class="field">
+      <view class="label">校区 / 楼栋 / 宿舍号 <text class="label-hint">宿舍号选填</text></view>
+      <picker
+        mode="multiSelector"
+        range="{{locationColumns}}"
+        value="{{locationSelection}}"
+        bindchange="onLocationChange"
+        bindcolumnchange="onLocationColumnChange"
+      >
+        <view class="picker">{{locationLabel}}</view>
+      </picker>
     </view>
 
     <view class="field">

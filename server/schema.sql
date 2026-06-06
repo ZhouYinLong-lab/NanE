@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS items (
   unit TEXT NOT NULL,
   campus TEXT NOT NULL,
   building TEXT NOT NULL,
+  room TEXT,
   expire_date DATE NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('reviewing', 'online', 'rejected', 'expired', 'taken_down')),
   reject_reason TEXT,

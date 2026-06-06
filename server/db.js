@@ -26,6 +26,7 @@ async function query(text, params = []) {
 async function initializeDatabase() {
   const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
   await pool.query(schema);
+  await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS room TEXT");
 
   await query(
     `INSERT INTO users (id, name, campus, building, wechat, qq, openid)
@@ -56,6 +57,7 @@ async function initializeDatabase() {
       unit: "支",
       campus: "仙林校区",
       building: "南苑 A 栋",
+      room: "",
       expireDate: "2026-12-31",
       status: "online",
       ownerName: "周同学",
@@ -71,6 +73,7 @@ async function initializeDatabase() {
       unit: "片",
       campus: "仙林校区",
       building: "南苑 A 栋",
+      room: "",
       expireDate: "2027-01-20",
       status: "online",
       ownerName: "周同学",
@@ -86,6 +89,7 @@ async function initializeDatabase() {
       unit: "片",
       campus: "仙林校区",
       building: "南苑 B 栋",
+      room: "",
       expireDate: "2026-08-15",
       status: "online",
       ownerName: "林同学",
@@ -97,10 +101,10 @@ async function initializeDatabase() {
   for (const item of seeds) {
     await query(
       `INSERT INTO items (
-        id, title, category, description, quantity, unit, campus, building,
+        id, title, category, description, quantity, unit, campus, building, room,
         expire_date, status, owner_id, owner_name, contact_wechat, contact_qq, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())`,
       [
         item.id,
         item.title,
@@ -110,6 +114,7 @@ async function initializeDatabase() {
         item.unit,
         item.campus,
         item.building,
+        item.room,
         item.expireDate,
         item.status,
         DEMO_USER_ID,
