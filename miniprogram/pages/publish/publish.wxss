@@ -1,9 +1,14 @@
+.publish-page {
+  overflow-x: hidden;
+}
+
 .brand-block {
   text-align: right;
+  min-width: 0;
 }
 
 .form {
-  margin-top: 30rpx;
+  margin-top: 26rpx;
 }
 
 .rules-warn {
@@ -12,83 +17,100 @@
 }
 
 .field {
-  margin-bottom: 24rpx;
+  margin-bottom: 22rpx;
 }
 
 .label {
-  margin-bottom: 10rpx;
+  margin-bottom: 9rpx;
   color: #222222;
-  font-size: 27rpx;
+  font-size: 26rpx;
   font-weight: 900;
+  line-height: 1.35;
 }
 
 .label-hint {
   margin-left: 8rpx;
   color: #666666;
-  font-size: 22rpx;
+  font-size: 21rpx;
   font-weight: 400;
+  white-space: nowrap;
 }
 
-input,
-textarea,
-.picker {
+.field-control {
   width: 100%;
-  border-radius: 14rpx;
+  border-radius: 15rpx;
   background: transparent;
-  border: 1rpx solid #d5d3cc;
+  border: 1rpx solid #dedbd2;
   color: #222222;
-  font-size: 28rpx;
+  font-size: 27rpx;
 }
 
-input,
+.field-control,
 .picker {
-  height: 78rpx;
+  height: 74rpx;
   padding: 0 18rpx;
-  line-height: 78rpx;
+  line-height: 74rpx;
 }
 
-textarea {
-  min-height: 160rpx;
+.textarea-control {
+  height: auto;
+  min-height: 156rpx;
   padding: 18rpx;
   line-height: 1.5;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18rpx;
+  grid-template-columns: 1fr;
+  gap: 0;
 }
 
 .location-parse {
   display: flex;
-  gap: 12rpx;
+  gap: 10rpx;
+  align-items: center;
 }
 
 .location-parse input {
   flex: 1;
+  min-width: 0;
 }
 
-.location-parse button {
-  width: 128rpx;
-  height: 78rpx;
+.parse-btn {
+  width: 104rpx;
+  height: 74rpx;
   margin: 0;
-  border-radius: 14rpx;
+  border-radius: 15rpx;
   background: #222222;
   color: #f4f2eb;
-  font-size: 27rpx;
+  font-size: 25rpx;
   font-weight: 800;
-  line-height: 78rpx;
+  line-height: 74rpx;
+  flex-shrink: 0;
 }
 
 .primary-btn {
-  margin-top: 34rpx;
-  margin-bottom: 24rpx;
+  margin-top: 30rpx;
+  margin-bottom: calc(28rpx + env(safe-area-inset-bottom));
 }
 
 .disclaimer {
   display: flex;
-  gap: 12rpx;
+  gap: 10rpx;
   color: #666666;
-  font-size: 24rpx;
-  line-height: 1.55;
+  font-size: 23rpx;
+  line-height: 1.6;
+  align-items: flex-start;
+}
+
+.disclaimer checkbox {
+  flex-shrink: 0;
+  margin-top: 2rpx;
+}
+
+@media (min-width: 420px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 18rpx;
+  }
 }

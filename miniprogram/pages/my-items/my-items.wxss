@@ -1,26 +1,23 @@
-.empty {
-  padding: 40rpx;
-  text-align: center;
-  color: #666666;
-}
-
-.list-item {
-  padding: 34rpx 0;
+.my-item-card {
+  margin-top: 18rpx;
+  padding: 22rpx;
   display: flex;
   align-items: flex-start;
-  gap: 18rpx;
-  border-bottom: 1rpx solid #e0ddd3;
+  gap: 16rpx;
+  border: 1rpx solid #e2dfd6;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .item-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 18rpx;
+  width: 82rpx;
+  height: 82rpx;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(0, 0, 0, 0.34);
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 900;
   flex-shrink: 0;
 }
@@ -44,8 +41,10 @@
 
 .name {
   color: #222222;
-  font-size: 31rpx;
+  font-size: 29rpx;
   font-weight: 900;
+  line-height: 1.28;
+  word-break: break-word;
 }
 
 .meta,
@@ -53,7 +52,9 @@
 .reason {
   margin-top: 8rpx;
   color: #666666;
-  font-size: 24rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 .reason {
@@ -61,11 +62,13 @@
 }
 
 .status {
-  padding: 9rpx 14rpx;
+  padding: 8rpx 13rpx;
   border-radius: 999rpx;
-  font-size: 23rpx;
+  font-size: 22rpx;
   font-weight: 900;
   white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .online {

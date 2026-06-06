@@ -11,10 +11,10 @@
     审核中物品不会进入首页。管理员通过后会同步展示给同楼栋/同校区同学。
   </view>
 
-  <view wx:if="{{loading}}" class="empty panel">正在读取发布记录...</view>
-  <view wx:elif="{{items.length === 0}}" class="empty panel">还没有发布记录</view>
+  <view wx:if="{{loading}}" class="state-card panel">正在读取发布记录...</view>
+  <view wx:elif="{{items.length === 0}}" class="state-card panel">还没有发布记录</view>
 
-  <view wx:for="{{items}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="openDetail">
+  <view wx:for="{{items}}" wx:key="id" class="my-item-card" data-id="{{item.id}}" bindtap="openDetail">
     <view class="item-icon {{index % 3 === 0 ? 'icon-red' : index % 3 === 1 ? 'icon-yellow' : 'icon-grey'}}">＋</view>
     <view class="main">
       <view class="name">{{item.title}}</view>

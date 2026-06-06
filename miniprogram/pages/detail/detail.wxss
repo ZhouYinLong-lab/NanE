@@ -1,47 +1,55 @@
-.empty {
-  padding: 40rpx;
-  color: #666666;
-  text-align: center;
+.detail-page {
+  overflow-x: hidden;
 }
 
 .brand-block {
   text-align: right;
+  min-width: 0;
 }
 
 .detail-hero {
-  padding: 20rpx 0 30rpx;
+  padding: 12rpx 0 26rpx;
   text-align: center;
 }
 
 .detail-icon {
-  width: 180rpx;
-  height: 180rpx;
-  margin: 0 auto 26rpx;
-  border-radius: 36rpx;
+  width: 148rpx;
+  height: 148rpx;
+  margin: 0 auto 22rpx;
+  border-radius: 30rpx;
   background: #f3edf3;
   color: rgba(0, 0, 0, 0.34);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 76rpx;
+  font-size: 64rpx;
   font-weight: 900;
 }
 
 .detail-title {
-  margin-bottom: 16rpx;
+  margin-bottom: 14rpx;
   color: #222222;
-  font-size: 44rpx;
+  font-size: 36rpx;
   font-weight: 900;
+  line-height: 1.28;
+  word-break: break-word;
 }
 
 .detail-meta {
-  margin-bottom: 18rpx;
+  margin-bottom: 16rpx;
   display: flex;
   justify-content: center;
-  gap: 24rpx;
+  gap: 12rpx;
   flex-wrap: wrap;
   color: #666666;
-  font-size: 24rpx;
+  font-size: 23rpx;
+  line-height: 1.45;
+}
+
+.detail-meta text {
+  padding: 6rpx 12rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.34);
 }
 
 .tags {
@@ -51,55 +59,58 @@
 }
 
 .detail-desc {
-  padding: 34rpx 0;
+  padding: 26rpx 0;
   border-top: 1rpx solid #e0ddd3;
   border-bottom: 1rpx solid #e0ddd3;
   color: #222222;
-  font-size: 27rpx;
+  font-size: 26rpx;
   line-height: 1.8;
+  word-break: break-word;
 }
 
 .contact-card {
-  margin-top: 28rpx;
-  padding: 34rpx;
-  border: 1rpx solid #d5d3cc;
+  margin-top: 26rpx;
+  padding: 28rpx;
+  border: 1rpx solid #dedbd2;
   border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.34);
   text-align: center;
 }
 
 .contact-hint {
-  margin-bottom: 22rpx;
+  margin-bottom: 20rpx;
   color: #666666;
-  font-size: 25rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
 }
 
 .reveal-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 72rpx;
-  padding: 0 34rpx;
+  height: 68rpx;
+  padding: 0 32rpx;
   border-radius: 999rpx;
   background: #dbcada;
   color: #222222;
-  font-size: 27rpx;
+  font-size: 25rpx;
   font-weight: 900;
-  line-height: 72rpx;
+  line-height: 68rpx;
 }
 
 .contact-title {
   margin-bottom: 14rpx;
   color: #222222;
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 900;
 }
 
 .contact-row {
   margin-top: 12rpx;
-  font-size: 31rpx;
+  font-size: 29rpx;
   font-weight: 900;
   color: #671463;
+  word-break: break-word;
 }
 
 .remaining {

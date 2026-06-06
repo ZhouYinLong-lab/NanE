@@ -1,21 +1,26 @@
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 34rpx;
-  margin-bottom: 42rpx;
+  gap: 24rpx;
+  margin-bottom: 32rpx;
+  padding: 22rpx;
+  border: 1rpx solid #e2dfd6;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .avatar {
-  width: 132rpx;
-  height: 132rpx;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
   background: #c4c5bd;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56rpx;
+  font-size: 48rpx;
   font-weight: 900;
+  flex-shrink: 0;
 }
 
 .profile-info {
@@ -25,14 +30,17 @@
 
 .name {
   color: #222222;
-  font-size: 38rpx;
+  font-size: 33rpx;
   font-weight: 900;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .campus {
   margin-top: 8rpx;
   color: #666666;
-  font-size: 25rpx;
+  font-size: 24rpx;
+  line-height: 1.35;
 }
 
 .auth-badge {
@@ -43,19 +51,21 @@
   border-radius: 999rpx;
   background: rgba(103, 20, 99, 0.08);
   color: #671463;
-  font-size: 22rpx;
+  font-size: 21rpx;
   font-weight: 900;
+  line-height: 1.25;
 }
 
 .menu-row {
-  min-height: 98rpx;
+  min-height: 92rpx;
   border-bottom: 1rpx solid #e0ddd3;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20rpx;
+  gap: 18rpx;
   color: #222222;
-  font-size: 29rpx;
+  font-size: 27rpx;
+  line-height: 1.35;
 }
 
 .menu-row:last-child {
@@ -65,11 +75,20 @@
 .menu-row text:last-child {
   color: #666666;
   text-align: right;
-  font-size: 24rpx;
+  font-size: 23rpx;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.menu-row text:first-child {
+  flex-shrink: 0;
+  font-weight: 800;
 }
 
 .switch-btn {
-  margin-top: 42rpx;
+  margin-top: 34rpx;
   background: #c4c5bd;
   color: #222222;
 }

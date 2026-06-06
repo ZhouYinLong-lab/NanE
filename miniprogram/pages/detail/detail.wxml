@@ -1,5 +1,5 @@
-<view class="page">
-  <view wx:if="{{loading}}" class="empty panel">正在读取详情...</view>
+<view class="page detail-page">
+  <view wx:if="{{loading}}" class="state-card panel">正在读取详情...</view>
 
   <view wx:elif="{{item}}" class="detail">
     <view class="brand-header">
@@ -14,8 +14,8 @@
       <view class="detail-icon">＋</view>
       <view class="detail-title">{{item.title}}</view>
       <view class="detail-meta">
-        <text>📍 {{item.campus}} · {{item.building}}</text>
-        <text>📦 余量: {{item.quantity}}{{item.unit}}</text>
+        <text>{{item.campus}} · {{item.building}}</text>
+        <text>余量 {{item.quantity}}{{item.unit}}</text>
       </view>
       <view class="tags">
         <text class="tag">{{item.category}}</text>
@@ -34,7 +34,7 @@
     <view class="contact-card">
       <view wx:if="{{!contact}}" class="contact-hidden">
         <view class="contact-hint">为保护隐私，联系方式默认隐藏</view>
-        <button class="reveal-btn" bindtap="revealContact">⌕ 查看联系方式</button>
+        <button class="reveal-btn" bindtap="revealContact">查看联系方式</button>
       </view>
 
       <view wx:else class="contact-revealed">
