@@ -122,12 +122,18 @@
 - DNS 已生效：
   - `api.zylatent.com -> 72.155.72.104`
   - `nane.zylatent.com -> 72.155.72.104`
+- Nginx + Certbot HTTPS 已完成：
+  - Let's Encrypt 证书签发成功，覆盖 `api.zylatent.com` 和 `nane.zylatent.com`。
+  - 证书当前到期日：2026-09-04。
+  - `curl https://api.zylatent.com/api/health` 返回正常。
+  - `curl https://nane.zylatent.com/api/health` 返回正常。
+  - `sudo certbot renew --dry-run` 模拟续期成功。
+- 小程序生产 API 配置已更新：
+  - `miniprogram/config.js` 中 `prod.apiBase` 为 `https://api.zylatent.com/api`。
+  - 当前默认环境仍为 `dev`，等待微信后台合法域名配置完成后切换。
 
 ### 当前待办
 
-- 配置 Nginx：
-  - `api.zylatent.com` 和 `nane.zylatent.com` 反向代理到 `http://127.0.0.1:37878`。
-- 使用 Certbot 申请 HTTPS 证书。
-- 验证 `https://api.zylatent.com/api/health`。
-- 小程序生产配置切换到 `https://api.zylatent.com/api`。
 - 微信公众平台配置 request 合法域名：`https://api.zylatent.com`。
+- 微信开发者工具刷新项目配置，确认生产域名请求可用。
+- 确认后将小程序 `env` 从 `dev` 切到 `prod`。

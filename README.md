@@ -62,6 +62,8 @@ const env = "prod";
 https://api.zylatent.com/api
 ```
 
+注意：`prod.apiBase` 已配置为该地址，但默认 `env` 仍为 `dev`，便于本地开发。微信后台合法域名配置完成后，再切换为 `prod`。
+
 正式小程序项目还需要把 `project.config.json` 中的 `appid` 替换为真实小程序 AppID。
 
 ## API 合约
@@ -192,13 +194,14 @@ Process manager: PM2, process name nane-api
 
 - `api.zylatent.com` 和 `nane.zylatent.com` 均已解析到 `72.155.72.104`。
 - VM 本机 `curl http://127.0.0.1:37878/api/health` 返回正常。
+- Nginx + Certbot HTTPS 已配置完成。
+- `curl https://api.zylatent.com/api/health` 返回正常。
+- `sudo certbot renew --dry-run` 成功。
 
 待完成：
 
-- Nginx 反向代理到 `http://127.0.0.1:37878`。
-- Certbot 申请 HTTPS 证书。
-- 小程序 `prod.apiBase` 切换为 `https://api.zylatent.com/api`。
 - 微信后台配置 request 合法域名 `https://api.zylatent.com`。
+- 确认后将小程序 `env` 从 `dev` 切换为 `prod`。
 
 ### 服务器启动示例
 

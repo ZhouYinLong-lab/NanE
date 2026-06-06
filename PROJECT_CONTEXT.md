@@ -6,7 +6,7 @@
 - 项目目标：面向南京大学校园场景的应急耗材互助信息平台，最终部署为微信小程序 + 服务器 API + 管理后台。
 - 核心定位：校园互助信息撮合；免费共享；禁止处方药、管控药和收费转让；发布内容需人工审核。
 - 目标用户：南京大学学生；管理员为项目团队/审核人员。
-- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别均已实现并推送到 GitHub；Azure VM 生产服务器已创建，Node API 已在服务器本机启动并通过健康检查。
+- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别均已实现并推送到 GitHub；Azure VM 生产服务器已创建，Nginx + HTTPS 已配置，公网 API 健康检查通过。
 
 ## 2. 技术栈 / Tech Stack
 
@@ -16,7 +16,7 @@
 - 管理后台：同一个 Node 服务内的轻量 HTML 管理页 `/admin`，不引入 React 构建。
 - 服务端口：NanE 专用端口 `37878`。
 - 本地/旧部署入口：Nginx Proxy Manager / frp 可反向代理到 `http://192.168.6.152:37878`。
-- 当前 Azure 部署入口：`api.zylatent.com`、`nane.zylatent.com` 解析到 Azure VM 公网 IP `72.155.72.104`，后续通过 Nginx 反向代理到 `http://127.0.0.1:37878`。
+- 当前 Azure 部署入口：`api.zylatent.com`、`nane.zylatent.com` 解析到 Azure VM 公网 IP `72.155.72.104`，通过 Nginx + Let's Encrypt HTTPS 反向代理到 `http://127.0.0.1:37878`。
 - 远程仓库：[ZhouYinLong-lab/NanE](https://github.com/ZhouYinLong-lab/NanE)
 
 ## 3. 系统架构 / System Architecture
@@ -96,7 +96,9 @@
   - 公网 IP：`72.155.72.104`。
   - DNS 已生效：`api.zylatent.com`、`nane.zylatent.com` 均解析到 `72.155.72.104`。
   - 服务器本机 API 已启动：`curl http://127.0.0.1:37878/api/health` 返回正常。
-  - 待完成：Nginx 反向代理、HTTPS 证书、小程序生产 API 域名切换、微信后台 request 合法域名配置。
+  - HTTPS 已配置：`curl https://api.zylatent.com/api/health` 和 `curl https://nane.zylatent.com/api/health` 返回正常。
+  - Certbot 自动续期 dry-run 成功，证书当前到期日为 2026-09-04。
+  - 待完成：微信后台 request 合法域名配置；确认后将小程序 `env` 切为 `prod`。
 - PostgreSQL：
   - 本地电脑未运行 PostgreSQL 时 `npm start` 会因 `ECONNREFUSED` 失败。
   - Azure VM 上已准备 NanE 专用 PostgreSQL 数据库和用户；敏感密码不写入仓库文档。
@@ -105,19 +107,14 @@
 
 ## 7. 后续计划 / Next Steps
 
-1. Azure 反向代理与 HTTPS：
-   - 在 VM 上创建 Nginx site：`api.zylatent.com`、`nane.zylatent.com` -> `http://127.0.0.1:37878`。
-   - 使用 Certbot 申请 Let's Encrypt 证书。
-   - 验证 `curl https://api.zylatent.com/api/health`。
-   - 验证 `sudo certbot renew --dry-run`。
-2. 小程序生产配置：
-   - 将 `miniprogram/config.js` 的 `prod.apiBase` 改为 `https://api.zylatent.com/api`。
-   - HTTPS 验证通过后，再将 `env` 从 `dev` 改为 `prod`。
-3. 微信小程序后台：
+1. 小程序生产配置：
+   - `miniprogram/config.js` 的 `prod.apiBase` 已设为 `https://api.zylatent.com/api`。
+   - 微信后台合法域名配置完成后，再将 `env` 从 `dev` 改为 `prod`。
+2. 微信小程序后台：
    - 服务类目选“信息查询”。
    - 配置 request 合法域名为 `https://api.zylatent.com`。
    - 提交隐私保护指引。
-4. 真实身份能力：
+3. 真实身份能力：
    - 替换 Demo 登录。
    - 确认是否对接校园身份认证，不占用“南哪小帮手”服务。
 
