@@ -1,32 +1,40 @@
-.header {
-  padding: 8rpx 4rpx 24rpx;
-}
-
-.title {
-  color: #183f32;
-  font-size: 42rpx;
-  font-weight: 800;
-}
-
-.sub {
-  margin-top: 10rpx;
-  color: #6d766f;
-  font-size: 26rpx;
-  line-height: 1.5;
-}
-
 .empty {
   padding: 40rpx;
   text-align: center;
-  color: #7b877f;
+  color: #666666;
 }
 
-.item {
-  margin-bottom: 18rpx;
-  padding: 24rpx;
+.list-item {
+  padding: 34rpx 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  border-bottom: 1rpx solid #e0ddd3;
+}
+
+.item-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
-  gap: 18rpx;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.34);
+  font-size: 40rpx;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.icon-yellow {
+  background: #dbcada;
+}
+
+.icon-red {
+  background: #f3edf3;
+}
+
+.icon-grey {
+  background: #c4c5bd;
 }
 
 .main {
@@ -35,16 +43,16 @@
 }
 
 .name {
-  color: #20231f;
+  color: #222222;
   font-size: 31rpx;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .meta,
 .time,
 .reason {
   margin-top: 8rpx;
-  color: #7b877f;
+  color: #666666;
   font-size: 24rpx;
 }
 
@@ -56,22 +64,23 @@
   padding: 9rpx 14rpx;
   border-radius: 999rpx;
   font-size: 23rpx;
-  font-weight: 800;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .online {
-  background: #e2f5ea;
-  color: #25735a;
+  border: 1rpx solid #671463;
+  color: #671463;
 }
 
 .reviewing {
-  background: #fff3cf;
-  color: #8b6422;
+  border: 1rpx solid #d5d3cc;
+  color: #222222;
 }
 
 .rejected,
 .expired,
 .taken_down {
-  background: #f3e6e1;
-  color: #8b3b2e;
+  border: 1rpx solid #671463;
+  color: #671463;
 }

@@ -1,36 +1,34 @@
 <view class="page">
-  <view class="hero">
+  <view class="brand-header">
     <view>
-      <view class="eyebrow">NJU campus mutual aid</view>
-      <view class="title">NanE 南易</view>
-      <view class="subtitle">把宿舍里用不完的应急耗材，交给正需要的人。</view>
+      <view class="brand-title">南易</view>
+      <view class="brand-subtitle">Campus Mutual Aid</view>
     </view>
-    <view class="badge">{{viewer.building || '南苑 A 栋'}}</view>
+    <view class="round-action">⌕</view>
   </view>
 
-  <view class="search panel">
+  <view class="search-row">
     <input value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" placeholder="搜索退烧贴、碘伏、创可贴" />
     <button bindtap="onSearch">搜索</button>
   </view>
 
-  <scroll-view scroll-x class="chips">
+  <scroll-view scroll-x class="filter-tags">
     <view
       wx:for="{{categories}}"
       wx:key="*this"
-      class="chip {{category === item ? 'active' : ''}}"
+      class="f-tag {{category === item ? 'active' : ''}}"
       data-category="{{item}}"
       bindtap="chooseCategory"
     >{{item}}</view>
   </scroll-view>
 
-  <view class="notice panel">
+  <view class="disclaimer-box">
+    <text class="disclaimer-title">[!] 平台互助规范</text>
     NanE 仅做校园互助信息撮合。所有物品免费共享，禁止处方药、管控药和任何形式的收费转让，发布内容需人工审核。
   </view>
 
-  <view class="section-head">
-    <text>附近互助</text>
-    <text class="hint">同楼栋优先排序</text>
-  </view>
+  <view class="section-title">附近物品</view>
+  <view class="hint">同楼栋/同校区优先排序 · {{viewer.building || '南苑 A 栋'}}</view>
 
   <view wx:if="{{loading}}" class="empty panel">正在连接 NanE API...</view>
   <view wx:elif="{{errorMessage}}" class="empty panel">
@@ -39,18 +37,19 @@
   </view>
   <view wx:elif="{{items.length === 0}}" class="empty panel">暂时没有符合条件的物品</view>
 
-  <view wx:for="{{items}}" wx:key="id" class="item panel" data-id="{{item.id}}" bindtap="openDetail">
-    <view class="item-main">
-      <view class="item-title">{{item.title}}</view>
-      <view class="item-desc">{{item.description}}</view>
-      <view class="meta">
-        <text>{{item.category}}</text>
-        <text>{{item.campus}} · {{item.building}}</text>
+  <view wx:for="{{items}}" wx:key="id" class="list-item" data-id="{{item.id}}" bindtap="openDetail">
+    <view class="item-icon {{index % 3 === 0 ? 'icon-red' : index % 3 === 1 ? 'icon-yellow' : 'icon-grey'}}">＋</view>
+    <view class="item-content">
+      <view class="item-header">
+        <view class="item-name">{{item.title}}</view>
+        <view class="meta-info">{{item.campus}} · {{item.building}}</view>
       </view>
-    </view>
-    <view class="item-side">
-      <view class="scope {{item.distanceScope}}">{{item.distanceLabel}}</view>
-      <view class="qty">{{item.quantity}}{{item.unit}}</view>
+      <view class="description">{{item.description}}</view>
+      <view class="tags">
+        <text class="tag">数量: {{item.quantity}}{{item.unit}}</text>
+        <text class="tag">{{item.distanceLabel}}</text>
+        <text class="tag tag-alert">{{item.expireDate}} 到期</text>
+      </view>
     </view>
   </view>
 </view>

@@ -1,8 +1,8 @@
 page {
   min-height: 100%;
-  background: #f7f4ef;
-  color: #20231f;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  background: #f4f2eb;
+  color: #222222;
+  font-family: "Microsoft YaHei", "微软雅黑", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
 }
 
 view,
@@ -16,31 +16,111 @@ picker {
 
 .page {
   min-height: 100vh;
-  padding: 28rpx 28rpx 44rpx;
+  padding: 42rpx 36rpx 52rpx;
+  background: #f4f2eb;
 }
 
 .panel {
-  background: #ffffff;
-  border: 1rpx solid #e7ded3;
-  border-radius: 16rpx;
+  background: transparent;
+  border: 1rpx solid #d5d3cc;
+  border-radius: 18rpx;
 }
 
 .primary-btn {
-  height: 88rpx;
-  border-radius: 16rpx;
-  background: #25735a;
-  color: #ffffff;
-  font-size: 30rpx;
-  font-weight: 700;
-  line-height: 88rpx;
+  height: 92rpx;
+  border-radius: 14rpx;
+  background: #222222;
+  color: #f4f2eb;
+  font-size: 31rpx;
+  font-weight: 800;
+  line-height: 92rpx;
 }
 
 .ghost-btn {
   height: 80rpx;
-  border: 1rpx solid #cdded6;
-  border-radius: 16rpx;
-  background: #f4fbf7;
-  color: #25735a;
+  border: 1rpx solid #d5d3cc;
+  border-radius: 14rpx;
+  background: transparent;
+  color: #222222;
   font-size: 28rpx;
   line-height: 80rpx;
+}
+
+.brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 36rpx;
+}
+
+.brand-title {
+  color: #222222;
+  font-size: 52rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+}
+
+.brand-subtitle {
+  margin-top: 8rpx;
+  color: #666666;
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+  text-transform: uppercase;
+}
+
+.round-action {
+  width: 80rpx;
+  height: 80rpx;
+  border: 1rpx solid #d5d3cc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666666;
+  font-size: 34rpx;
+}
+
+.section-title {
+  margin: 40rpx 0 8rpx;
+  color: #222222;
+  font-size: 36rpx;
+  font-weight: 900;
+}
+
+.muted {
+  color: #666666;
+}
+
+.tag {
+  display: inline-flex;
+  margin-right: 12rpx;
+  margin-bottom: 10rpx;
+  padding: 6rpx 12rpx;
+  border: 1rpx solid #d5d3cc;
+  border-radius: 12rpx;
+  color: #222222;
+  font-size: 21rpx;
+  font-weight: 800;
+}
+
+.tag-alert {
+  color: #671463;
+  border-color: #671463;
+}
+
+.disclaimer-box {
+  margin: 24rpx 0;
+  padding: 24rpx;
+  border: 1rpx dashed #671463;
+  border-radius: 14rpx;
+  background: rgba(103, 20, 99, 0.08);
+  color: #671463;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.disclaimer-title {
+  display: block;
+  margin-bottom: 8rpx;
+  font-weight: 900;
 }

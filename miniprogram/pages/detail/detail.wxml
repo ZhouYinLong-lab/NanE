@@ -2,40 +2,47 @@
   <view wx:if="{{loading}}" class="empty panel">正在读取详情...</view>
 
   <view wx:elif="{{item}}" class="detail">
-    <view class="cover panel">
-      <view class="scope {{item.distanceScope}}">{{item.distanceLabel}}</view>
-      <view class="cover-title">{{item.title}}</view>
-      <view class="cover-sub">{{item.category}} · 余 {{item.quantity}}{{item.unit}}</view>
+    <view class="brand-header">
+      <view class="round-action">←</view>
+      <view class="brand-block">
+        <view class="brand-title">详情</view>
+        <view class="brand-subtitle">Item Details</view>
+      </view>
     </view>
 
-    <view class="panel block">
-      <view class="row">
-        <text class="label">位置</text>
-        <text>{{item.campus}} · {{item.building}}</text>
+    <view class="detail-hero">
+      <view class="detail-icon">＋</view>
+      <view class="detail-title">{{item.title}}</view>
+      <view class="detail-meta">
+        <text>📍 {{item.campus}} · {{item.building}}</text>
+        <text>📦 余量: {{item.quantity}}{{item.unit}}</text>
       </view>
-      <view class="row">
-        <text class="label">有效期</text>
-        <text>{{item.expireDate}}</text>
+      <view class="tags">
+        <text class="tag">{{item.category}}</text>
+        <text class="tag">{{item.distanceLabel}}</text>
+        <text class="tag tag-alert">{{item.expireDate}} 到期</text>
       </view>
-      <view class="row">
-        <text class="label">发布者</text>
-        <text>{{item.ownerName}}</text>
-      </view>
-      <view class="desc">{{item.description}}</view>
     </view>
 
-    <view class="panel safety">
-      <view class="safety-title">领取前提示</view>
-      <view>平台仅做校园互助信息撮合，不介入线下交接。所有物品应为免费共享；请自行确认包装、有效期和适用风险；处方药、管控药物不允许发布或领取。</view>
+    <view class="detail-desc">{{item.description}}</view>
+
+    <view class="disclaimer-box">
+      <text class="disclaimer-title">免责声明</text>
+      平台仅做校园互助信息撮合，不介入线下交接。所有物品应为免费共享；请自行确认包装、有效期和适用风险；处方药、管控药物不允许发布或领取。
     </view>
 
-    <button wx:if="{{!contact}}" class="primary-btn" bindtap="revealContact">我要领取，查看联系方式</button>
+    <view class="contact-card">
+      <view wx:if="{{!contact}}" class="contact-hidden">
+        <view class="contact-hint">为保护隐私，联系方式默认隐藏</view>
+        <button class="reveal-btn" bindtap="revealContact">⌕ 查看联系方式</button>
+      </view>
 
-    <view wx:else class="panel contact">
-      <view class="contact-title">联系方式</view>
-      <view class="contact-row">微信：{{contact.wechat}}</view>
-      <view class="contact-row">QQ：{{contact.qq}}</view>
-      <view class="remaining">今日剩余查看次数：{{remaining}}</view>
+      <view wx:else class="contact-revealed">
+        <view class="contact-title">联系方式</view>
+        <view class="contact-row">微信：{{contact.wechat}}</view>
+        <view class="contact-row">QQ：{{contact.qq}}</view>
+        <view class="remaining">今日剩余查看次数：{{remaining}}</view>
+      </view>
     </view>
   </view>
 </view>

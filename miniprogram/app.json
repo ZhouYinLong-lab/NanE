@@ -10,12 +10,12 @@
     "navigationBarTitleText": "NanE 南易",
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f7f4ef"
+    "backgroundColor": "#f4f2eb"
   },
   "tabBar": {
     "color": "#8c8177",
-    "selectedColor": "#25735a",
-    "backgroundColor": "#ffffff",
+    "selectedColor": "#671463",
+    "backgroundColor": "#f4f2eb",
     "borderStyle": "white",
     "list": [
       {

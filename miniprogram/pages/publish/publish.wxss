@@ -1,46 +1,14 @@
-.intro {
-  padding: 30rpx;
-  background: #e7f5ed;
-}
-
-.intro-title {
-  color: #183f32;
-  font-size: 38rpx;
-  font-weight: 800;
-}
-
-.intro-sub {
-  margin-top: 12rpx;
-  color: #5c675f;
-  font-size: 26rpx;
-  line-height: 1.55;
+.brand-block {
+  text-align: right;
 }
 
 .form {
-  margin-top: 22rpx;
-  padding: 26rpx;
-}
-
-.rules {
-  margin-top: 22rpx;
-  padding: 24rpx;
-  background: #fff9e9;
-  color: #6f5b2c;
-  font-size: 25rpx;
-  line-height: 1.55;
-}
-
-.rules-title {
-  margin-bottom: 8rpx;
-  color: #20231f;
-  font-size: 29rpx;
-  font-weight: 800;
+  margin-top: 30rpx;
 }
 
 .rules-warn {
   margin-top: 8rpx;
-  color: #9f3d33;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .field {
@@ -49,9 +17,9 @@
 
 .label {
   margin-bottom: 10rpx;
-  color: #52605a;
-  font-size: 25rpx;
-  font-weight: 700;
+  color: #222222;
+  font-size: 27rpx;
+  font-weight: 900;
 }
 
 input,
@@ -59,9 +27,9 @@ textarea,
 .picker {
   width: 100%;
   border-radius: 14rpx;
-  background: #f9f8f5;
-  border: 1rpx solid #e6ded4;
-  color: #20231f;
+  background: transparent;
+  border: 1rpx solid #d5d3cc;
+  color: #222222;
   font-size: 28rpx;
 }
 
@@ -85,13 +53,14 @@ textarea {
 }
 
 .primary-btn {
-  margin-top: 24rpx;
+  margin-top: 34rpx;
+  margin-bottom: 24rpx;
 }
 
 .disclaimer {
   display: flex;
   gap: 12rpx;
-  color: #52605a;
+  color: #666666;
   font-size: 24rpx;
   line-height: 1.55;
 }
