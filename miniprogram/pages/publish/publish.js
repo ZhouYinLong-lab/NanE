@@ -18,6 +18,8 @@ Page({
       room: "",
       expireDate: "2026-12-31",
       description: "",
+      contactWechat: "",
+      contactQq: "",
       disclaimerAccepted: false
     },
     submitting: false
@@ -95,6 +97,10 @@ Page({
       wx.showToast({ title: "请补全必填信息", icon: "none" });
       return;
     }
+    if (!form.contactWechat.trim()) {
+      wx.showToast({ title: "请填写微信联系方式", icon: "none" });
+      return;
+    }
     if (!form.campus || !form.building) {
       wx.showToast({ title: "请选择校区和楼栋", icon: "none" });
       return;
@@ -128,6 +134,8 @@ Page({
         "form.title": "",
         "form.description": "",
         "form.quantity": "1",
+        "form.contactWechat": "",
+        "form.contactQq": "",
         "form.disclaimerAccepted": false
       });
     } catch (error) {

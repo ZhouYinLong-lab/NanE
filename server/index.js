@@ -218,6 +218,12 @@ async function createItem(req, res, viewer) {
     json(res, 400, { error: "VALIDATION_ERROR", message: validationError });
     return;
   }
+  const contactWechat = String(input.contactWechat || viewer.wechat || "").trim();
+  const contactQq = String(input.contactQq || viewer.qq || "").trim();
+  if (!contactWechat) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写微信联系方式" });
+    return;
+  }
 
   const itemId = makeId("item");
   const { rows } = await query(
@@ -240,8 +246,8 @@ async function createItem(req, res, viewer) {
       input.expireDate,
       viewer.id,
       viewer.name,
-      viewer.wechat,
-      viewer.qq
+      contactWechat,
+      contactQq
     ]
   );
 

@@ -1,10 +1,10 @@
 <view class="page publish-page">
-  <view class="brand-header">
-    <view class="round-action">←</view>
-    <view class="brand-block">
+  <view class="publish-hero">
+    <view>
       <view class="brand-title">发布</view>
       <view class="brand-subtitle">Upload Items</view>
     </view>
+    <view class="hero-note">提交后人工审核</view>
   </view>
 
   <view class="disclaimer-box">
@@ -66,6 +66,19 @@
     <view class="field">
       <view class="label">补充说明</view>
       <textarea class="field-control textarea-control" data-key="description" value="{{form.description}}" bindinput="updateField" placeholder="包装状态、领取时间、注意事项" />
+    </view>
+
+    <view class="contact-section">
+      <view class="section-label">联系方式</view>
+      <view class="section-help">审核通过后，领取者点击详情页按钮才会看到联系方式。</view>
+      <view class="field">
+        <view class="label">微信号 *</view>
+        <input class="field-control" data-key="contactWechat" value="{{form.contactWechat}}" bindinput="updateField" placeholder="请输入可联系的微信号" />
+      </view>
+      <view class="field">
+        <view class="label">QQ 号 <text class="label-hint">选填</text></view>
+        <input class="field-control" data-key="contactQq" value="{{form.contactQq}}" bindinput="updateField" placeholder="可选，用于备用联系" />
+      </view>
     </view>
 
     <checkbox-group bindchange="toggleDisclaimer">
