@@ -1,34 +1,55 @@
 <view class="page home-page">
-  <view class="brand-header">
-    <view>
-      <view class="brand-title">南易</view>
-      <view class="brand-subtitle">Campus Mutual Aid</view>
+  <view class="topbar">
+    <view class="avatar">
+      <text class="fa">{{icons.handHoldingHeart}}</text>
+      <view class="avatar-dot"></view>
     </view>
-    <view class="round-action">⌕</view>
+    <view class="screen-title">发现互助</view>
+    <view class="icon-btn">
+      <text class="fa">{{icons.bell}}</text>
+    </view>
   </view>
 
   <view class="search-row">
-    <input value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" placeholder="搜索退烧贴、碘伏、创可贴" />
-    <button bindtap="onSearch">搜索</button>
+    <view class="search-box">
+      <text class="fa search-icon">{{icons.magnifyingGlass}}</text>
+      <input value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" placeholder="搜索退烧贴、碘伏、创可贴" />
+    </view>
+    <button class="filter-btn" bindtap="onSearch">
+      <text class="fa">{{icons.filter}}</text>
+    </button>
   </view>
 
-  <scroll-view scroll-x class="filter-tags">
+  <scroll-view scroll-x class="chips">
     <view
       wx:for="{{categories}}"
       wx:key="*this"
-      class="f-tag {{category === item ? 'active' : ''}}"
+      class="chip {{category === item ? 'active' : ''}}"
       data-category="{{item}}"
       bindtap="chooseCategory"
     >{{item}}</view>
   </scroll-view>
 
-  <view class="disclaimer-box">
-    <text class="disclaimer-title">[!] 平台互助规范</text>
-    NanE 仅做校园互助信息撮合。所有物品免费共享，禁止处方药、管控药和任何形式的收费转让，发布内容需人工审核。
+  <view class="hero-card">
+    <view>
+      <view class="hero-title">南大校园互助共享</view>
+      <view class="hero-desc">同楼栋/同校区优先展示 · 免费共享 · 人工审核</view>
+    </view>
+    <view class="hero-icon"><text class="fa">{{icons.shieldHeart}}</text></view>
   </view>
 
-  <view class="section-title">附近物品</view>
-  <view class="hint">同楼栋/同校区优先排序 · {{viewer.building || '南苑 A 栋'}}</view>
+  <view class="rules-strip">
+    <text class="fa">{{icons.circleInfo}}</text>
+    <text>禁止处方药、管控药和任何形式收费转让。</text>
+  </view>
+
+  <view class="section-head">
+    <view>
+      <view class="section-title">附近物品</view>
+      <view class="section-more">{{viewer.building || '南苑 A 栋'}} · 优先排序</view>
+    </view>
+    <view class="section-more">查看全部</view>
+  </view>
 
   <view wx:if="{{loading}}" class="state-card panel">正在连接 NanE API...</view>
   <view wx:elif="{{errorMessage}}" class="state-card panel">
@@ -37,18 +58,18 @@
   </view>
   <view wx:elif="{{items.length === 0}}" class="state-card panel">暂时没有符合条件的物品</view>
 
-  <view wx:for="{{items}}" wx:key="id" class="item-card" data-id="{{item.id}}" bindtap="openDetail">
-    <view class="item-icon {{index % 3 === 0 ? 'icon-red' : index % 3 === 1 ? 'icon-yellow' : 'icon-grey'}}">＋</view>
-    <view class="item-content">
-      <view class="item-header">
-        <view class="item-name">{{item.title}}</view>
-        <view class="meta-info">{{item.campus}} · {{item.building}}</view>
+  <view class="item-grid" wx:else>
+    <view wx:for="{{items}}" wx:key="id" class="item-card" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="item-img {{index % 3 === 0 ? 'tone-purple' : index % 3 === 1 ? 'tone-brown' : 'tone-cream'}}">
+        <text class="fa">{{icons.notesMedical}}</text>
       </view>
-      <view class="description">{{item.description}}</view>
-      <view class="tags">
-        <text class="tag">数量: {{item.quantity}}{{item.unit}}</text>
-        <text class="tag">{{item.distanceLabel}}</text>
-        <text class="tag tag-alert">{{item.expireDate}} 到期</text>
+      <view class="item-info">
+        <view class="item-name">{{item.title}}</view>
+        <view class="item-loc"><text class="fa">{{icons.locationDot}}</text> {{item.campus}} · {{item.building}}</view>
+        <view class="item-tags">
+          <text class="item-tag">{{item.category}}</text>
+          <text class="priority-badge">{{item.distanceLabel}}</text>
+        </view>
       </view>
     </view>
   </view>

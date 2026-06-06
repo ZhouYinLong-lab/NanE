@@ -1,40 +1,53 @@
-<view class="page">
-  <view class="brand-header">
-    <view>
-      <view class="brand-title">我的空间</view>
-      <view class="brand-subtitle">User Profile</view>
+<view class="page profile-page">
+  <view class="profile-hero">
+    <view class="profile-avatar"><text class="fa">{{icons.user}}</text></view>
+    <view class="profile-info">
+      <view class="profile-name">{{user.name || 'Demo 用户'}}</view>
+      <view class="profile-campus">{{user.campus || '仙林校区'}} · {{user.building || '南苑 A 栋'}}</view>
+      <view class="auth-badge"><text class="fa">{{icons.check}}</text> 校园身份认证 Demo</view>
     </view>
   </view>
 
-  <view class="profile-header">
-    <view class="avatar">南</view>
-    <view class="profile-info">
-      <view class="name">{{user.name || 'Demo 用户'}}</view>
-      <view class="campus">{{user.campus || '仙林校区'}} · {{user.building || '南苑 A 栋'}}</view>
-      <view class="auth-badge">✓ 校园身份认证 Demo</view>
+  <view class="stats-row">
+    <view class="stat-card">
+      <view class="stat-num">{{contactLimit.daily}}</view>
+      <view class="stat-label">每日额度</view>
     </view>
+    <view class="stat-card">
+      <view class="stat-num">{{contactLimit.remaining}}</view>
+      <view class="stat-label">今日剩余</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-num">{{apiStatus}}</view>
+      <view class="stat-label">API 状态</view>
+    </view>
+  </view>
+
+  <view class="section-head">
+    <view class="section-title">我的功能</view>
   </view>
 
   <view class="profile-menu">
-    <view class="menu-row" bindtap="openMyItems">
-      <text>我发布的互助</text>
-      <text>查看审核和上架状态</text>
+    <view class="menu-item" bindtap="openMyItems">
+      <view class="menu-icon"><text class="fa">{{icons.clipboardList}}</text></view>
+      <view class="menu-text">我发布的互助</view>
+      <view class="menu-badge">审核状态</view>
+      <text class="fa menu-arrow">{{icons.chevronRight}}</text>
     </view>
-    <view class="menu-row">
-      <text>联系方式</text>
-      <text>{{user.wechat || 'nane_demo'}}</text>
+    <view class="menu-item">
+      <view class="menu-icon"><text class="fa">{{icons.idCard}}</text></view>
+      <view class="menu-text">联系方式</view>
+      <view class="menu-badge">{{user.wechat || user.qq || '待设置'}}</view>
     </view>
-    <view class="menu-row">
-      <text>查看历史</text>
-      <text>今日余 {{contactLimit.remaining}} 次</text>
+    <view class="menu-item">
+      <view class="menu-icon"><text class="fa">{{icons.clock}}</text></view>
+      <view class="menu-text">查看历史</view>
+      <view class="menu-badge">今日余 {{contactLimit.remaining}} 次</view>
     </view>
-    <view class="menu-row">
-      <text>API 状态</text>
-      <text>{{apiStatus}}</text>
-    </view>
-    <view class="menu-row">
-      <text>隐私策略</text>
-      <text>查看后展示，每日限 {{contactLimit.daily}} 次</text>
+    <view class="menu-item">
+      <view class="menu-icon"><text class="fa">{{icons.shieldHeart}}</text></view>
+      <view class="menu-text">隐私策略</view>
+      <view class="menu-badge">每日限 {{contactLimit.daily}} 次</view>
     </view>
   </view>
 

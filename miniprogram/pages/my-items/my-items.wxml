@@ -1,29 +1,37 @@
-<view class="page">
-  <view class="brand-header">
-    <view>
-      <view class="brand-title">我的发布</view>
-      <view class="brand-subtitle">Published Items</view>
-    </view>
+<view class="page my-items-page">
+  <view class="topbar">
+    <view class="icon-btn" bindtap="goBack"><text class="fa">{{icons.arrowLeft}}</text></view>
+    <view class="screen-title">我的发布</view>
+    <view class="icon-btn"><text class="fa">{{icons.clipboardList}}</text></view>
   </view>
 
-  <view class="disclaimer-box">
-    <text class="disclaimer-title">审核提示</text>
-    审核中物品不会进入首页。管理员通过后会同步展示给同楼栋/同校区同学。
+  <scroll-view scroll-x class="chips">
+    <view class="chip active">全部</view>
+    <view class="chip">上架中</view>
+    <view class="chip">审核中</view>
+    <view class="chip">已下架</view>
+  </scroll-view>
+
+  <view class="tips-card">
+    <text class="fa">{{icons.circleInfo}}</text>
+    <text>审核中物品不会进入首页。通过后会同步展示给同楼栋/同校区同学。</text>
   </view>
 
   <view wx:if="{{loading}}" class="state-card panel">正在读取发布记录...</view>
   <view wx:elif="{{items.length === 0}}" class="state-card panel">还没有发布记录</view>
 
-  <view wx:for="{{items}}" wx:key="id" class="my-item-card" data-id="{{item.id}}" bindtap="openDetail">
-    <view class="item-icon {{index % 3 === 0 ? 'icon-red' : index % 3 === 1 ? 'icon-yellow' : 'icon-grey'}}">＋</view>
-    <view class="main">
-      <view class="name">{{item.title}}</view>
-      <view class="meta">
-        {{item.category}} · {{item.building}}<text wx:if="{{item.room}}"> · {{item.room}}</text> · {{item.quantity}}{{item.unit}}
+  <view wx:for="{{items}}" wx:key="id" class="my-item" data-id="{{item.id}}" bindtap="openDetail">
+    <view class="my-item-icon {{index % 3 === 0 ? 'tone-purple' : index % 3 === 1 ? 'tone-brown' : 'tone-cream'}}">
+      <text class="fa">{{icons.notesMedical}}</text>
+    </view>
+    <view class="my-item-info">
+      <view class="my-item-name">{{item.title}}</view>
+      <view class="my-item-meta">
+        {{item.category}} · {{item.building}}<text wx:if="{{item.room}}"> · {{item.room}}</text> · 余 {{item.quantity}}{{item.unit}}
       </view>
-      <view class="time">有效期 {{item.expireDate}}</view>
+      <view class="my-item-meta">有效期 {{item.expireDate}}</view>
       <view wx:if="{{item.rejectReason}}" class="reason">原因：{{item.rejectReason}}</view>
     </view>
-    <view class="status {{item.status}}">{{item.statusText}}</view>
+    <view class="status-tag {{item.status}}">{{item.statusText}}</view>
   </view>
 </view>

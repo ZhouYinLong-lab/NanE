@@ -1,7 +1,9 @@
 const api = require("../../utils/api");
+const icons = require("../../utils/icons");
 
 Page({
   data: {
+    icons,
     id: "",
     item: null,
     contact: null,
@@ -12,6 +14,10 @@ Page({
   onLoad(query) {
     this.setData({ id: query.id || "" });
     this.loadItem(query.id);
+  },
+
+  goBack() {
+    wx.navigateBack({ delta: 1 });
   },
 
   async loadItem(id) {

@@ -1,4 +1,5 @@
 const api = require("../../utils/api");
+const icons = require("../../utils/icons");
 
 const statusText = {
   online: "上架中",
@@ -10,12 +11,17 @@ const statusText = {
 
 Page({
   data: {
+    icons,
     items: [],
     loading: true
   },
 
   onShow() {
     this.loadItems();
+  },
+
+  goBack() {
+    wx.navigateBack({ delta: 1 });
   },
 
   async loadItems() {

@@ -1,7 +1,9 @@
 const api = require("../../utils/api");
+const icons = require("../../utils/icons");
 
 Page({
   data: {
+    icons,
     user: {},
     contactLimit: {
       daily: 5,

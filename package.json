@@ -8,6 +8,7 @@
     "start": "node server/index.js"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "pg": "^8.13.1"
   },
   "engines": {

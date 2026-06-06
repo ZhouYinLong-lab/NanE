@@ -1,14 +1,12 @@
 <view class="page publish-page">
-  <view class="publish-hero">
-    <view>
-      <view class="brand-title">发布</view>
-      <view class="brand-subtitle">Upload Items</view>
-    </view>
-    <view class="hero-note">提交后人工审核</view>
+  <view class="topbar">
+    <view class="avatar"><text class="fa">{{icons.pen}}</text></view>
+    <view class="screen-title">发布互助</view>
+    <view class="icon-btn"><text class="fa">{{icons.shieldHeart}}</text></view>
   </view>
 
   <view class="publish-rules">
-    <view class="rules-mark">规</view>
+    <view class="rules-mark"><text class="fa">{{icons.circleInfo}}</text></view>
     <view class="rules-copy">
       <view class="rules-title">发布规范</view>
       <view class="rules-text">仅限低风险应急耗材免费互助，发布后需人工审核。</view>
@@ -16,7 +14,7 @@
     </view>
   </view>
 
-  <view class="form">
+  <view class="form soft-card">
     <view class="field">
       <view class="label">物品名称 *</view>
       <input class="field-control" data-key="title" value="{{form.title}}" bindinput="updateField" placeholder="例如：碘伏棉签 10 支" />
@@ -92,5 +90,8 @@
     </checkbox-group>
   </view>
 
-  <button class="primary-btn" loading="{{submitting}}" bindtap="submit">提交审核</button>
+  <button class="primary-btn submit-btn" loading="{{submitting}}" bindtap="submit">
+    <text class="fa">{{icons.check}}</text>
+    <text>提交审核</text>
+  </button>
 </view>

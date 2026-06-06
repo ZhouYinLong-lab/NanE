@@ -2,119 +2,143 @@
   overflow-x: hidden;
 }
 
-.brand-block {
-  text-align: right;
-  min-width: 0;
-}
-
 .detail-hero {
-  padding: 12rpx 0 26rpx;
+  padding: 26rpx 22rpx 24rpx;
   text-align: center;
+  margin-bottom: 18rpx;
 }
 
-.detail-icon {
-  width: 148rpx;
-  height: 148rpx;
-  margin: 0 auto 22rpx;
-  border-radius: 30rpx;
-  background: #f3edf3;
-  color: rgba(0, 0, 0, 0.34);
+.detail-img {
+  width: 160rpx;
+  height: 160rpx;
+  margin: 0 auto 20rpx;
+  border-radius: 34rpx;
+  background: linear-gradient(135deg, rgba(75, 18, 63, 0.1), rgba(139, 94, 52, 0.14));
+  color: #4b123f;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 64rpx;
-  font-weight: 900;
+  font-size: 66rpx;
 }
 
 .detail-title {
   margin-bottom: 14rpx;
-  color: #222222;
-  font-size: 36rpx;
+  color: #2f261d;
+  font-size: 34rpx;
   font-weight: 900;
   line-height: 1.28;
   word-break: break-word;
 }
 
-.detail-meta {
-  margin-bottom: 16rpx;
+.badge-row {
   display: flex;
   justify-content: center;
-  gap: 12rpx;
   flex-wrap: wrap;
-  color: #666666;
+}
+
+.detail-card {
+  padding: 22rpx;
+  margin-bottom: 18rpx;
+}
+
+.detail-row {
+  display: flex;
+  gap: 16rpx;
+  align-items: flex-start;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #efe4d4;
+}
+
+.detail-row:last-child {
+  border-bottom: 0;
+}
+
+.detail-label {
+  width: 132rpx;
+  color: #8a7661;
   font-size: 23rpx;
-  line-height: 1.45;
+  font-weight: 900;
+  flex-shrink: 0;
 }
 
-.detail-meta text {
-  padding: 6rpx 12rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.34);
+.detail-label .fa {
+  width: 28rpx;
+  color: #4b123f;
 }
 
-.tags {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.detail-desc {
-  padding: 26rpx 0;
-  border-top: 1rpx solid #e0ddd3;
-  border-bottom: 1rpx solid #e0ddd3;
-  color: #222222;
-  font-size: 26rpx;
-  line-height: 1.8;
+.detail-val {
+  flex: 1;
+  min-width: 0;
+  color: #2f261d;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1.55;
   word-break: break-word;
 }
 
-.contact-card {
-  margin-top: 26rpx;
-  padding: 28rpx;
-  border: 1rpx solid #dedbd2;
+.info-callout {
+  margin-bottom: 18rpx;
+  padding: 18rpx 20rpx;
   border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.34);
+  border: 1rpx solid #e1d2bd;
+  background: rgba(255, 250, 242, 0.72);
+  color: #6f5a45;
+  display: flex;
+  gap: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.55;
+}
+
+.info-callout .fa {
+  margin-top: 4rpx;
+  color: #4b123f;
+  flex-shrink: 0;
+}
+
+.contact-card {
+  padding: 24rpx;
   text-align: center;
 }
 
 .contact-hint {
-  margin-bottom: 20rpx;
-  color: #666666;
-  font-size: 24rpx;
-  line-height: 1.5;
+  margin-bottom: 18rpx;
+  color: #8a7661;
+  font-size: 23rpx;
 }
 
-.reveal-btn {
-  display: inline-flex;
+.contact-btn {
+  height: 74rpx;
+  margin: 0;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  color: #fffaf2;
+  display: flex;
   align-items: center;
   justify-content: center;
-  height: 68rpx;
-  padding: 0 32rpx;
-  border-radius: 999rpx;
-  background: #dbcada;
-  color: #222222;
+  gap: 12rpx;
   font-size: 25rpx;
   font-weight: 900;
-  line-height: 68rpx;
+  line-height: 74rpx;
+  box-shadow: 0 10rpx 24rpx rgba(75, 18, 63, 0.18);
 }
 
 .contact-title {
   margin-bottom: 14rpx;
-  color: #222222;
+  color: #2f261d;
   font-size: 30rpx;
   font-weight: 900;
 }
 
 .contact-row {
-  margin-top: 12rpx;
+  margin-top: 10rpx;
+  color: #4b123f;
   font-size: 29rpx;
   font-weight: 900;
-  color: #671463;
   word-break: break-word;
 }
 
 .remaining {
-  margin-top: 18rpx;
-  color: #666666;
-  font-size: 24rpx;
+  margin-top: 16rpx;
+  color: #8a7661;
+  font-size: 22rpx;
 }

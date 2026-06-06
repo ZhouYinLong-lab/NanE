@@ -1,0 +1,23 @@
+module.exports = {
+  bell: "\uf0f3",
+  arrowLeft: "\uf060",
+  box: "\uf466",
+  calendar: "\uf133",
+  check: "\uf00c",
+  chevronRight: "\uf054",
+  circleInfo: "\uf05a",
+  clipboardList: "\uf46d",
+  clock: "\uf017",
+  filter: "\uf0b0",
+  handHoldingHeart: "\uf4be",
+  heartPulse: "\uf21e",
+  home: "\uf015",
+  idCard: "\uf2c2",
+  locationDot: "\uf3c5",
+  magnifyingGlass: "\uf002",
+  notesMedical: "\uf481",
+  pen: "\uf304",
+  plus: "\u002b",
+  shieldHeart: "\ue574",
+  user: "\uf007"
+};

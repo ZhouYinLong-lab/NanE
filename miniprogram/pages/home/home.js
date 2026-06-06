@@ -1,7 +1,9 @@
 const api = require("../../utils/api");
+const icons = require("../../utils/icons");
 
 Page({
   data: {
+    icons,
     keyword: "",
     category: "全部",
     categories: ["全部", "退烧降温", "消毒护理", "外伤处理", "防护用品"],

@@ -1,89 +1,135 @@
-.my-item-card {
-  margin-top: 18rpx;
-  padding: 22rpx;
-  display: flex;
-  align-items: flex-start;
-  gap: 16rpx;
-  border: 1rpx solid #e2dfd6;
-  border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.28);
+.my-items-page {
+  overflow-x: hidden;
 }
 
-.item-icon {
-  width: 82rpx;
-  height: 82rpx;
-  border-radius: 16rpx;
+.chips {
+  width: 100%;
+  margin-bottom: 16rpx;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.chip {
+  display: inline-flex;
+  margin-right: 10rpx;
+  padding: 9rpx 20rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid #e1d2bd;
+  background: #fffaf2;
+  color: #6f5a45;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.chip.active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  color: #fffaf2;
+}
+
+.tips-card {
+  margin-bottom: 18rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid #e1d2bd;
+  background: rgba(255, 250, 242, 0.72);
+  color: #6f5a45;
+  display: flex;
+  gap: 12rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.tips-card .fa {
+  margin-top: 4rpx;
+  color: #4b123f;
+}
+
+.my-item {
+  margin-bottom: 14rpx;
+  padding: 18rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #e1d2bd;
+  background: #fffaf2;
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  box-shadow: 0 8rpx 22rpx rgba(96, 68, 36, 0.06);
+}
+
+.my-item-icon {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 20rpx;
+  color: #4b123f;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(0, 0, 0, 0.34);
-  font-size: 36rpx;
-  font-weight: 900;
+  font-size: 32rpx;
   flex-shrink: 0;
 }
 
-.icon-yellow {
-  background: #dbcada;
+.tone-purple {
+  background: rgba(75, 18, 63, 0.09);
 }
 
-.icon-red {
-  background: #f3edf3;
+.tone-brown {
+  background: rgba(139, 94, 52, 0.14);
 }
 
-.icon-grey {
-  background: #c4c5bd;
+.tone-cream {
+  background: #f3eadf;
 }
 
-.main {
+.my-item-info {
   flex: 1;
   min-width: 0;
 }
 
-.name {
-  color: #222222;
-  font-size: 29rpx;
+.my-item-name {
+  color: #2f261d;
+  font-size: 25rpx;
   font-weight: 900;
-  line-height: 1.28;
+  line-height: 1.3;
   word-break: break-word;
 }
 
-.meta,
-.time,
+.my-item-meta,
 .reason {
-  margin-top: 8rpx;
-  color: #666666;
-  font-size: 23rpx;
+  margin-top: 6rpx;
+  color: #8a7661;
+  font-size: 21rpx;
   line-height: 1.45;
   word-break: break-word;
 }
 
 .reason {
-  color: #9f3d33;
+  color: #9b3d32;
+  font-weight: 800;
 }
 
-.status {
-  padding: 8rpx 13rpx;
+.status-tag {
+  padding: 6rpx 12rpx;
   border-radius: 999rpx;
-  font-size: 22rpx;
+  font-size: 20rpx;
   font-weight: 900;
   white-space: nowrap;
   flex-shrink: 0;
-  line-height: 1.2;
 }
 
 .online {
-  border: 1rpx solid #671463;
-  color: #671463;
+  background: #e0f5e3;
+  color: #287a30;
 }
 
 .reviewing {
-  border: 1rpx solid #d5d3cc;
-  color: #222222;
+  background: #fff3cd;
+  color: #8a6d14;
 }
 
 .rejected,
 .expired,
 .taken_down {
-  border: 1rpx solid #671463;
-  color: #671463;
+  background: #f8dfd8;
+  color: #9b3d32;
 }

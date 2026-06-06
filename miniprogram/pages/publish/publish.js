@@ -1,8 +1,10 @@
 const api = require("../../utils/api");
 const locationTools = require("../../utils/locations");
+const icons = require("../../utils/icons");
 
 Page({
   data: {
+    icons,
     categories: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"],
     categoryIndex: 1,
     locationText: "",

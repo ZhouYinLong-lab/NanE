@@ -2,39 +2,49 @@
   <view wx:if="{{loading}}" class="state-card panel">正在读取详情...</view>
 
   <view wx:elif="{{item}}" class="detail">
-    <view class="brand-header">
-      <view class="round-action">←</view>
-      <view class="brand-block">
-        <view class="brand-title">详情</view>
-        <view class="brand-subtitle">Item Details</view>
-      </view>
+    <view class="topbar">
+      <view class="icon-btn" bindtap="goBack"><text class="fa">{{icons.arrowLeft}}</text></view>
+      <view class="screen-title">互助详情</view>
+      <view class="icon-btn"><text class="fa">{{icons.shieldHeart}}</text></view>
     </view>
 
-    <view class="detail-hero">
-      <view class="detail-icon">＋</view>
+    <view class="detail-hero soft-card">
+      <view class="detail-img"><text class="fa">{{icons.notesMedical}}</text></view>
       <view class="detail-title">{{item.title}}</view>
-      <view class="detail-meta">
-        <text>{{item.campus}} · {{item.building}}</text>
-        <text>余量 {{item.quantity}}{{item.unit}}</text>
-      </view>
-      <view class="tags">
-        <text class="tag">{{item.category}}</text>
-        <text class="tag">{{item.distanceLabel}}</text>
-        <text class="tag tag-alert">{{item.expireDate}} 到期</text>
+      <view class="badge-row">
+        <text class="badge badge-main">{{item.category}}</text>
+        <text class="badge">{{item.distanceLabel}}</text>
+        <text class="badge">{{item.expireDate}} 到期</text>
       </view>
     </view>
 
-    <view class="detail-desc">{{item.description}}</view>
-
-    <view class="disclaimer-box">
-      <text class="disclaimer-title">免责声明</text>
-      平台仅做校园互助信息撮合，不介入线下交接。所有物品应为免费共享；请自行确认包装、有效期和适用风险；处方药、管控药物不允许发布或领取。
+    <view class="detail-card soft-card">
+      <view class="detail-row">
+        <view class="detail-label"><text class="fa">{{icons.locationDot}}</text> 位置</view>
+        <view class="detail-val">{{item.campus}} · {{item.building}}</view>
+      </view>
+      <view class="detail-row">
+        <view class="detail-label"><text class="fa">{{icons.box}}</text> 余量</view>
+        <view class="detail-val">{{item.quantity}}{{item.unit}}</view>
+      </view>
+      <view class="detail-row">
+        <view class="detail-label"><text class="fa">{{icons.clipboardList}}</text> 说明</view>
+        <view class="detail-val">{{item.description}}</view>
+      </view>
     </view>
 
-    <view class="contact-card">
+    <view class="info-callout">
+      <text class="fa">{{icons.circleInfo}}</text>
+      <text>平台仅做校园互助信息撮合。请自行确认包装、有效期和适用风险；禁止处方药和管控药物。</text>
+    </view>
+
+    <view class="contact-card soft-card">
       <view wx:if="{{!contact}}" class="contact-hidden">
-        <view class="contact-hint">为保护隐私，联系方式默认隐藏</view>
-        <button class="reveal-btn" bindtap="revealContact">查看联系方式</button>
+        <view class="contact-hint">联系方式默认隐藏，每日查看次数有限。</view>
+        <button class="contact-btn" bindtap="revealContact">
+          <text class="fa">{{icons.idCard}}</text>
+          <text>查看联系方式</text>
+        </button>
       </view>
 
       <view wx:else class="contact-revealed">
