@@ -1,22 +1,22 @@
 <view class="page home-page">
   <view class="topbar">
     <view class="avatar">
-      <text class="fa">{{icons.handHoldingHeart}}</text>
+      <text class="fa">{{iconHandHoldingHeart}}</text>
       <view class="avatar-dot"></view>
     </view>
     <view class="screen-title">发现互助</view>
     <view class="icon-btn">
-      <text class="fa">{{icons.bell}}</text>
+      <text class="fa">{{iconBell}}</text>
     </view>
   </view>
 
   <view class="search-row">
     <view class="search-box">
-      <text class="fa search-icon">{{icons.magnifyingGlass}}</text>
+      <text class="fa search-icon">{{iconMagnifyingGlass}}</text>
       <input value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" placeholder="搜索退烧贴、碘伏、创可贴" />
     </view>
     <button class="filter-btn" bindtap="onSearch">
-      <text class="fa">{{icons.filter}}</text>
+      <text class="fa">{{iconFilter}}</text>
     </button>
   </view>
 
@@ -35,11 +35,11 @@
       <view class="hero-title">南大校园互助共享</view>
       <view class="hero-desc">同楼栋/同校区优先展示 · 免费共享 · 人工审核</view>
     </view>
-    <view class="hero-icon"><text class="fa">{{icons.shieldHeart}}</text></view>
+    <view class="hero-icon"><text class="fa">{{iconShieldHeart}}</text></view>
   </view>
 
   <view class="rules-strip">
-    <text class="fa">{{icons.circleInfo}}</text>
+    <text class="fa">{{iconCircleInfo}}</text>
     <text>禁止处方药、管控药和任何形式收费转让。</text>
   </view>
 
@@ -58,14 +58,14 @@
   </view>
   <view wx:elif="{{items.length === 0}}" class="state-card panel">暂时没有符合条件的物品</view>
 
-  <view class="item-grid" wx:else>
+  <view class="item-grid" wx:if="{{!loading && !errorMessage && items.length > 0}}">
     <view wx:for="{{items}}" wx:key="id" class="item-card" data-id="{{item.id}}" bindtap="openDetail">
       <view class="item-img {{index % 3 === 0 ? 'tone-purple' : index % 3 === 1 ? 'tone-brown' : 'tone-cream'}}">
-        <text class="fa">{{icons.notesMedical}}</text>
+        <text class="fa">{{iconNotesMedical}}</text>
       </view>
       <view class="item-info">
         <view class="item-name">{{item.title}}</view>
-        <view class="item-loc"><text class="fa">{{icons.locationDot}}</text> {{item.campus}} · {{item.building}}</view>
+        <view class="item-loc"><text class="fa">{{iconLocationDot}}</text> {{item.campus}} · {{item.building}}</view>
         <view class="item-tags">
           <text class="item-tag">{{item.category}}</text>
           <text class="priority-badge">{{item.distanceLabel}}</text>

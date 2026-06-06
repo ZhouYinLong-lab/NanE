@@ -27,7 +27,7 @@ button::after {
 }
 
 .fa {
-  font-family: "Font Awesome 6 Free";
+  font-family: "Font Awesome 6 Free", "Microsoft YaHei", sans-serif;
   font-weight: 900;
   display: inline-flex;
   align-items: center;

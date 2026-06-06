@@ -3,7 +3,14 @@ const icons = require("../../utils/icons");
 
 Page({
   data: {
-    icons,
+    iconBell: icons.bell,
+    iconFilter: icons.filter,
+    iconHandHoldingHeart: icons.handHoldingHeart,
+    iconLocationDot: icons.locationDot,
+    iconMagnifyingGlass: icons.magnifyingGlass,
+    iconNotesMedical: icons.notesMedical,
+    iconShieldHeart: icons.shieldHeart,
+    iconCircleInfo: icons.circleInfo,
     keyword: "",
     category: "全部",
     categories: ["全部", "退烧降温", "消毒护理", "外伤处理", "防护用品"],
