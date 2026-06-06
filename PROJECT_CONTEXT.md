@@ -6,7 +6,7 @@
 - 项目目标：面向南京大学校园场景的应急耗材互助信息平台，最终部署为微信小程序 + 服务器 API + 管理后台。
 - 核心定位：校园互助信息撮合；免费共享；禁止处方药、管控药和收费转让；发布内容需人工审核。
 - 目标用户：南京大学学生；管理员为项目团队/审核人员。
-- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别均已实现并推送到 GitHub。
+- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别均已实现并推送到 GitHub；Azure VM 生产服务器已创建，Node API 已在服务器本机启动并通过健康检查。
 
 ## 2. 技术栈 / Tech Stack
 
@@ -15,7 +15,8 @@
 - 数据库：PostgreSQL。
 - 管理后台：同一个 Node 服务内的轻量 HTML 管理页 `/admin`，不引入 React 构建。
 - 服务端口：NanE 专用端口 `37878`。
-- 部署入口：Nginx Proxy Manager / frp 反向代理到 `http://192.168.6.152:37878`。
+- 本地/旧部署入口：Nginx Proxy Manager / frp 可反向代理到 `http://192.168.6.152:37878`。
+- 当前 Azure 部署入口：`api.zylatent.com`、`nane.zylatent.com` 解析到 Azure VM 公网 IP `72.155.72.104`，后续通过 Nginx 反向代理到 `http://127.0.0.1:37878`。
 - 远程仓库：[ZhouYinLong-lab/NanE](https://github.com/ZhouYinLong-lab/NanE)
 
 ## 3. 系统架构 / System Architecture
@@ -23,13 +24,13 @@
 ```text
 微信小程序
   -> HTTPS API 域名
-  -> Nginx Proxy Manager / frp
-  -> http://192.168.6.152:37878
+  -> Azure VM Nginx
+  -> http://127.0.0.1:37878
   -> NanE Node API
   -> PostgreSQL
 
 管理员浏览器
-  -> /admin
+  -> https://nane.zylatent.com/admin
   -> 同一个 NanE Node API
   -> PostgreSQL
 ```
@@ -62,10 +63,20 @@
   - 每人每日最多查看 5 次。
   - 记录保存在 `contact_views`。
 - 新视觉设计：
-  - 已根据 `C:\Users\26585\Downloads\index.html` 迁移到小程序原生页面。
+  - 已根据 `campus_share_ui.html` 的组件风格迁移到小程序原生页面。
+  - 当前 UI 使用米褐校园底色 + 南大紫强调色，并本地内置 Font Awesome 字体作为图标资源。
 
 ## 5. 最近更新 / Recent Changes
 
+- `971242f Restore home rendering fallback`
+  - 修复首页空白风险，移除首页 `wx:else` 条件链，改为显式 `wx:if`。
+  - 图标绑定降级为稳定字段和可读字符兜底，避免字体加载问题导致页面主体不可见。
+- `feacfbe Apply Nanjing University themed UI`
+  - 小程序 UI 调整为米褐校园底色 + 南大紫强调 + `campus_share_ui.html` 组件风格。
+  - 本地内置 Font Awesome Free 字体资源和图标映射。
+- `750b72c Refine publish rules and contact validation`
+  - 发布页规则提示改为轻量说明。
+  - 联系方式改为微信/QQ 至少填写一项。
 - `6178025 Add campus building room picker`
   - 接入校区/楼栋/宿舍号数据。
   - 发布表单新增三级选择和快速识别。
@@ -80,33 +91,31 @@
 
 ## 6. 当前问题 / Known Issues
 
-- 服务器域名访问限制：
-  - 如果 `nane.lilystudio.space` 只能校园网访问，则可用于校内演示，但不适合微信小程序正式版审核。
-  - 小程序正式 request 合法域名应为公网可访问 HTTPS 域名。
+- Azure 部署：
+  - VM 已创建：`nane-vm`，区域 `Korea Central`，规格 `Standard B2ats_v2`，Ubuntu 24.04。
+  - 公网 IP：`72.155.72.104`。
+  - DNS 已生效：`api.zylatent.com`、`nane.zylatent.com` 均解析到 `72.155.72.104`。
+  - 服务器本机 API 已启动：`curl http://127.0.0.1:37878/api/health` 返回正常。
+  - 待完成：Nginx 反向代理、HTTPS 证书、小程序生产 API 域名切换、微信后台 request 合法域名配置。
 - PostgreSQL：
   - 本地电脑未运行 PostgreSQL 时 `npm start` 会因 `ECONNREFUSED` 失败。
-  - 服务器部署时应为 NanE 单独准备 PostgreSQL 数据库或容器，避免混用其他项目数据库。
+  - Azure VM 上已准备 NanE 专用 PostgreSQL 数据库和用户；敏感密码不写入仓库文档。
 - 微信登录：
   - 当前 `/api/auth/wx-login` 仍为 Demo 登录，后续需替换为真实 `wx.login` + `code2Session`。
-- 未跟踪文件：
-  - `PROJECT_CONTEXT.md` 此前为未跟踪文件；本次维护后应纳入仓库。
 
 ## 7. 后续计划 / Next Steps
 
-1. 服务器部署：
-   - 准备 NanE 专用 PostgreSQL。
-   - 设置 `.env`：`PORT=37878`、`DATABASE_URL`、`JWT_SECRET`、`ADMIN_PASSWORD`。
-   - 使用 PM2 或 systemd 启动 Node API。
-   - 验证 `curl http://127.0.0.1:37878/api/health`。
-2. Nginx Proxy Manager：
-   - 新建 NanE 专用子域名。
-   - Scheme 选 `http`。
-   - Forward Hostname/IP 填 NanE API 所在机器，如 `192.168.6.152`。
-   - Forward Port 填 `37878`。
-   - SSL 开启 Force SSL 和 HTTP/2。
+1. Azure 反向代理与 HTTPS：
+   - 在 VM 上创建 Nginx site：`api.zylatent.com`、`nane.zylatent.com` -> `http://127.0.0.1:37878`。
+   - 使用 Certbot 申请 Let's Encrypt 证书。
+   - 验证 `curl https://api.zylatent.com/api/health`。
+   - 验证 `sudo certbot renew --dry-run`。
+2. 小程序生产配置：
+   - 将 `miniprogram/config.js` 的 `prod.apiBase` 改为 `https://api.zylatent.com/api`。
+   - HTTPS 验证通过后，再将 `env` 从 `dev` 改为 `prod`。
 3. 微信小程序后台：
    - 服务类目选“信息查询”。
-   - 配置 request 合法域名为公网 HTTPS API 域名。
+   - 配置 request 合法域名为 `https://api.zylatent.com`。
    - 提交隐私保护指引。
 4. 真实身份能力：
    - 替换 Demo 登录。

@@ -56,6 +56,12 @@ cp .env.example .env
 const env = "prod";
 ```
 
+当前 Azure 部署计划中的生产 API 域名为：
+
+```text
+https://api.zylatent.com/api
+```
+
 正式小程序项目还需要把 `project.config.json` 中的 `appid` 替换为真实小程序 AppID。
 
 ## API 合约
@@ -168,6 +174,32 @@ http://localhost:37878/admin
 - 后续可将联系方式查看限流迁移到 Redis
 - 将 `/api/auth/wx-login` 替换为真实微信登录与校园认证
 
+### 当前 Azure 部署信息
+
+```text
+VM: nane-vm
+Region: Korea Central
+OS: Ubuntu 24.04
+Size: Standard B2ats_v2
+Public IP: 72.155.72.104
+API domain: api.zylatent.com
+Admin/domain entry: nane.zylatent.com
+Node API local port: 37878
+Process manager: PM2, process name nane-api
+```
+
+已完成：
+
+- `api.zylatent.com` 和 `nane.zylatent.com` 均已解析到 `72.155.72.104`。
+- VM 本机 `curl http://127.0.0.1:37878/api/health` 返回正常。
+
+待完成：
+
+- Nginx 反向代理到 `http://127.0.0.1:37878`。
+- Certbot 申请 HTTPS 证书。
+- 小程序 `prod.apiBase` 切换为 `https://api.zylatent.com/api`。
+- 微信后台配置 request 合法域名 `https://api.zylatent.com`。
+
 ### 服务器启动示例
 
 ```bash
@@ -179,7 +211,7 @@ Nginx 反向代理示例：
 ```nginx
 server {
   listen 443 ssl;
-  server_name api.example.com;
+  server_name api.zylatent.com;
 
   location / {
     proxy_pass http://127.0.0.1:37878;

@@ -83,3 +83,51 @@
 - 发布表单新增快速识别输入，支持类似“鼓楼 南二 321”“仙林 4 321”的位置解析。
 - 后端 `items` 增加可空 `room` 字段，管理员后台和本人发布列表可见，普通首页/详情不公开。
 - 隐私说明补充宿舍号仅供发布者本人和管理员核对。
+
+## 2026-06-06
+
+### UI 与 Azure 部署推进
+
+- 小程序 UI 调整为米褐校园底色 + 南大紫强调色，并参考 `campus_share_ui.html` 的组件结构：
+  - 首页：topbar、搜索框、分类 chips、引导 banner、双列物品卡。
+  - 详情页：hero 图标、badge、信息卡、联系方式卡片。
+  - 发布页：白卡表单、轻量规则提示、微信/QQ 至少一项联系方式。
+  - 我的页：profile hero、统计卡、菜单卡片。
+  - 我的发布：状态 chips、发布记录卡片。
+- 本地内置 Font Awesome Free 字体文件：`miniprogram/assets/fontawesome/fa-solid-900.woff2`。
+- 新增图标映射：`miniprogram/utils/icons.js`。
+- 修复首页空白风险：
+  - 首页列表渲染从 `wx:else` 改为显式 `wx:if`。
+  - 图标值增加可读字符兜底，降低字体加载失败时的显示风险。
+
+### Azure 服务器部署记录
+
+- Azure for Students 已创建 VM：
+  - 资源组：`nane-rg`
+  - VM 名称：`nane-vm`
+  - 区域：`Korea Central`
+  - 系统：Ubuntu 24.04
+  - 规格：`Standard B2ats_v2`，2 vCPU / 1GB 内存
+  - 公网 IP：`72.155.72.104`
+- 已添加 2GB swap，基础环境可用：
+  - Node.js `v20.20.2`
+  - npm `10.8.2`
+  - PM2 `7.0.1`
+  - PostgreSQL `16.14`
+- 已在 VM 上创建 NanE PostgreSQL 数据库和用户，敏感密码不记录在仓库。
+- 已拉取 GitHub 仓库并使用 PM2 启动 API：
+  - PM2 进程名：`nane-api`
+  - 本机端口：`37878`
+  - 健康检查：`curl http://127.0.0.1:37878/api/health` 返回正常。
+- DNS 已生效：
+  - `api.zylatent.com -> 72.155.72.104`
+  - `nane.zylatent.com -> 72.155.72.104`
+
+### 当前待办
+
+- 配置 Nginx：
+  - `api.zylatent.com` 和 `nane.zylatent.com` 反向代理到 `http://127.0.0.1:37878`。
+- 使用 Certbot 申请 HTTPS 证书。
+- 验证 `https://api.zylatent.com/api/health`。
+- 小程序生产配置切换到 `https://api.zylatent.com/api`。
+- 微信公众平台配置 request 合法域名：`https://api.zylatent.com`。
