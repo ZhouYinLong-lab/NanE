@@ -97,8 +97,8 @@ Page({
       wx.showToast({ title: "请补全必填信息", icon: "none" });
       return;
     }
-    if (!form.contactWechat.trim()) {
-      wx.showToast({ title: "请填写微信联系方式", icon: "none" });
+    if (!form.contactWechat.trim() && !form.contactQq.trim()) {
+      wx.showToast({ title: "微信或 QQ 至少填写一项", icon: "none" });
       return;
     }
     if (!form.campus || !form.building) {

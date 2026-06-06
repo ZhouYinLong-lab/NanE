@@ -39,8 +39,8 @@
 
       <view wx:else class="contact-revealed">
         <view class="contact-title">联系方式</view>
-        <view class="contact-row">微信：{{contact.wechat}}</view>
-        <view class="contact-row">QQ：{{contact.qq}}</view>
+        <view wx:if="{{contact.wechat}}" class="contact-row">微信：{{contact.wechat}}</view>
+        <view wx:if="{{contact.qq}}" class="contact-row">QQ：{{contact.qq}}</view>
         <view class="remaining">今日剩余查看次数：{{remaining}}</view>
       </view>
     </view>

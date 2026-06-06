@@ -7,10 +7,13 @@
     <view class="hero-note">提交后人工审核</view>
   </view>
 
-  <view class="disclaimer-box">
-    <text class="disclaimer-title">[!] 平台发布规范</text>
-    <view>退烧降温、消毒护理、外伤处理、防护用品、其他低风险应急耗材。</view>
-    <view class="rules-warn">禁止处方药、管控药、拆封不明物品和任何形式的收费交易。</view>
+  <view class="publish-rules">
+    <view class="rules-mark">规</view>
+    <view class="rules-copy">
+      <view class="rules-title">发布规范</view>
+      <view class="rules-text">仅限低风险应急耗材免费互助，发布后需人工审核。</view>
+      <view class="rules-text rules-warn">禁止处方药、管控药、收费交易和拆封不明物品。</view>
+    </view>
   </view>
 
   <view class="form">
@@ -72,12 +75,12 @@
       <view class="section-label">联系方式</view>
       <view class="section-help">审核通过后，领取者点击详情页按钮才会看到联系方式。</view>
       <view class="field">
-        <view class="label">微信号 *</view>
+        <view class="label">微信号 <text class="label-hint">微信 / QQ 至少填一项</text></view>
         <input class="field-control" data-key="contactWechat" value="{{form.contactWechat}}" bindinput="updateField" placeholder="请输入可联系的微信号" />
       </view>
       <view class="field">
-        <view class="label">QQ 号 <text class="label-hint">选填</text></view>
-        <input class="field-control" data-key="contactQq" value="{{form.contactQq}}" bindinput="updateField" placeholder="可选，用于备用联系" />
+        <view class="label">QQ 号</view>
+        <input class="field-control" data-key="contactQq" value="{{form.contactQq}}" bindinput="updateField" placeholder="请输入可联系的 QQ 号" />
       </view>
     </view>
 

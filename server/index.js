@@ -218,10 +218,10 @@ async function createItem(req, res, viewer) {
     json(res, 400, { error: "VALIDATION_ERROR", message: validationError });
     return;
   }
-  const contactWechat = String(input.contactWechat || viewer.wechat || "").trim();
-  const contactQq = String(input.contactQq || viewer.qq || "").trim();
-  if (!contactWechat) {
-    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写微信联系方式" });
+  const contactWechat = String(input.contactWechat || "").trim();
+  const contactQq = String(input.contactQq || "").trim();
+  if (!contactWechat && !contactQq) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "微信或 QQ 至少填写一项" });
     return;
   }
 
