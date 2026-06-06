@@ -98,7 +98,8 @@
   - 服务器本机 API 已启动：`curl http://127.0.0.1:37878/api/health` 返回正常。
   - HTTPS 已配置：`curl https://api.zylatent.com/api/health` 和 `curl https://nane.zylatent.com/api/health` 返回正常。
   - Certbot 自动续期 dry-run 成功，证书当前到期日为 2026-09-04。
-  - 待完成：微信后台 request 合法域名配置；确认后将小程序 `env` 切为 `prod`。
+  - 小程序生产 API 已切换：`miniprogram/config.js` 当前 `env = "prod"`，请求 `https://api.zylatent.com/api`。
+  - 待完成：微信后台 request 合法域名保存后，在微信开发者工具刷新配置并回归测试主要页面。
 - PostgreSQL：
   - 本地电脑未运行 PostgreSQL 时 `npm start` 会因 `ECONNREFUSED` 失败。
   - Azure VM 上已准备 NanE 专用 PostgreSQL 数据库和用户；敏感密码不写入仓库文档。
@@ -109,7 +110,7 @@
 
 1. 小程序生产配置：
    - `miniprogram/config.js` 的 `prod.apiBase` 已设为 `https://api.zylatent.com/api`。
-   - 微信后台合法域名配置完成后，再将 `env` 从 `dev` 改为 `prod`。
+   - `env` 已从 `dev` 切换为 `prod`。
 2. 微信小程序后台：
    - 服务类目选“信息查询”。
    - 配置 request 合法域名为 `https://api.zylatent.com`。

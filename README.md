@@ -62,7 +62,7 @@ const env = "prod";
 https://api.zylatent.com/api
 ```
 
-注意：`prod.apiBase` 已配置为该地址，但默认 `env` 仍为 `dev`，便于本地开发。微信后台合法域名配置完成后，再切换为 `prod`。
+注意：当前 `env` 已切换为 `prod`，小程序会请求 `https://api.zylatent.com/api`。如需本地开发，可临时改回 `dev`。
 
 正式小程序项目还需要把 `project.config.json` 中的 `appid` 替换为真实小程序 AppID。
 
@@ -201,7 +201,7 @@ Process manager: PM2, process name nane-api
 待完成：
 
 - 微信后台配置 request 合法域名 `https://api.zylatent.com`。
-- 确认后将小程序 `env` 从 `dev` 切换为 `prod`。
+- 微信开发者工具刷新项目配置并回归测试首页、发布、详情、我的发布。
 
 ### 服务器启动示例
 

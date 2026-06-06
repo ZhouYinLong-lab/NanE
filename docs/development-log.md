@@ -130,10 +130,10 @@
   - `sudo certbot renew --dry-run` 模拟续期成功。
 - 小程序生产 API 配置已更新：
   - `miniprogram/config.js` 中 `prod.apiBase` 为 `https://api.zylatent.com/api`。
-  - 当前默认环境仍为 `dev`，等待微信后台合法域名配置完成后切换。
+  - 2026-06-07 已将默认环境切换为 `prod`，小程序请求生产 HTTPS API。
 
 ### 当前待办
 
 - 微信公众平台配置 request 合法域名：`https://api.zylatent.com`。
 - 微信开发者工具刷新项目配置，确认生产域名请求可用。
-- 确认后将小程序 `env` 从 `dev` 切到 `prod`。
+- 回归测试首页、详情、发布、我的发布和管理后台审核链路。
