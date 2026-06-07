@@ -22,7 +22,7 @@
 
   <view wx:for="{{items}}" wx:key="id" class="my-item" data-id="{{item.id}}" bindtap="openDetail">
     <view class="my-item-icon {{index % 3 === 0 ? 'tone-purple' : index % 3 === 1 ? 'tone-brown' : 'tone-cream'}}">
-      <text class="fa">{{icons.notesMedical}}</text>
+      <text class="fa">{{item.itemIconGlyph}}</text>
     </view>
     <view class="my-item-info">
       <view class="my-item-name">{{item.title}}</view>

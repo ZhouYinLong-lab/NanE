@@ -41,7 +41,10 @@ Page({
         category: this.data.category === "全部" ? "" : this.data.category
       });
       this.setData({
-        items: data.items,
+        items: data.items.map(item => ({
+          ...item,
+          itemIconGlyph: icons.itemIconGlyph(item.itemIcon, item.itemType)
+        })),
         viewer: data.viewer,
         filterChips: this.buildFilterChips(data.viewer),
         loading: false,

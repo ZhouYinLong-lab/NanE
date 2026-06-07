@@ -16,13 +16,48 @@ const DAILY_CONTACT_LIMIT = 5;
 const ITEM_TYPES = {
   consumable: {
     text: "耗材",
-    categories: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"]
+    defaultCategory: "应急耗材",
+    defaultIcon: "plus",
+    categories: ["应急耗材", "退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"]
   },
   medicine: {
     text: "非处方药品",
+    defaultCategory: "感冒药",
+    defaultIcon: "capsules",
     categories: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"]
   }
 };
+const ALLOWED_ITEM_ICONS = new Set([
+  "plus",
+  "bandage",
+  "notesMedical",
+  "kitMedical",
+  "capsules",
+  "pills",
+  "tablets",
+  "prescriptionBottleMedical",
+  "temperatureHalf",
+  "maskFace",
+  "shieldVirus",
+  "pumpMedical",
+  "bottleDroplet",
+  "box",
+  "boxOpen",
+  "droplet",
+  "handHoldingMedical",
+  "heartPulse",
+  "syringe",
+  "soap"
+]);
+
+function defaultItemIcon(itemType) {
+  return ITEM_TYPES[itemType]?.defaultIcon || ITEM_TYPES.consumable.defaultIcon;
+}
+
+function normalizeItemIcon(input, itemType) {
+  const value = String(input || "").trim();
+  return ALLOWED_ITEM_ICONS.has(value) ? value : defaultItemIcon(itemType);
+}
 
 function json(res, status, payload) {
   res.writeHead(status, {
@@ -125,6 +160,7 @@ function itemFromRow(row, viewer, options = {}) {
     title: row.title,
     itemType,
     itemTypeText: ITEM_TYPES[itemType]?.text || "耗材",
+    itemIcon: row.item_icon || defaultItemIcon(itemType),
     category: row.category,
     description: row.description,
     quantity: row.quantity,
@@ -156,7 +192,7 @@ async function demoViewer() {
 }
 
 function validateItemInput(input) {
-  const required = ["title", "itemType", "category", "quantity", "unit", "campus", "building", "expireDate"];
+  const required = ["title", "itemType", "quantity", "unit", "campus", "building", "expireDate"];
   const missing = required.filter(key => input[key] === undefined || input[key] === "");
   if (missing.length) {
     return `缺少字段: ${missing.join(", ")}`;
@@ -165,8 +201,12 @@ function validateItemInput(input) {
   if (!typeConfig) {
     return "物品类型不在白名单内";
   }
-  if (!typeConfig.categories.includes(input.category)) {
+  const category = String(input.category || typeConfig.defaultCategory).trim();
+  if (!typeConfig.categories.includes(category)) {
     return "分类与物品类型不匹配";
+  }
+  if (input.itemIcon && !ALLOWED_ITEM_ICONS.has(String(input.itemIcon).trim())) {
+    return "图标不在白名单内";
   }
   if (!Number.isInteger(Number(input.quantity)) || Number(input.quantity) <= 0) {
     return "数量必须是正整数";
@@ -238,18 +278,22 @@ async function createItem(req, res, viewer) {
   }
 
   const itemId = makeId("item");
+  const typeConfig = ITEM_TYPES[input.itemType] || ITEM_TYPES.consumable;
+  const category = String(input.category || typeConfig.defaultCategory).trim();
+  const itemIcon = normalizeItemIcon(input.itemIcon, input.itemType);
   const { rows } = await query(
     `INSERT INTO items (
-      id, title, item_type, category, description, quantity, unit, campus, building, room,
+      id, title, item_type, item_icon, category, description, quantity, unit, campus, building, room,
       expire_date, status, owner_id, owner_name, contact_wechat, contact_qq
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'reviewing', $12, $13, $14, $15)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'reviewing', $13, $14, $15, $16)
     RETURNING *`,
     [
       itemId,
       String(input.title).trim(),
       input.itemType,
-      input.category,
+      itemIcon,
+      category,
       String(input.description || "发布者暂未填写补充说明。").trim(),
       Number(input.quantity),
       String(input.unit).trim(),
@@ -481,7 +525,7 @@ function adminPage() {
         const data = await api("/api/admin/items?status=" + encodeURIComponent(statusValue));
         container.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + escapeHtml(item.title) +
           ' <span class="pill">' + escapeHtml(item.status) + '</span></h3><p>' + escapeHtml(item.description) +
-          '</p><p class="muted">' + escapeHtml(item.itemTypeText) + ' · ' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
+          '</p><p class="muted">图标 ' + escapeHtml(item.itemIcon) + ' · ' + escapeHtml(item.itemTypeText) + ' · ' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
           ' · 余 ' + escapeHtml(item.quantity) + escapeHtml(item.unit) + ' · 有效期 ' + escapeHtml(item.expireDate) +
           '</p><p class="muted">发布者：' + escapeHtml(item.ownerName) + ' · 微信 ' + escapeHtml(item.contact.wechat || "未填") + ' · QQ ' + escapeHtml(item.contact.qq || "未填") +
           (item.rejectReason ? '</p><p>驳回原因：' + escapeHtml(item.rejectReason) : '') +

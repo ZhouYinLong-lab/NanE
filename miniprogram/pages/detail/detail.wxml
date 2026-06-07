@@ -9,7 +9,7 @@
     </view>
 
     <view class="detail-hero soft-card">
-      <view class="detail-img"><text class="fa">{{icons.notesMedical}}</text></view>
+      <view class="detail-img"><text class="fa">{{item.itemIconGlyph}}</text></view>
       <view class="detail-title">{{item.title}}</view>
       <view class="badge-row">
         <text class="badge badge-main">{{item.itemTypeText}}</text>

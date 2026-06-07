@@ -38,11 +38,31 @@
       <input class="field-control" data-key="title" value="{{form.title}}" bindinput="updateField" placeholder="{{titlePlaceholder}}" />
     </view>
 
-    <view class="field">
+    <view wx:if="{{showCategoryPicker}}" class="field">
       <view class="label">分类 *</view>
       <picker range="{{categories}}" value="{{categoryIndex}}" bindchange="chooseCategory">
         <view class="picker field-control">{{categories[categoryIndex]}}</view>
       </picker>
+    </view>
+    <view wx:else class="field">
+      <view class="label">分类</view>
+      <view class="type-hint">耗材无需再选择细分类，默认按“应急耗材”提交审核。</view>
+    </view>
+
+    <view class="field">
+      <view class="label">选择图标 <text class="label-hint">可选，默认 {{selectedIconLabel}}</text></view>
+      <scroll-view scroll-x class="icon-scroll">
+        <view
+          wx:for="{{iconOptions}}"
+          wx:key="key"
+          class="icon-choice {{form.itemIcon === item.key ? 'active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="chooseIcon"
+        >
+          <text class="fa icon-choice-glyph">{{item.glyph}}</text>
+          <text class="icon-choice-label">{{item.label}}</text>
+        </view>
+      </scroll-view>
     </view>
 
     <view class="grid">

@@ -31,6 +31,7 @@ Page({
       this.setData({
         items: data.items.map(item => ({
           ...item,
+          itemIconGlyph: icons.itemIconGlyph(item.itemIcon, item.itemType),
           statusText: statusText[item.status] || item.status
         })),
         loading: false

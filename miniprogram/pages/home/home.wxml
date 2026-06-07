@@ -55,7 +55,7 @@
   <view class="item-list" wx:if="{{!loading && !errorMessage && items.length > 0}}">
     <view wx:for="{{items}}" wx:key="id" class="aid-item" data-id="{{item.id}}" bindtap="openDetail">
       <view class="aid-icon {{index % 2 === 0 ? 'tone-purple' : 'tone-cream'}}">
-        <text class="fa">{{iconNotesMedical}}</text>
+        <text class="fa">{{item.itemIconGlyph}}</text>
       </view>
       <view class="aid-info">
         <view class="aid-row">

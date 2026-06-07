@@ -106,7 +106,7 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
 {
   "title": "医用棉签 20 支",
   "itemType": "consumable",
-  "category": "消毒护理",
+  "itemIcon": "bandage",
   "quantity": 20,
   "unit": "支",
   "campus": "仙林校区",
@@ -117,12 +117,15 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
 }
 ```
 
+耗材发布无需选择细分类；未传 `category` 时后端默认保存为 `应急耗材`。
+
 药品类只接受笼统分类，例如：
 
 ```json
 {
   "title": "未拆封感冒药一盒",
   "itemType": "medicine",
+  "itemIcon": "capsules",
   "category": "感冒药",
   "quantity": 1,
   "unit": "盒",

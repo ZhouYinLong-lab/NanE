@@ -92,6 +92,46 @@
   line-height: 1.5;
 }
 
+.icon-scroll {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.icon-choice {
+  width: 116rpx;
+  height: 112rpx;
+  margin-right: 12rpx;
+  border-radius: 22rpx;
+  border: 1rpx solid #e4ded3;
+  background: #fffaf2;
+  color: #6f6a61;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.icon-choice.active {
+  border-color: #6E0065;
+  background: rgba(110, 0, 101, 0.08);
+  color: #6E0065;
+}
+
+.icon-choice-glyph {
+  font-size: 34rpx;
+}
+
+.icon-choice-label {
+  max-width: 96rpx;
+  font-size: 19rpx;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .label {
   margin-bottom: 9rpx;
   color: #6f6a61;

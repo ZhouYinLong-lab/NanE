@@ -23,7 +23,13 @@ Page({
   async loadItem(id) {
     try {
       const data = await api.getItem(id);
-      this.setData({ item: data.item, loading: false });
+      this.setData({
+        item: {
+          ...data.item,
+          itemIconGlyph: icons.itemIconGlyph(data.item.itemIcon, data.item.itemType)
+        },
+        loading: false
+      });
     } catch (error) {
       this.setData({ loading: false });
       wx.showToast({ title: "详情加载失败", icon: "none" });

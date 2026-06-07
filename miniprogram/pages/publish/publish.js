@@ -18,14 +18,18 @@ Page({
       }
     ],
     categoriesByType: {
-      consumable: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"],
+      consumable: ["应急耗材"],
       medicine: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"]
     },
-    categories: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"],
+    categories: ["应急耗材"],
     itemTypeIndex: 0,
-    categoryIndex: 1,
+    categoryIndex: 0,
+    showCategoryPicker: false,
     typeHint: "适用于创可贴、碘伏棉签、防护用品等低风险应急耗材。",
     titlePlaceholder: "例如：碘伏棉签 10 支",
+    iconOptions: icons.itemIconOptions,
+    selectedIconLabel: "通用",
+    selectedIconGlyph: icons.itemIconGlyph("plus", "consumable"),
     locationText: "",
     locationColumns: [],
     locationSelection: [1, 0, 0],
@@ -33,6 +37,7 @@ Page({
     form: {
       title: "",
       itemType: "consumable",
+      itemIcon: "plus",
       quantity: "1",
       unit: "件",
       campus: "仙林校区",
@@ -70,9 +75,24 @@ Page({
       itemTypeIndex,
       categories,
       categoryIndex: 0,
+      showCategoryPicker: itemType === "medicine",
       typeHint: this.data.itemTypes[itemTypeIndex].hint,
       titlePlaceholder: itemType === "medicine" ? "例如：未拆封感冒药一盒" : "例如：碘伏棉签 10 支",
+      selectedIconLabel: itemType === "medicine" ? "胶囊" : "通用",
+      selectedIconGlyph: icons.itemIconGlyph(icons.defaultItemIcon(itemType), itemType),
+      "form.itemIcon": icons.defaultItemIcon(itemType),
       "form.itemType": itemType
+    });
+  },
+
+  chooseIcon(event) {
+    const key = event.currentTarget.dataset.key;
+    const option = this.data.iconOptions.find(item => item.key === key);
+    if (!option) return;
+    this.setData({
+      selectedIconLabel: option.label,
+      selectedIconGlyph: option.glyph,
+      "form.itemIcon": option.key
     });
   },
 
@@ -141,7 +161,8 @@ Page({
       wx.showToast({ title: "请选择校区和楼栋", icon: "none" });
       return;
     }
-    if (!this.data.categoriesByType[form.itemType]?.includes(this.data.categories[this.data.categoryIndex])) {
+    const selectedCategory = this.data.categories[this.data.categoryIndex];
+    if (form.itemType === "medicine" && !this.data.categoriesByType[form.itemType]?.includes(selectedCategory)) {
       wx.showToast({ title: "请选择匹配的物品类型和分类", icon: "none" });
       return;
     }
@@ -162,7 +183,7 @@ Page({
     try {
       await api.createItem({
         ...form,
-        category: this.data.categories[this.data.categoryIndex],
+        category: form.itemType === "medicine" ? selectedCategory : "应急耗材",
         quantity: Number(form.quantity)
       });
       wx.showModal({
@@ -170,14 +191,19 @@ Page({
         content: "发布请求已写入服务器数据库。管理员审核通过后会进入首页列表。",
         showCancel: false
       });
+      const currentType = this.data.itemTypes[this.data.itemTypeIndex].value;
+      const defaultIcon = icons.defaultItemIcon(currentType);
       this.setData({
         "form.title": "",
-        "form.itemType": this.data.itemTypes[this.data.itemTypeIndex].value,
+        "form.itemType": currentType,
+        "form.itemIcon": defaultIcon,
         "form.description": "",
         "form.quantity": "1",
         "form.contactWechat": "",
         "form.contactQq": "",
-        "form.disclaimerAccepted": false
+        "form.disclaimerAccepted": false,
+        selectedIconLabel: currentType === "medicine" ? "胶囊" : "通用",
+        selectedIconGlyph: icons.itemIconGlyph(defaultIcon, currentType)
       });
     } catch (error) {
       wx.showToast({ title: error.message || "提交失败", icon: "none" });

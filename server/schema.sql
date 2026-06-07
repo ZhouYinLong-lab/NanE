@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS items (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   item_type TEXT NOT NULL DEFAULT 'consumable' CHECK (item_type IN ('consumable', 'medicine')),
+  item_icon TEXT NOT NULL DEFAULT 'plus',
   category TEXT NOT NULL,
   description TEXT NOT NULL,
   quantity INTEGER NOT NULL CHECK (quantity > 0),
