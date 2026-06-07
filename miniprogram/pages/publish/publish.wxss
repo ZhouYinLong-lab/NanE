@@ -8,17 +8,17 @@
   display: flex;
   gap: 16rpx;
   border-radius: 22rpx;
-  border: 1rpx solid #e1d2bd;
-  background: rgba(255, 250, 242, 0.74);
-  box-shadow: 0 8rpx 22rpx rgba(96, 68, 36, 0.06);
+  border: 1rpx solid #e4ded3;
+  background: #fffaf2;
+  box-shadow: none;
 }
 
 .rules-mark {
   width: 48rpx;
   height: 48rpx;
   border-radius: 16rpx;
-  background: rgba(75, 18, 63, 0.1);
-  color: #4b123f;
+  background: rgba(110, 0, 101, 0.1);
+  color: #6E0065;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,20 +33,20 @@
 
 .rules-title {
   margin-bottom: 4rpx;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 25rpx;
   font-weight: 900;
 }
 
 .rules-text {
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 22rpx;
   line-height: 1.5;
 }
 
 .rules-warn {
   margin-top: 2rpx;
-  color: #4b123f;
+  color: #6E0065;
   font-weight: 800;
 }
 
@@ -60,7 +60,7 @@
 
 .label {
   margin-bottom: 9rpx;
-  color: #6f5a45;
+  color: #6f6a61;
   font-size: 23rpx;
   font-weight: 900;
   line-height: 1.35;
@@ -68,21 +68,21 @@
 
 .label-hint {
   margin-left: 8rpx;
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 20rpx;
   font-weight: 700;
 }
 
 .section-label {
   margin-bottom: 6rpx;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 28rpx;
   font-weight: 900;
 }
 
 .section-help {
   margin-bottom: 18rpx;
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 22rpx;
   line-height: 1.5;
 }
@@ -109,7 +109,7 @@
   height: 72rpx;
   margin: 0;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  background: #6E0065;
   color: #fffaf2;
   font-size: 24rpx;
   font-weight: 900;
@@ -120,13 +120,13 @@
 .contact-section {
   margin-top: 26rpx;
   padding-top: 24rpx;
-  border-top: 1rpx solid #efe4d4;
+  border-top: 1rpx solid #e4ded3;
 }
 
 .disclaimer {
   display: flex;
   gap: 10rpx;
-  color: #6f5a45;
+  color: #6f6a61;
   font-size: 22rpx;
   line-height: 1.6;
   align-items: flex-start;

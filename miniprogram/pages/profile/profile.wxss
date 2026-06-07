@@ -6,12 +6,12 @@
   margin-bottom: 18rpx;
   padding: 30rpx 24rpx;
   border-radius: 30rpx;
-  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  background: #6E0065;
   color: #fffaf2;
   display: flex;
   align-items: center;
   gap: 22rpx;
-  box-shadow: 0 14rpx 34rpx rgba(75, 18, 63, 0.18);
+  box-shadow: 0 14rpx 34rpx rgba(110, 0, 101, 0.18);
 }
 
 .profile-avatar {
@@ -25,6 +25,11 @@
   justify-content: center;
   font-size: 42rpx;
   flex-shrink: 0;
+}
+
+.profile-logo {
+  width: 68rpx;
+  height: 68rpx;
 }
 
 .profile-info {
@@ -68,14 +73,14 @@
 .stat-card {
   padding: 18rpx 8rpx;
   border-radius: 22rpx;
-  border: 1rpx solid #e1d2bd;
+  border: 1rpx solid #e4ded3;
   background: #fffaf2;
   text-align: center;
   box-shadow: 0 8rpx 22rpx rgba(96, 68, 36, 0.06);
 }
 
 .stat-num {
-  color: #4b123f;
+  color: #6E0065;
   font-size: 28rpx;
   font-weight: 900;
   line-height: 1.2;
@@ -83,7 +88,7 @@
 
 .stat-label {
   margin-top: 5rpx;
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 19rpx;
   font-weight: 800;
 }
@@ -93,7 +98,7 @@
   margin-bottom: 12rpx;
   padding: 18rpx 20rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #e1d2bd;
+  border: 1rpx solid #e4ded3;
   background: #fffaf2;
   display: flex;
   align-items: center;
@@ -105,8 +110,8 @@
   width: 54rpx;
   height: 54rpx;
   border-radius: 18rpx;
-  background: rgba(75, 18, 63, 0.09);
-  color: #4b123f;
+  background: rgba(110, 0, 101, 0.09);
+  color: #6E0065;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,7 +122,7 @@
 .menu-text {
   flex: 1;
   min-width: 0;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 25rpx;
   font-weight: 900;
 }
@@ -127,7 +132,7 @@
   padding: 5rpx 12rpx;
   border-radius: 999rpx;
   background: #f3eadf;
-  color: #6f5a45;
+  color: #6f6a61;
   font-size: 19rpx;
   font-weight: 800;
   white-space: nowrap;

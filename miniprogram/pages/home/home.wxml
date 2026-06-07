@@ -1,16 +1,18 @@
 <view class="page home-page">
-  <view class="topbar">
-    <view class="avatar">
-      <text class="fa">{{iconHandHoldingHeart}}</text>
-      <view class="avatar-dot"></view>
+  <view class="brand-head">
+    <view class="brand-copy">
+      <view class="brand-title-row">
+        <text class="brand-title">南易</text>
+        <image class="brand-logo" src="/assets/brand/nane-logo.png" mode="aspectFit" />
+      </view>
+      <view class="brand-subtitle">CAMPUS MUTUAL AID</view>
     </view>
-    <view class="screen-title">发现互助</view>
-    <view class="icon-btn">
-      <text class="fa">{{iconBell}}</text>
+    <view class="icon-btn search-round" bindtap="toggleSearch">
+      <text class="fa">{{iconMagnifyingGlass}}</text>
     </view>
   </view>
 
-  <view class="search-row">
+  <view wx:if="{{showSearch}}" class="search-row">
     <view class="search-box">
       <text class="fa search-icon">{{iconMagnifyingGlass}}</text>
       <input value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" bindconfirm="onSearch" placeholder="搜索退烧贴、碘伏、创可贴" />
@@ -22,26 +24,13 @@
 
   <scroll-view scroll-x class="chips">
     <view
-      wx:for="{{categories}}"
-      wx:key="*this"
-      class="chip {{category === item ? 'active' : ''}}"
-      data-category="{{item}}"
-      bindtap="chooseCategory"
-    >{{item}}</view>
+      wx:for="{{filterChips}}"
+      wx:key="key"
+      class="chip {{activeChip === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="chooseFilter"
+    >{{item.label}}</view>
   </scroll-view>
-
-  <view class="hero-card">
-    <view>
-      <view class="hero-title">南大校园互助共享</view>
-      <view class="hero-desc">同楼栋/同校区优先展示 · 免费共享 · 人工审核</view>
-    </view>
-    <view class="hero-icon"><text class="fa">{{iconShieldHeart}}</text></view>
-  </view>
-
-  <view class="rules-strip">
-    <text class="fa">{{iconCircleInfo}}</text>
-    <text>禁止处方药、管控药和任何形式收费转让。</text>
-  </view>
 
   <view class="section-head">
     <view>
@@ -58,17 +47,27 @@
   </view>
   <view wx:elif="{{items.length === 0}}" class="state-card panel">暂时没有符合条件的物品</view>
 
-  <view class="item-grid" wx:if="{{!loading && !errorMessage && items.length > 0}}">
-    <view wx:for="{{items}}" wx:key="id" class="item-card" data-id="{{item.id}}" bindtap="openDetail">
-      <view class="item-img {{index % 3 === 0 ? 'tone-purple' : index % 3 === 1 ? 'tone-brown' : 'tone-cream'}}">
+  <view class="rules-line">
+    <text class="fa">{{iconCircleInfo}}</text>
+    <text>禁止处方药、管控药和任何形式收费转让。</text>
+  </view>
+
+  <view class="item-list" wx:if="{{!loading && !errorMessage && items.length > 0}}">
+    <view wx:for="{{items}}" wx:key="id" class="aid-item" data-id="{{item.id}}" bindtap="openDetail">
+      <view class="aid-icon {{index % 2 === 0 ? 'tone-purple' : 'tone-cream'}}">
         <text class="fa">{{iconNotesMedical}}</text>
       </view>
-      <view class="item-info">
-        <view class="item-name">{{item.title}}</view>
-        <view class="item-loc"><text class="fa">{{iconLocationDot}}</text> {{item.campus}} · {{item.building}}</view>
-        <view class="item-tags">
-          <text class="item-tag">{{item.category}}</text>
-          <text class="priority-badge">{{item.distanceLabel}}</text>
+      <view class="aid-info">
+        <view class="aid-row">
+          <view class="aid-title">{{item.title}}</view>
+          <view class="aid-loc">{{item.campus}} {{item.building}}</view>
+        </view>
+        <view wx:if="{{item.description}}" class="aid-desc">{{item.description}}</view>
+        <view wx:else class="aid-desc">发布者暂未填写补充说明。</view>
+        <view class="aid-tags">
+          <text class="aid-tag">数量：{{item.quantity}}{{item.unit}}</text>
+          <text class="aid-tag">人工审核通过</text>
+          <text class="aid-tag accent">{{item.expireDate}} 到期</text>
         </view>
       </view>
     </view>

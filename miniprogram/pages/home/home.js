@@ -12,8 +12,15 @@ Page({
     iconShieldHeart: icons.shieldHeart,
     iconCircleInfo: icons.circleInfo,
     keyword: "",
+    showSearch: false,
     category: "全部",
-    categories: ["全部", "退烧降温", "消毒护理", "外伤处理", "防护用品"],
+    activeChip: "building",
+    filterChips: [
+      { key: "building", label: "同楼栋（本楼栋）", category: "" },
+      { key: "campus", label: "同校区（本校区）", category: "" },
+      { key: "medical", label: "医疗白名单", category: "" },
+      { key: "life", label: "生活应急", category: "其他耗材" }
+    ],
     items: [],
     viewer: {},
     loading: true,
@@ -34,6 +41,7 @@ Page({
       this.setData({
         items: data.items,
         viewer: data.viewer,
+        filterChips: this.buildFilterChips(data.viewer),
         loading: false,
         errorMessage: ""
       });
@@ -45,6 +53,15 @@ Page({
     }
   },
 
+  buildFilterChips(viewer = {}) {
+    return [
+      { key: "building", label: `同楼栋（${viewer.building || "本楼栋"}）`, category: "" },
+      { key: "campus", label: `同校区（${viewer.campus || "本校区"}）`, category: "" },
+      { key: "medical", label: "医疗白名单", category: "" },
+      { key: "life", label: "生活应急", category: "其他耗材" }
+    ];
+  },
+
   onKeywordInput(event) {
     this.setData({ keyword: event.detail.value });
   },
@@ -53,8 +70,17 @@ Page({
     this.loadItems();
   },
 
-  chooseCategory(event) {
-    this.setData({ category: event.currentTarget.dataset.category }, () => this.loadItems());
+  toggleSearch() {
+    this.setData({ showSearch: !this.data.showSearch });
+  },
+
+  chooseFilter(event) {
+    const chip = this.data.filterChips.find(item => item.key === event.currentTarget.dataset.key);
+    if (!chip) return;
+    this.setData({
+      activeChip: chip.key,
+      category: chip.category || "全部"
+    }, () => this.loadItems());
   },
 
   openDetail(event) {

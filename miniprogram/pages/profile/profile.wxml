@@ -1,6 +1,6 @@
 <view class="page profile-page">
   <view class="profile-hero">
-    <view class="profile-avatar"><text class="fa">{{icons.user}}</text></view>
+    <view class="profile-avatar"><image class="profile-logo" src="/assets/brand/nane-logo.png" mode="aspectFit" /></view>
     <view class="profile-info">
       <view class="profile-name">{{user.name || 'Demo 用户'}}</view>
       <view class="profile-campus">{{user.campus || '仙林校区'}} · {{user.building || '南苑 A 栋'}}</view>

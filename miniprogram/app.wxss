@@ -7,8 +7,8 @@
 
 page {
   min-height: 100%;
-  background: linear-gradient(160deg, #f7f1e6 0%, #eadfce 56%, #dccbb4 100%);
-  color: #2f261d;
+  background: #f6f1e8;
+  color: #1f1f1f;
   font-family: "Nunito", "Microsoft YaHei", "微软雅黑", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
 }
 
@@ -38,15 +38,15 @@ button::after {
 .page {
   min-height: 100vh;
   padding: 28rpx 28rpx calc(58rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(160deg, #f7f1e6 0%, #eadfce 56%, #dccbb4 100%);
+  background: #f6f1e8;
 }
 
 .panel,
 .soft-card {
   background: #fffaf2;
-  border: 1rpx solid #e1d2bd;
+  border: 1rpx solid #e4ded3;
   border-radius: 24rpx;
-  box-shadow: 0 12rpx 32rpx rgba(96, 68, 36, 0.08);
+  box-shadow: 0 10rpx 28rpx rgba(58, 45, 31, 0.06);
 }
 
 .state-card {
@@ -56,7 +56,7 @@ button::after {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #8a7661;
+  color: #6f6a61;
   text-align: center;
   font-size: 26rpx;
   line-height: 1.55;
@@ -73,7 +73,7 @@ button::after {
 .screen-title {
   flex: 1;
   text-align: center;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 30rpx;
   font-weight: 900;
 }
@@ -82,7 +82,7 @@ button::after {
   width: 68rpx;
   height: 68rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  background: #6E0065;
   color: #fffaf2;
   display: flex;
   align-items: center;
@@ -91,7 +91,7 @@ button::after {
   font-weight: 900;
   flex-shrink: 0;
   position: relative;
-  box-shadow: 0 8rpx 18rpx rgba(75, 18, 63, 0.16);
+  box-shadow: 0 8rpx 18rpx rgba(110, 0, 101, 0.16);
 }
 
 .avatar-dot {
@@ -100,9 +100,9 @@ button::after {
   position: absolute;
   top: -2rpx;
   right: -2rpx;
-  border: 3rpx solid #f7f1e6;
+  border: 3rpx solid #f6f1e8;
   border-radius: 50%;
-  background: #4b123f;
+  background: #6E0065;
 }
 
 .icon-btn {
@@ -110,8 +110,8 @@ button::after {
   height: 64rpx;
   border-radius: 50%;
   background: #fffaf2;
-  border: 1rpx solid #e1d2bd;
-  color: #4b123f;
+  border: 1rpx solid #e4ded3;
+  color: #6E0065;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,14 +128,14 @@ button::after {
 }
 
 .section-title {
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 28rpx;
   font-weight: 900;
 }
 
 .section-more,
 .muted {
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 22rpx;
 }
 
@@ -148,7 +148,7 @@ button::after {
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
   background: #f3eadf;
-  color: #4b123f;
+  color: #6E0065;
   font-size: 20rpx;
   font-weight: 800;
   line-height: 1.25;
@@ -156,19 +156,19 @@ button::after {
 
 .tag-alert,
 .badge-main {
-  background: rgba(75, 18, 63, 0.1);
-  color: #4b123f;
+  background: rgba(110, 0, 101, 0.1);
+  color: #6E0065;
 }
 
 .primary-btn {
   height: 82rpx;
   border-radius: 24rpx;
-  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  background: #6E0065;
   color: #fffaf2;
   font-size: 28rpx;
   font-weight: 900;
   line-height: 82rpx;
-  box-shadow: 0 10rpx 24rpx rgba(75, 18, 63, 0.22);
+  box-shadow: 0 10rpx 24rpx rgba(110, 0, 101, 0.18);
 }
 
 .field-control {
@@ -176,8 +176,8 @@ button::after {
   min-height: 72rpx;
   border-radius: 20rpx;
   background: #fffaf2;
-  border: 1rpx solid #e1d2bd;
-  color: #2f261d;
+  border: 1rpx solid #e4ded3;
+  color: #1f1f1f;
   font-size: 26rpx;
 }
 

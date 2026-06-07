@@ -13,8 +13,8 @@
   height: 160rpx;
   margin: 0 auto 20rpx;
   border-radius: 34rpx;
-  background: linear-gradient(135deg, rgba(75, 18, 63, 0.1), rgba(139, 94, 52, 0.14));
-  color: #4b123f;
+  background: #f0e6ef;
+  color: #6E0065;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,7 +23,7 @@
 
 .detail-title {
   margin-bottom: 14rpx;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 34rpx;
   font-weight: 900;
   line-height: 1.28;
@@ -46,7 +46,7 @@
   gap: 16rpx;
   align-items: flex-start;
   padding: 14rpx 0;
-  border-bottom: 1rpx solid #efe4d4;
+  border-bottom: 1rpx solid #e4ded3;
 }
 
 .detail-row:last-child {
@@ -55,7 +55,7 @@
 
 .detail-label {
   width: 132rpx;
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 23rpx;
   font-weight: 900;
   flex-shrink: 0;
@@ -63,13 +63,13 @@
 
 .detail-label .fa {
   width: 28rpx;
-  color: #4b123f;
+  color: #6E0065;
 }
 
 .detail-val {
   flex: 1;
   min-width: 0;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 24rpx;
   font-weight: 700;
   line-height: 1.55;
@@ -80,9 +80,9 @@
   margin-bottom: 18rpx;
   padding: 18rpx 20rpx;
   border-radius: 20rpx;
-  border: 1rpx solid #e1d2bd;
-  background: rgba(255, 250, 242, 0.72);
-  color: #6f5a45;
+  border: 1rpx solid #e4ded3;
+  background: #fffaf2;
+  color: #6f6a61;
   display: flex;
   gap: 12rpx;
   font-size: 22rpx;
@@ -91,7 +91,7 @@
 
 .info-callout .fa {
   margin-top: 4rpx;
-  color: #4b123f;
+  color: #6E0065;
   flex-shrink: 0;
 }
 
@@ -102,7 +102,7 @@
 
 .contact-hint {
   margin-bottom: 18rpx;
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 23rpx;
 }
 
@@ -110,7 +110,7 @@
   height: 74rpx;
   margin: 0;
   border-radius: 24rpx;
-  background: linear-gradient(135deg, #8b5e34, #4b123f);
+  background: #6E0065;
   color: #fffaf2;
   display: flex;
   align-items: center;
@@ -119,19 +119,19 @@
   font-size: 25rpx;
   font-weight: 900;
   line-height: 74rpx;
-  box-shadow: 0 10rpx 24rpx rgba(75, 18, 63, 0.18);
+  box-shadow: 0 10rpx 24rpx rgba(110, 0, 101, 0.18);
 }
 
 .contact-title {
   margin-bottom: 14rpx;
-  color: #2f261d;
+  color: #1f1f1f;
   font-size: 30rpx;
   font-weight: 900;
 }
 
 .contact-row {
   margin-top: 10rpx;
-  color: #4b123f;
+  color: #6E0065;
   font-size: 29rpx;
   font-weight: 900;
   word-break: break-word;
@@ -139,6 +139,6 @@
 
 .remaining {
   margin-top: 16rpx;
-  color: #8a7661;
+  color: #6f6a61;
   font-size: 22rpx;
 }
