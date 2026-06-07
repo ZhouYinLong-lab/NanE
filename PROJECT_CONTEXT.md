@@ -116,9 +116,10 @@
   - 本地电脑未运行 PostgreSQL 时 `npm start` 会因 `ECONNREFUSED` 失败。
   - Azure VM 上已准备 NanE 专用 PostgreSQL 数据库和用户；敏感密码不写入仓库文档。
 - 登录与身份：
-  - 当前 `/api/auth/wx-login` 仍为 Demo 登录。
-  - 下一阶段推荐接入小助手 challenge-code 身份验证，而不是在小程序端直接保存第三方密钥。
-  - NanE 后端新增 `/api/auth/nanna/challenge`、`/api/auth/nanna/verify` 后，使用 `NANNA_API_KEY` 调用小助手接口，再签发 NanE 自己的 JWT。
+  - 当前 `/api/auth/wx-login` 仍保留 Demo 登录，方便演示兜底。
+  - 已新增小助手 challenge-code 身份验证入口：`/api/auth/nanna/challenge`、`/api/auth/nanna/verify`。
+  - NanE 后端使用 `NANNA_API_KEY` 调用小助手接口，再签发 NanE 自己的 JWT；小程序端不保存第三方密钥。
+  - 用户请求会优先根据 Bearer token 查当前 NanE 用户，没有有效 token 时降级为 Demo 用户。
 
 ## 7. 后续计划 / Next Steps
 
@@ -130,7 +131,8 @@
    - 配置 request 合法域名为 `https://api.zylatent.com`。
    - 提交隐私保护指引。
 3. 真实身份能力：
-   - 按小助手文档接入 challenge-code 验证。
+   - 在服务器环境中配置 `NANNA_API_BASE`、`NANNA_APP_UID`、`NANNA_API_KEY`。
+   - 用小程序“我的”页的身份验证卡片回归 challenge 和 verify 链路。
    - 建议 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
    - 用户表后续可扩展 `auth_provider`、`student_id_masked`、`is_verified` 等字段。
 4. 多端路线：

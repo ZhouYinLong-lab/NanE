@@ -106,6 +106,44 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。下一阶段计�
 
 建议申请的 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
 
+### POST `/api/auth/nanna/challenge`
+
+向小助手发起 challenge-code 验证。服务器必须配置：
+
+```text
+NANNA_API_BASE
+NANNA_APP_UID
+NANNA_API_KEY
+```
+
+请求示例：
+
+```json
+{
+  "email": "student@example.com",
+  "studentId": "251000000"
+}
+```
+
+`email` 和 `studentId` 至少填写一项。成功后返回 `challengeId`、`maskedTarget`、`expiresIn` 和提示文案。
+
+### POST `/api/auth/nanna/verify`
+
+验证小助手验证码，并在 NanE 中创建或更新用户。成功后返回 NanE 自己签发的 JWT。
+
+请求示例：
+
+```json
+{
+  "email": "student@example.com",
+  "studentId": "251000000",
+  "challengeId": "challenge_xxx",
+  "code": "123456"
+}
+```
+
+验证成功后，后续 `/api/me`、`/api/me/items`、发布、联系方式查看等接口会按 Bearer token 中的 NanE 用户读取数据；没有有效 token 时仍降级为 Demo 用户，便于演示。
+
 ### GET `/api/me`
 
 返回当前用户信息，以及今日联系方式查看额度。

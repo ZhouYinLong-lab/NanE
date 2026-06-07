@@ -12,6 +12,10 @@ const { proximityForItem, sortByProximity } = require("./proximity");
 
 const PORT = Number(process.env.PORT || 37878);
 const JWT_SECRET = process.env.JWT_SECRET || "nane-dev-secret";
+const NANNA_API_BASE = String(process.env.NANNA_API_BASE || "").replace(/\/+$/, "");
+const NANNA_APP_UID = process.env.NANNA_APP_UID || "";
+const NANNA_API_KEY = process.env.NANNA_API_KEY || "";
+const NANNA_SCOPES = ["identity:basic:read", "identity:student_id:read", "identity:campus:read", "identity:major:read"];
 const DAILY_CONTACT_LIMIT = 5;
 const ITEM_TYPES = {
   consumable: {
@@ -189,6 +193,174 @@ function itemFromRow(row, viewer, options = {}) {
 async function demoViewer() {
   const { rows } = await query("SELECT * FROM users WHERE id = $1", [DEMO_USER_ID]);
   return rows[0];
+}
+
+async function userFromRequest(req) {
+  const auth = req.headers.authorization || "";
+  const payload = verifyToken(auth.replace(/^Bearer\s+/i, ""));
+  if (payload?.role === "user" && payload.sub) {
+    const { rows } = await query("SELECT * FROM users WHERE id = $1", [payload.sub]);
+    if (rows[0]) {
+      return rows[0];
+    }
+  }
+  return demoViewer();
+}
+
+function nannaConfigured() {
+  return Boolean(NANNA_API_BASE && NANNA_APP_UID && NANNA_API_KEY);
+}
+
+function pick(source, keys, fallback = "") {
+  for (const key of keys) {
+    if (source && source[key] !== undefined && source[key] !== null && source[key] !== "") {
+      return source[key];
+    }
+  }
+  return fallback;
+}
+
+function nannaHeaders() {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${NANNA_API_KEY}`
+  };
+}
+
+async function callNanna(pathname, payload) {
+  const response = await fetch(`${NANNA_API_BASE}${pathname}`, {
+    method: "POST",
+    headers: nannaHeaders(),
+    body: JSON.stringify({
+      app_uid: NANNA_APP_UID,
+      appUid: NANNA_APP_UID,
+      scopes: NANNA_SCOPES,
+      scope: NANNA_SCOPES.join(" "),
+      ...payload
+    })
+  });
+  const text = await response.text();
+  let data = {};
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (error) {
+      data = { message: text };
+    }
+  }
+  if (!response.ok) {
+    const message = data.message || data.error_description || data.error || "小助手接口请求失败";
+    const error = new Error(message);
+    error.statusCode = response.status;
+    throw error;
+  }
+  return data;
+}
+
+function normalizeNannaIdentity(data, input = {}) {
+  const profile = data.user || data.profile || data.identity || data.data || data;
+  const openid = String(pick(profile, ["openid", "openId", "open_id", "sub", "id"], "")).trim();
+  const email = String(pick(profile, ["email"], input.email || "")).trim();
+  const studentId = String(pick(profile, ["student_id", "studentId", "studentID"], input.studentId || "")).trim();
+  const campus = String(pick(profile, ["campus", "campus_name", "campusName"], "仙林校区")).trim();
+  const building = String(pick(profile, ["building", "building_name", "buildingName", "dormitory"], "未设置楼栋")).trim();
+  return {
+    openid,
+    name: String(pick(profile, ["name", "nickname", "display_name", "displayName"], "南易用户")).trim(),
+    campus,
+    building,
+    email,
+    studentIdMasked: studentId ? `${studentId.slice(0, 3)}****${studentId.slice(-2)}` : "",
+    major: String(pick(profile, ["major", "department"], "")).trim()
+  };
+}
+
+async function upsertNannaUser(identity) {
+  if (!identity.openid) {
+    throw new Error("小助手未返回 openid，无法建立 NanE 账号");
+  }
+  const userId = makeId("user");
+  const { rows } = await query(
+    `INSERT INTO users (
+      id, name, campus, building, wechat, qq, openid, auth_provider, email, student_id_masked, major, is_verified
+    )
+    VALUES ($1, $2, $3, $4, '', '', $5, 'nanna', $6, $7, $8, true)
+    ON CONFLICT (openid) DO UPDATE SET
+      name = EXCLUDED.name,
+      campus = EXCLUDED.campus,
+      building = EXCLUDED.building,
+      auth_provider = 'nanna',
+      email = EXCLUDED.email,
+      student_id_masked = EXCLUDED.student_id_masked,
+      major = EXCLUDED.major,
+      is_verified = true
+    RETURNING *`,
+    [
+      userId,
+      identity.name || "南易用户",
+      identity.campus || "仙林校区",
+      identity.building || "未设置楼栋",
+      identity.openid,
+      identity.email || null,
+      identity.studentIdMasked || null,
+      identity.major || null
+    ]
+  );
+  return rows[0];
+}
+
+async function nannaChallenge(req, res) {
+  if (!nannaConfigured()) {
+    json(res, 503, { error: "NANNA_NOT_CONFIGURED", message: "服务器尚未配置小助手身份验证参数" });
+    return;
+  }
+  const input = await readBody(req);
+  const email = String(input.email || "").trim();
+  const studentId = String(input.studentId || input.student_id || "").trim();
+  if (!email && !studentId) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写邮箱或学号以接收验证码" });
+    return;
+  }
+  const data = await callNanna("/api/v1/oauth/challenge", {
+    email: email || undefined,
+    student_id: studentId || undefined,
+    studentId: studentId || undefined
+  });
+  json(res, 200, {
+    challengeId: pick(data, ["challenge_id", "challengeId", "id"], ""),
+    maskedTarget: pick(data, ["masked_target", "maskedTarget", "target"], email || studentId),
+    expiresIn: pick(data, ["expires_in", "expiresIn"], 300),
+    message: data.message || "验证码已通过小助手发送"
+  });
+}
+
+async function nannaVerify(req, res) {
+  if (!nannaConfigured()) {
+    json(res, 503, { error: "NANNA_NOT_CONFIGURED", message: "服务器尚未配置小助手身份验证参数" });
+    return;
+  }
+  const input = await readBody(req);
+  const code = String(input.code || input.challengeCode || "").trim();
+  const challengeId = String(input.challengeId || input.challenge_id || "").trim();
+  if (!code) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写小助手验证码" });
+    return;
+  }
+  const data = await callNanna("/api/v1/oauth/verify", {
+    challenge_id: challengeId || undefined,
+    challengeId: challengeId || undefined,
+    code,
+    challenge_code: code,
+    email: String(input.email || "").trim() || undefined,
+    student_id: String(input.studentId || input.student_id || "").trim() || undefined
+  });
+  const identity = normalizeNannaIdentity(data, input);
+  const user = await upsertNannaUser(identity);
+  json(res, 200, {
+    token: signToken({ sub: user.id, role: "user", provider: "nanna" }),
+    user,
+    loginMode: "nanna"
+  });
 }
 
 function validateItemInput(input) {
@@ -564,7 +736,6 @@ async function handle(req, res) {
   }
 
   const pathname = new URL(req.url, "http://localhost").pathname;
-  const viewer = await demoViewer();
 
   if (req.method === "GET" && pathname === "/admin") {
     html(res, adminPage());
@@ -577,12 +748,24 @@ async function handle(req, res) {
   }
 
   if (req.method === "POST" && pathname === "/api/auth/wx-login") {
+    const viewer = await demoViewer();
     const input = await readBody(req);
     json(res, 200, { token: signToken({ sub: viewer.id, role: "user" }), user: viewer, loginMode: input.code ? "wx-code-demo" : "fallback-demo" });
     return;
   }
 
+  if (req.method === "POST" && pathname === "/api/auth/nanna/challenge") {
+    await nannaChallenge(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/nanna/verify") {
+    await nannaVerify(req, res);
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/me") {
+    const viewer = await userFromRequest(req);
     const used = await query("SELECT COUNT(*)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE", [viewer.id]);
     json(res, 200, {
       user: viewer,
@@ -596,18 +779,21 @@ async function handle(req, res) {
   }
 
   if (req.method === "GET" && pathname === "/api/me/items") {
+    const viewer = await userFromRequest(req);
     const { rows } = await query("SELECT * FROM items WHERE owner_id = $1 ORDER BY created_at DESC", [viewer.id]);
     json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, { includeRoom: true })) });
     return;
   }
 
   if (req.method === "GET" && pathname === "/api/items") {
+    const viewer = await userFromRequest(req);
     await listItems(req, res, viewer);
     return;
   }
 
   const itemDetailMatch = pathname.match(/^\/api\/items\/([^/]+)$/);
   if (req.method === "GET" && itemDetailMatch) {
+    const viewer = await userFromRequest(req);
     const { rows } = await query("SELECT * FROM items WHERE id = $1", [itemDetailMatch[1]]);
     if (!rows[0]) {
       json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
@@ -618,12 +804,14 @@ async function handle(req, res) {
   }
 
   if (req.method === "POST" && pathname === "/api/items") {
+    const viewer = await userFromRequest(req);
     await createItem(req, res, viewer);
     return;
   }
 
   const contactMatch = pathname.match(/^\/api\/items\/([^/]+)\/contact$/);
   if (req.method === "POST" && contactMatch) {
+    const viewer = await userFromRequest(req);
     await viewContact(req, res, viewer, contactMatch[1]);
     return;
   }

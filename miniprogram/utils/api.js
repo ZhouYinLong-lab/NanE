@@ -48,5 +48,11 @@ module.exports = {
   },
   getMyItems() {
     return request("/me/items");
+  },
+  nannaChallenge(data) {
+    return request("/auth/nanna/challenge", { method: "POST", data });
+  },
+  nannaVerify(data) {
+    return request("/auth/nanna/verify", { method: "POST", data });
   }
 };

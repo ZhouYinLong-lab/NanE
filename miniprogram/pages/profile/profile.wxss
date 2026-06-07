@@ -93,6 +93,82 @@
   font-weight: 800;
 }
 
+.auth-card {
+  margin-bottom: 22rpx;
+  padding: 22rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #e4ded3;
+  background: #fffaf2;
+  box-shadow: 0 8rpx 22rpx rgba(96, 68, 36, 0.06);
+}
+
+.auth-title {
+  color: #1f1f1f;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.auth-desc {
+  margin-top: 8rpx;
+  color: #6f6a61;
+  font-size: 22rpx;
+  line-height: 1.55;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.auth-input {
+  height: 76rpx;
+  box-sizing: border-box;
+  padding: 0 20rpx;
+  border: 1rpx solid #e1d2bd;
+  border-radius: 18rpx;
+  background: #fffdf8;
+  color: #1f1f1f;
+  font-size: 23rpx;
+}
+
+.auth-code-row {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 12rpx;
+  align-items: center;
+}
+
+.auth-code-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-button {
+  width: 118rpx;
+  height: 76rpx;
+  padding: 0;
+  border-radius: 18rpx;
+  background: #1f1f1f;
+  color: #fffaf2;
+  font-size: 23rpx;
+  font-weight: 900;
+  line-height: 76rpx;
+}
+
+.auth-button.primary {
+  background: #6E0065;
+}
+
+.auth-message {
+  margin-top: 12rpx;
+  color: #6E0065;
+  font-size: 21rpx;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .menu-item {
   min-height: 88rpx;
   margin-bottom: 12rpx;
@@ -147,4 +223,10 @@
 
 .switch-btn {
   margin-top: 24rpx;
+}
+
+@media (max-width: 360px) {
+  .auth-grid {
+    grid-template-columns: 1fr;
+  }
 }

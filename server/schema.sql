@@ -6,6 +6,11 @@ CREATE TABLE IF NOT EXISTS users (
   wechat TEXT NOT NULL,
   qq TEXT NOT NULL,
   openid TEXT UNIQUE,
+  auth_provider TEXT NOT NULL DEFAULT 'demo',
+  email TEXT,
+  student_id_masked TEXT,
+  major TEXT,
+  is_verified BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

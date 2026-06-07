@@ -197,3 +197,24 @@
   - 演示脚本补充宿舍群推荐、图标选择、联系方式二选一和多端路线说明。
 - 更新早期项目书：
   - 将项目名称、技术方案和开发计划从早期假设同步为当前已落地工程状态。
+
+### 小助手身份验证链路接入
+
+- 后端新增小助手 challenge-code 接口：
+  - `POST /api/auth/nanna/challenge`
+  - `POST /api/auth/nanna/verify`
+- 新增服务器环境变量模板：
+  - `NANNA_API_BASE`
+  - `NANNA_APP_UID`
+  - `NANNA_API_KEY`
+- 用户表新增身份字段：
+  - `auth_provider`
+  - `email`
+  - `student_id_masked`
+  - `major`
+  - `is_verified`
+- 用户接口从固定 Demo 用户升级为优先读取 Bearer token 对应用户；无有效 token 时仍降级 Demo 用户，保证演示链路可用。
+- 小程序“我的”页新增小助手身份验证卡片：
+  - 邮箱或学号发起验证码。
+  - 输入验证码后完成验证并保存 NanE JWT。
+  - 验证后 `/me`、我的发布、发布、联系方式查看均按真实 NanE 用户执行。
