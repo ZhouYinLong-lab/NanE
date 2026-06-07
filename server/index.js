@@ -424,7 +424,11 @@ function adminPage() {
     function byId(id) { return document.getElementById(id); }
     function escapeHtml(value) {
       return String(value == null ? "" : value).replace(/[&<>"']/g, function(char) {
-        return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char];
+        if (char === "&") return "&amp;";
+        if (char === "<") return "&lt;";
+        if (char === ">") return "&gt;";
+        if (char === '"') return "&quot;";
+        return "&#39;";
       });
     }
     async function api(path, options = {}) {
@@ -469,13 +473,16 @@ function adminPage() {
           '</p><p class="muted">发布者：' + escapeHtml(item.ownerName) + ' · 微信 ' + escapeHtml(item.contact.wechat || "未填") + ' · QQ ' + escapeHtml(item.contact.qq || "未填") +
           (item.rejectReason ? '</p><p>驳回原因：' + escapeHtml(item.rejectReason) : '') +
           '</p></div><div class="row">' +
-          '<button onclick="review(\\'' + item.id + '\\',\\'approve\\')">通过</button>' +
-          '<button class="secondary" onclick="review(\\'' + item.id + '\\',\\'reject\\')">驳回</button>' +
-          '<button class="danger" onclick="review(\\'' + item.id + '\\',\\'take-down\\')">下架</button>' +
+          '<button data-id="' + escapeHtml(item.id) + '" data-action="approve" onclick="reviewFromButton(this)">通过</button>' +
+          '<button class="secondary" data-id="' + escapeHtml(item.id) + '" data-action="reject" onclick="reviewFromButton(this)">驳回</button>' +
+          '<button class="danger" data-id="' + escapeHtml(item.id) + '" data-action="take-down" onclick="reviewFromButton(this)">下架</button>' +
           '</div></div>').join("") || '<div class="card muted">暂无数据</div>';
       } catch (error) {
         container.innerHTML = '<div class="card muted">列表加载失败：' + escapeHtml(error.message) + '</div>';
       }
+    }
+    function reviewFromButton(button) {
+      review(button.dataset.id, button.dataset.action);
     }
     async function review(id, action) {
       const reason = action === "reject" ? prompt("请输入驳回原因", "不符合发布规范") : "";
