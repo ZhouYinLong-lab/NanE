@@ -3,10 +3,10 @@
 ## 1. 项目概述 / Project Overview
 
 - 项目名称：NanE（南易）
-- 项目目标：面向南京大学校园场景的应急耗材互助信息平台，最终部署为微信小程序 + 服务器 API + 管理后台。
+- 项目目标：面向南京大学校园场景的免费互助信息平台，当前优先上线微信小程序，后续扩展 Web 站点和桌面 EXE，三端共用服务器 API、PostgreSQL 和审核后台。
 - 核心定位：校园互助信息撮合；免费共享；禁止处方药、管控药和收费转让；发布内容需人工审核。
 - 目标用户：南京大学学生；管理员为项目团队/审核人员。
-- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别均已实现并推送到 GitHub；Azure VM 生产服务器已创建，Nginx + HTTPS 已配置，公网 API 健康检查通过。
+- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别、耗材/非处方药品模型、物品图标、同宿舍群推荐排序均已实现并推送到 GitHub；Azure VM 生产服务器已创建，Nginx + HTTPS 已配置，公网 API 健康检查通过。
 
 ## 2. 技术栈 / Tech Stack
 
@@ -14,6 +14,8 @@
 - 后端：Node.js 18+，原生 `http` 服务，`pg` 访问 PostgreSQL。
 - 数据库：PostgreSQL。
 - 管理后台：同一个 Node 服务内的轻量 HTML 管理页 `/admin`，不引入 React 构建。
+- 未来 Web：优先复用同一套 API 建响应式网页，域名可使用 `https://nane.zylatent.com`。
+- 未来 EXE：建议使用 Tauri 封装 Web 客户端；Electron 可作为备选。
 - 服务端口：NanE 专用端口 `37878`。
 - 本地/旧部署入口：Nginx Proxy Manager / frp 可反向代理到 `http://192.168.6.152:37878`。
 - 当前 Azure 部署入口：`api.zylatent.com`、`nane.zylatent.com` 解析到 Azure VM 公网 IP `72.155.72.104`，通过 Nginx + Let's Encrypt HTTPS 反向代理到 `http://127.0.0.1:37878`。
@@ -33,11 +35,15 @@
   -> https://nane.zylatent.com/admin
   -> 同一个 NanE Node API
   -> PostgreSQL
+
+未来 Web / EXE
+  -> 同一套 HTTPS API
+  -> 同一套 PostgreSQL 数据
 ```
 
 - 小程序端：
-  - 首页：浏览审核通过的互助物品，同楼栋/同校区优先排序。
-  - 发布页：发布物品，填写校区、楼栋，宿舍号选填，提交后进入审核。
+  - 首页：浏览审核通过的互助物品，同楼栋 > 同宿舍群 > 同校区 > 其他校区优先排序。
+  - 发布页：发布耗材或非处方常见药品，填写校区、楼栋，宿舍号选填，提交后进入审核。
   - 详情页：展示物品信息，点击后调用联系方式查看 API。
   - 我的页：显示用户信息、查看额度、我的发布入口。
   - 我的发布：展示自己发布物品的审核状态；本人可看到自己填写的宿舍号。
@@ -50,7 +56,11 @@
 
 ## 4. 核心功能 / Core Features
 
-- 发布互助物品：白名单分类、数量、有效期、校区/楼栋、宿舍号选填、免责声明确认。
+- 发布互助物品：物品类型、数量、有效期、校区/楼栋、宿舍号选填、联系方式、图标选择、免责声明确认。
+- 类型与分类：
+  - 耗材：发布表单不要求选择细分类，后端默认保存为 `应急耗材`。
+  - 药品：仅允许笼统非处方分类，如 `感冒药`、`退烧药`、`过敏药`、`肠胃药`、`其他非处方药`。
+  - 后端兼容旧耗材分类：`退烧降温`、`消毒护理`、`外伤处理`、`防护用品`、`其他耗材`。
 - 位置选择：
   - 使用 `miniprogram/data/locations.js` 内置位置数据。
   - 支持三级下拉：校区 / 楼栋 / 宿舍号。
@@ -62,29 +72,31 @@
 - 联系方式限流：
   - 每人每日最多查看 5 次。
   - 记录保存在 `contact_views`。
+- 推荐排序：
+  - 首页列表按同楼栋、同宿舍群、同校区、其他校区排序。
+  - 仙林、苏州、浦口宿舍群规则已在 `server/proximity.js` 中维护。
+- 物品图标：
+  - `item_icon` 保存在数据库。
+  - 小程序提供 20 个本地 Font Awesome 图标选项。
+  - 默认耗材图标为 `plus`，默认药品图标为 `capsules`。
 - 新视觉设计：
   - 已根据 `campus_share_ui.html` 的组件风格迁移到小程序原生页面。
-  - 当前 UI 使用米褐校园底色 + 南大紫强调色，并本地内置 Font Awesome 字体作为图标资源。
+  - 当前 UI 使用纯米色背景 + 南大纯紫 `#6E0065` 强调色，并本地内置 Font Awesome 字体作为图标资源。
 
 ## 5. 最近更新 / Recent Changes
 
-- `971242f Restore home rendering fallback`
-  - 修复首页空白风险，移除首页 `wx:else` 条件链，改为显式 `wx:if`。
-  - 图标绑定降级为稳定字段和可读字符兜底，避免字体加载问题导致页面主体不可见。
-- `feacfbe Apply Nanjing University themed UI`
-  - 小程序 UI 调整为米褐校园底色 + 南大紫强调 + `campus_share_ui.html` 组件风格。
-  - 本地内置 Font Awesome Free 字体资源和图标映射。
-- `750b72c Refine publish rules and contact validation`
-  - 发布页规则提示改为轻量说明。
-  - 联系方式改为微信/QQ 至少填写一项。
-- `6178025 Add campus building room picker`
-  - 接入校区/楼栋/宿舍号数据。
-  - 发布表单新增三级选择和快速识别。
-  - 后端新增 `room` 字段，普通用户不公开展示。
-- `aceda18 Apply new mini program visual design`
-  - 替换小程序整体美术风格。
-- `8596445 Use dedicated NanE service port`
-  - NanE 服务统一使用端口 `37878`，避免与其他服务冲突。
+- `b4cce15 Add item icons and simplify consumable category`
+  - 耗材发布不再要求选择细分类，后端默认 `应急耗材`。
+  - 药品兜底项改为 `其他非处方药`。
+  - 发布表单新增 20 个 Font Awesome 物品图标选项，并持久化 `item_icon`。
+- `d202899 Prioritize nearby dorm groups in item feed`
+  - 首页排序升级为同楼栋 > 同宿舍群 > 同校区 > 其他校区。
+  - 新增仙林、苏州、浦口宿舍群规则。
+- `81f44d4 Add consumable and medicine item types`
+  - 数据模型升级为 `item_type + category`。
+  - 药品只接受非处方常见笼统分类。
+- `37e96a4 Simplify publish rules copy`
+  - 发布规则提示改为轻量可读文案。
 - `013337d Add PostgreSQL API and admin review console`
   - 后端迁移到 PostgreSQL。
   - 新增 `/admin` 管理后台和管理员 API。
@@ -103,8 +115,10 @@
 - PostgreSQL：
   - 本地电脑未运行 PostgreSQL 时 `npm start` 会因 `ECONNREFUSED` 失败。
   - Azure VM 上已准备 NanE 专用 PostgreSQL 数据库和用户；敏感密码不写入仓库文档。
-- 微信登录：
-  - 当前 `/api/auth/wx-login` 仍为 Demo 登录，后续需替换为真实 `wx.login` + `code2Session`。
+- 登录与身份：
+  - 当前 `/api/auth/wx-login` 仍为 Demo 登录。
+  - 下一阶段推荐接入小助手 challenge-code 身份验证，而不是在小程序端直接保存第三方密钥。
+  - NanE 后端新增 `/api/auth/nanna/challenge`、`/api/auth/nanna/verify` 后，使用 `NANNA_API_KEY` 调用小助手接口，再签发 NanE 自己的 JWT。
 
 ## 7. 后续计划 / Next Steps
 
@@ -116,8 +130,13 @@
    - 配置 request 合法域名为 `https://api.zylatent.com`。
    - 提交隐私保护指引。
 3. 真实身份能力：
-   - 替换 Demo 登录。
-   - 确认是否对接校园身份认证，不占用“南哪小帮手”服务。
+   - 按小助手文档接入 challenge-code 验证。
+   - 建议 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
+   - 用户表后续可扩展 `auth_provider`、`student_id_masked`、`is_verified` 等字段。
+4. 多端路线：
+   - 小程序先完成上线审核。
+   - Web 站点复用 API 和数据库，承接桌面浏览与介绍页。
+   - EXE 用 Tauri 或 Electron 封装 Web 客户端，避免重复实现业务逻辑。
 
 ## 8. 关键文件 / Reference Files
 

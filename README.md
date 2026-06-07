@@ -1,16 +1,32 @@
 # NanE 南易互助平台
 
-NanE（南易）是面向南京大学校园场景的应急耗材互助信息平台。当前工程包含微信小程序、Node.js API、PostgreSQL 数据库和轻量 Web 管理后台，用于打通发布、审核、展示、联系方式限流和后台管理链路。
+NanE（南易）是面向南京大学校园场景的免费互助信息平台。当前工程优先服务微信小程序上线，同时保留 Web 站点和桌面 EXE 的扩展路径；所有客户端最终共用同一套 Node.js API、PostgreSQL 数据库和审核后台。
 
 ## 当前打通的链路
 
-- 小程序端：首页按分类/关键词浏览互助物品，同楼栋优先排序
+- 小程序端：首页按关键词、类型和推荐距离浏览互助物品，同楼栋、同宿舍群、同校区依次优先
 - 小程序端：UI 已切换为米色底、南大纯紫强调和线性附近物品列表，不再使用渐变主视觉
 - 小程序端：详情页查看物品信息，点击后调用 API 获取联系方式
-- 小程序端：发布页提交物品，后端写入审核队列
+- 小程序端：发布页支持耗材 / 非处方常见药品、位置识别、图标选择、微信或 QQ 联系方式校验，提交后写入审核队列
 - 小程序端：我的页显示校园身份、联系方式查看额度、API 连接状态
 - 后端 API：健康检查、登录 Demo、物品列表、物品详情、发布物品、联系方式限流
 - 管理后台：管理员登录、待审列表、通过/驳回/下架、统计
+
+## 产品形态
+
+- 微信小程序：当前主线，负责移动端发布、浏览、查看联系方式和我的发布。
+- Web 站点：下一阶段可部署在 `https://nane.zylatent.com`，复用同一套 API 和 PostgreSQL，用于桌面浏览、管理和公开介绍。
+- 桌面 EXE：建议以 Web 优先方式封装，后续可用 Tauri（优先）或 Electron 打包，不重新写一套业务后端。
+
+推荐架构：
+
+```text
+微信小程序 / Web / EXE
+  -> https://api.zylatent.com/api
+  -> Azure VM Nginx
+  -> NanE Node API :37878
+  -> PostgreSQL
+```
 
 ## 环境变量
 
@@ -21,7 +37,12 @@ PORT=37878
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/nane
 JWT_SECRET=replace-with-a-long-random-secret
 ADMIN_PASSWORD=replace-with-a-strong-admin-password
+NANNA_API_BASE=https://assistant.example.com
+NANNA_APP_UID=replace-with-nanna-app-uid
+NANNA_API_KEY=replace-with-nanna-api-key
 ```
+
+`NANNA_*` 变量用于下一阶段接入小助手身份验证。当前生产链路仍使用 Demo 登录，API Key 只能放在服务器环境变量中，不能写入小程序端。
 
 ## 本地运行
 
@@ -36,10 +57,10 @@ npm run dev:api
 http://localhost:37878
 ```
 
-微信开发者工具导入本目录，项目配置已写在 `project.config.json`。小程序端默认请求：
+微信开发者工具导入本目录，项目配置已写在 `project.config.json`。当前小程序端默认请求生产 API：
 
 ```text
-http://localhost:37878/api
+https://api.zylatent.com/api
 ```
 
 本地或服务器需要先准备 PostgreSQL 数据库，例如：
@@ -75,7 +96,15 @@ https://api.zylatent.com/api
 
 ### POST `/api/auth/wx-login`
 
-Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换为微信 `code2Session` + 校园身份认证。注意：NanE 不占用“南哪小帮手”服务，只预留未来对接能力。
+Demo 登录接口，当前返回固定用户和 `demo-token`。下一阶段计划接入小助手身份验证和账号系统：
+
+1. 小程序或 Web 输入邮箱 / 学号等身份线索。
+2. NanE 后端携带 `NANNA_API_KEY` 调用小助手 `/api/v1/oauth/challenge`。
+3. 用户在小助手侧收到验证码。
+4. NanE 后端调用 `/api/v1/oauth/verify` 验证 challenge code。
+5. 验证成功后按小助手返回的 `openid` upsert NanE 用户，并签发 NanE 自己的 JWT。
+
+建议申请的 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
 
 ### GET `/api/me`
 
@@ -250,11 +279,25 @@ server {
 
 ## 后续工程化路线
 
-1. 登录认证：微信 OpenID + 校园身份认证
-2. 审核后台：白名单分类、过期自动下架、管理员账号管理
-3. 安全：接口鉴权、字段校验、联系方式脱敏、频控
-4. 小程序：图片上传、收藏、审核状态通知
-5. 部署：公网 HTTPS API、Nginx Proxy Manager、微信 request 合法域名
+### 近期上线
+
+1. 微信后台配置 `request 合法域名`：`https://api.zylatent.com`。
+2. 微信开发者工具刷新项目配置，回归首页、发布、详情、我的发布、后台审核。
+3. 补齐小程序基础资料、服务类目、隐私保护指引和审核说明。
+4. 继续压测发布、审核、联系方式查看 5 次限流和到期字段校验。
+
+### 账号与安全
+
+1. 接入小助手 challenge-code 身份验证，替换 Demo 登录。
+2. NanE 后端保存 `openid`、校园身份摘要、校区楼栋和联系方式，签发自己的 JWT。
+3. 增加管理员账号管理、操作审计、联系方式脱敏展示和更严格频控。
+4. 药品类继续保持笼统分类、人工审核、禁止处方药/管控药/收费交易。
+
+### 多端产品
+
+1. Web 站点：先做同 API 的响应式网页端，可承担介绍页、浏览页和管理增强。
+2. EXE：Web 稳定后用 Tauri 打包桌面端，复用网页 UI 和 API。
+3. 图片上传、收藏、消息通知、过期自动下架作为后续功能扩展，不影响当前 MVP 上线。
 
 ## 配套文档
 
