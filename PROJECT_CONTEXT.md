@@ -6,7 +6,7 @@
 - 项目目标：面向南京大学校园场景的免费互助信息平台，当前优先上线微信小程序，后续扩展 Web 站点和桌面 EXE，三端共用服务器 API、PostgreSQL 和审核后台。
 - 核心定位：校园互助信息撮合；免费共享；禁止处方药、管控药和收费转让；发布内容需人工审核。
 - 目标用户：南京大学学生；管理员为项目团队/审核人员。
-- 当前进度：小程序基础功能、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别、耗材/非处方药品模型、物品图标、同宿舍群推荐排序均已实现并推送到 GitHub；Azure VM 生产服务器已创建，Nginx + HTTPS 已配置，公网 API 健康检查通过。
+- 当前进度：小程序基础功能、网页端初版、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别、耗材/非处方药品模型、物品图标、同宿舍群推荐排序均已实现；Azure VM 生产服务器已创建，Nginx + HTTPS 已配置，公网 API 健康检查通过。
 
 ## 2. 技术栈 / Tech Stack
 
@@ -14,7 +14,7 @@
 - 后端：Node.js 18+，原生 `http` 服务，`pg` 访问 PostgreSQL。
 - 数据库：PostgreSQL。
 - 管理后台：同一个 Node 服务内的轻量 HTML 管理页 `/admin`，不引入 React 构建。
-- 未来 Web：优先复用同一套 API 建响应式网页，域名可使用 `https://nane.zylatent.com`。
+- Web：原生 HTML/CSS/JS，位于 `web/`，由同一 Node 服务托管，入口为 `https://nane.zylatent.com`。
 - 未来 EXE：建议使用 Tauri 封装 Web 客户端；Electron 可作为备选。
 - 服务端口：NanE 专用端口 `37878`。
 - 本地/旧部署入口：Nginx Proxy Manager / frp 可反向代理到 `http://192.168.6.152:37878`。
@@ -36,9 +36,16 @@
   -> 同一个 NanE Node API
   -> PostgreSQL
 
-未来 Web / EXE
+网页版
+  -> https://nane.zylatent.com
+  -> 同一 NanE Node 服务
   -> 同一套 HTTPS API
-  -> 同一套 PostgreSQL 数据
+  -> PostgreSQL
+
+未来 EXE
+  -> 封装 Web 客户端
+  -> 同一套 HTTPS API
+  -> PostgreSQL
 ```
 
 - 小程序端：
@@ -136,7 +143,7 @@
    - 建议 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
    - 用户表后续可扩展 `auth_provider`、`student_id_masked`、`is_verified` 等字段。
 4. 多端路线：
-   - 小程序先完成上线审核。
+   - 小程序备案/审核较慢时，先使用 Web 站点完成演示和测试。
    - Web 站点复用 API 和数据库，承接桌面浏览与介绍页。
    - EXE 用 Tauri 或 Electron 封装 Web 客户端，避免重复实现业务逻辑。
 
@@ -148,6 +155,7 @@
 - `docs/privacy-guideline-draft.md`：隐私保护指引草稿。
 - `docs/demo-script.md`：演示脚本。
 - `server/index.js`：Node API 和管理后台入口。
+- `web/`：浏览器网页版，复用同一套 API。
 - `server/schema.sql`：PostgreSQL schema。
 - `server/db.js`：数据库初始化与种子数据。
 - `miniprogram/config.js`：小程序 API 环境配置。

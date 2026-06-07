@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NanE 南易</title>
+  <link rel="stylesheet" href="/web/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div>
+          <div class="brand-row">
+            <h1>南易</h1>
+            <img src="/assets/brand/nane-logo.png" alt="NanE logo">
+          </div>
+          <p>CAMPUS MUTUAL AID</p>
+        </div>
+      </div>
+      <button class="icon-button" id="refreshButton" title="刷新"></button>
+    </header>
+
+    <nav class="tabs" aria-label="主要页面">
+      <button class="tab active" data-view="home">发现</button>
+      <button class="tab" data-view="publish">发布</button>
+      <button class="tab" data-view="mine">我的</button>
+    </nav>
+
+    <main>
+      <section class="view active" id="view-home">
+        <div class="search-row">
+          <input id="keywordInput" type="search" placeholder="搜索创可贴、感冒药、碘伏棉签">
+          <button class="primary small" id="searchButton">搜索</button>
+        </div>
+        <div class="chips" id="filterChips">
+          <button class="chip active" data-type="">全部</button>
+          <button class="chip" data-type="consumable">应急耗材</button>
+          <button class="chip" data-type="medicine">非处方药品</button>
+        </div>
+        <div class="notice-line">免费共享 · 同楼栋/同宿舍群优先 · 人工审核 · 禁止处方药、管控药和收费交易</div>
+        <div class="section-head">
+          <div>
+            <h2>附近物品</h2>
+            <p id="viewerLabel">正在连接 NanE API...</p>
+          </div>
+        </div>
+        <div class="state-card" id="homeState">正在加载...</div>
+        <div class="item-list" id="itemList"></div>
+      </section>
+
+      <section class="view" id="view-publish">
+        <div class="section-head">
+          <div>
+            <h2>发布互助</h2>
+            <p>提交后进入人工审核，审核通过才会展示。</p>
+          </div>
+        </div>
+        <form class="card form-card" id="publishForm">
+          <div class="rules-card">
+            <strong>发布规范</strong>
+            <span>支持低风险应急耗材与非处方常见药品免费互助；药品仅使用笼统分类。</span>
+          </div>
+
+          <label>物品类型</label>
+          <div class="segmented">
+            <button type="button" class="segment active" data-item-type="consumable">耗材</button>
+            <button type="button" class="segment" data-item-type="medicine">药品</button>
+          </div>
+          <p class="hint" id="typeHint">耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。</p>
+
+          <label for="titleInput">物品名称 *</label>
+          <input id="titleInput" required placeholder="例如：碘伏棉签 10 支">
+
+          <div class="field-grid">
+            <div>
+              <label for="quantityInput">数量 *</label>
+              <input id="quantityInput" required type="number" min="1" value="1">
+            </div>
+            <div>
+              <label for="unitInput">单位 *</label>
+              <input id="unitInput" required value="件">
+            </div>
+          </div>
+
+          <div id="medicineCategoryWrap" hidden>
+            <label for="categorySelect">药品笼统分类 *</label>
+            <select id="categorySelect">
+              <option>感冒药</option>
+              <option>退烧药</option>
+              <option>过敏药</option>
+              <option>肠胃药</option>
+              <option>其他非处方药</option>
+            </select>
+          </div>
+
+          <label>选择图标（可选）</label>
+          <div class="icon-grid" id="iconGrid"></div>
+
+          <div class="field-grid">
+            <div>
+              <label for="campusInput">校区 *</label>
+              <input id="campusInput" required value="仙林校区">
+            </div>
+            <div>
+              <label for="buildingInput">楼栋 *</label>
+              <input id="buildingInput" required value="南苑 A 栋">
+            </div>
+          </div>
+
+          <label for="roomInput">宿舍号（选填，不公开展示）</label>
+          <input id="roomInput" placeholder="例如：321">
+
+          <label for="expireInput">有效期 *</label>
+          <input id="expireInput" required type="date" value="2026-12-31">
+
+          <label for="descriptionInput">补充说明</label>
+          <textarea id="descriptionInput" rows="4" placeholder="包装状态、领取时间、注意事项"></textarea>
+
+          <div class="field-grid">
+            <div>
+              <label for="wechatInput">微信</label>
+              <input id="wechatInput" placeholder="微信或 QQ 至少填一项">
+            </div>
+            <div>
+              <label for="qqInput">QQ</label>
+              <input id="qqInput" placeholder="微信或 QQ 至少填一项">
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input id="disclaimerInput" type="checkbox">
+            <span>我确认本次发布为免费互助，禁止处方药、管控药、收费交易和拆封不明物品。</span>
+          </label>
+
+          <button class="primary wide" type="submit">提交审核</button>
+          <div class="form-message" id="publishMessage"></div>
+        </form>
+      </section>
+
+      <section class="view" id="view-mine">
+        <div class="profile-card">
+          <div class="avatar"><img src="/assets/brand/nane-logo.png" alt=""></div>
+          <div>
+            <h2 id="profileName">Demo 用户</h2>
+            <p id="profileCampus">仙林校区 · 南苑 A 栋</p>
+            <span id="verifyBadge">校园身份认证 Demo</span>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat"><strong id="dailyLimit">5</strong><span>每日额度</span></div>
+          <div class="stat"><strong id="remainingLimit">5</strong><span>今日剩余</span></div>
+          <div class="stat"><strong id="apiStatus">检查中</strong><span>API 状态</span></div>
+        </div>
+
+        <div class="card form-card">
+          <h3>小助手身份验证</h3>
+          <p class="hint">输入邮箱或学号后，小助手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
+          <div class="field-grid">
+            <input id="authEmail" placeholder="邮箱（可选）">
+            <input id="authStudentId" placeholder="学号（可选）">
+          </div>
+          <div class="auth-row">
+            <input id="authCode" placeholder="小助手验证码">
+            <button class="secondary" id="sendCodeButton">发送</button>
+            <button class="primary small" id="verifyCodeButton">验证</button>
+          </div>
+          <div class="form-message" id="authMessage"></div>
+        </div>
+
+        <div class="section-head">
+          <div>
+            <h2>我的发布</h2>
+            <p>审核中、上架中、已驳回都会显示在这里。</p>
+          </div>
+          <button class="secondary" id="loadMineButton">刷新</button>
+        </div>
+        <div class="item-list" id="myItemList"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="detailDialog">
+    <div class="dialog-head">
+      <h3 id="detailTitle">物品详情</h3>
+      <button id="closeDetailButton" class="icon-button"></button>
+    </div>
+    <div id="detailBody"></div>
+  </dialog>
+
+  <script src="/web/app.js"></script>
+</body>
+</html>

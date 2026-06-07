@@ -1,5 +1,7 @@
 const http = require("http");
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 require("./env");
 const {
   DEMO_USER_ID,
@@ -78,6 +80,63 @@ function html(res, body) {
     "Content-Type": "text/html; charset=utf-8"
   });
   res.end(body);
+}
+
+const MIME_TYPES = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".woff2": "font/woff2"
+};
+
+function sendFile(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  res.writeHead(200, {
+    "Content-Type": MIME_TYPES[ext] || "application/octet-stream"
+  });
+  fs.createReadStream(filePath).pipe(res);
+}
+
+function staticPathFromRequest(pathname) {
+  if (pathname === "/" || pathname === "/web") {
+    return path.join(__dirname, "..", "web", "index.html");
+  }
+  if (pathname.startsWith("/web/")) {
+    const relative = pathname.replace(/^\/web\//, "");
+    return path.join(__dirname, "..", "web", relative);
+  }
+  if (pathname.startsWith("/assets/")) {
+    const relative = pathname.replace(/^\/assets\//, "");
+    return path.join(__dirname, "..", "miniprogram", "assets", relative);
+  }
+  return "";
+}
+
+function serveStatic(req, res, pathname) {
+  if (req.method !== "GET") {
+    return false;
+  }
+  const filePath = staticPathFromRequest(pathname);
+  if (!filePath) {
+    return false;
+  }
+  const roots = [
+    path.join(__dirname, "..", "web"),
+    path.join(__dirname, "..", "miniprogram", "assets")
+  ].map(root => path.resolve(root));
+  const resolved = path.resolve(filePath);
+  const allowed = roots.some(root => resolved === root || resolved.startsWith(`${root}${path.sep}`));
+  if (!allowed || !fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+    json(res, 404, { error: "NOT_FOUND", message: "静态资源不存在" });
+    return true;
+  }
+  sendFile(res, resolved);
+  return true;
 }
 
 function readBody(req) {
@@ -739,6 +798,10 @@ async function handle(req, res) {
 
   if (req.method === "GET" && pathname === "/admin") {
     html(res, adminPage());
+    return;
+  }
+
+  if (serveStatic(req, res, pathname)) {
     return;
   }
 
