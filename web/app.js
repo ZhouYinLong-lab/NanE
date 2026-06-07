@@ -73,17 +73,20 @@ function escapeHtml(value) {
 }
 
 function token() {
-  return state.token || "demo-token";
+  return state.token || "";
 }
 
 async function api(path, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {})
+  };
+  if (token()) {
+    headers.Authorization = `Bearer ${token()}`;
+  }
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token()}`,
-      ...(options.headers || {})
-    }
+    headers
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -101,13 +104,28 @@ function saveSession(tokenValue, user) {
   }
 }
 
-async function ensureDemoLogin() {
-  if (state.token) return;
-  const data = await api("/auth/wx-login", {
-    method: "POST",
-    body: JSON.stringify({ code: "web-demo" })
-  });
-  saveSession(data.token, data.user);
+function clearSession() {
+  state.token = "";
+  state.user = null;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
+
+function isVerifiedUser() {
+  return Boolean(state.user?.is_verified);
+}
+
+function requireVerified(message) {
+  if (isVerifiedUser()) {
+    return true;
+  }
+  const text = message || "请先在“我的”页使用小助手完成校园身份验证";
+  const activeMineTab = document.querySelector('.tab[data-view="mine"]');
+  if (activeMineTab) {
+    activeMineTab.click();
+  }
+  $("authMessage").textContent = text;
+  return false;
 }
 
 function iconGlyph(key, itemType) {
@@ -170,12 +188,21 @@ async function loadProfile() {
   try {
     const data = await api("/me");
     state.user = data.user;
-    localStorage.setItem(USER_KEY, JSON.stringify(data.user || {}));
-    $("profileName").textContent = data.user?.name || "Demo 用户";
-    $("profileCampus").textContent = `${data.user?.campus || "仙林校区"} · ${data.user?.building || "南苑 A 栋"}`;
-    $("verifyBadge").textContent = data.user?.is_verified ? "小助手校园身份已认证" : "校园身份认证 Demo";
-    $("dailyLimit").textContent = data.contactLimit?.daily ?? 5;
-    $("remainingLimit").textContent = data.contactLimit?.remaining ?? 5;
+    if (data.user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      $("profileName").textContent = data.user.name || "南易用户";
+      $("profileCampus").textContent = `${data.user.campus || "未设置校区"} · ${data.user.building || "未设置楼栋"}`;
+      $("verifyBadge").textContent = data.user.is_verified ? "小助手校园身份已认证" : "未完成校园身份验证";
+      $("dailyLimit").textContent = data.contactLimit?.daily ?? 5;
+      $("remainingLimit").textContent = data.contactLimit?.remaining ?? 0;
+    } else {
+      clearSession();
+      $("profileName").textContent = "游客模式";
+      $("profileCampus").textContent = "可浏览物品，登录后可发布和查看联系方式";
+      $("verifyBadge").textContent = "未登录";
+      $("dailyLimit").textContent = 5;
+      $("remainingLimit").textContent = 0;
+    }
     $("apiStatus").textContent = "已连接";
   } catch (error) {
     $("apiStatus").textContent = "未连接";
@@ -184,6 +211,10 @@ async function loadProfile() {
 
 async function loadMyItems() {
   const container = $("myItemList");
+  if (!isVerifiedUser()) {
+    container.innerHTML = `<div class="state-card">请先使用小助手完成校园身份验证，再查看自己的发布。</div>`;
+    return;
+  }
   container.innerHTML = `<div class="state-card">正在加载...</div>`;
   try {
     const data = await api("/me/items");
@@ -207,7 +238,7 @@ async function openDetail(id) {
       有效期：${escapeHtml(data.item.expireDate)} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "发布者暂未填写补充说明。")}</p>
       <div class="notice-line">免费互助信息撮合；禁止处方药、管控药和收费交易。领取前请自行确认包装、有效期和适用风险。</div>
-      <button class="primary wide" id="contactButton">查看联系方式</button>
+      <button class="primary wide" id="contactButton">${isVerifiedUser() ? "查看联系方式" : "登录后查看微信 / QQ"}</button>
       <div id="contactResult"></div>
     `;
     $("detailDialog").showModal();
@@ -218,6 +249,10 @@ async function openDetail(id) {
 
 async function viewContact() {
   if (!state.selectedDetail) return;
+  if (!requireVerified("请先使用小助手完成校园身份验证，再查看微信或 QQ 联系方式。")) {
+    $("detailDialog").close();
+    return;
+  }
   try {
     const data = await api(`/items/${encodeURIComponent(state.selectedDetail.id)}/contact`, { method: "POST" });
     $("contactResult").innerHTML = `
@@ -259,6 +294,11 @@ function setPublishType(itemType) {
 async function submitPublish(event) {
   event.preventDefault();
   const message = $("publishMessage");
+  if (!isVerifiedUser()) {
+    message.textContent = "请先在“我的”页使用小助手完成校园身份验证，再发布互助。";
+    requireVerified(message.textContent);
+    return;
+  }
   const contactWechat = $("wechatInput").value.trim();
   const contactQq = $("qqInput").value.trim();
   if (!contactWechat && !contactQq) {
@@ -404,11 +444,6 @@ async function init() {
   bindEvents();
   renderIconGrid();
   setPublishType("consumable");
-  try {
-    await ensureDemoLogin();
-  } catch (error) {
-    // The rest of the app can still show API errors in-place.
-  }
   await Promise.all([loadHome(), loadProfile()]);
 }
 

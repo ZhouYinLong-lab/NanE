@@ -60,6 +60,7 @@
 - 数据隐私：
   - 普通首页/详情只展示到楼栋，不公开宿舍号。
   - 宿舍号仅发布者本人和管理员可见。
+  - 游客仅可查看物品公开信息；查看微信 / QQ、发布互助、我的发布需要小助手认证用户。
 
 ## 4. 核心功能 / Core Features
 
@@ -126,7 +127,7 @@
   - 当前 `/api/auth/wx-login` 仍保留 Demo 登录，方便演示兜底。
   - 已新增小助手 challenge-code 身份验证入口：`/api/auth/nanna/challenge`、`/api/auth/nanna/verify`。
   - NanE 后端使用 `NANNA_API_KEY` 调用小助手接口，再签发 NanE 自己的 JWT；小程序端不保存第三方密钥。
-  - 用户请求会优先根据 Bearer token 查当前 NanE 用户，没有有效 token 时降级为 Demo 用户。
+  - 首页列表和详情允许游客访问；发布、联系方式查看、我的发布必须是 `is_verified=true` 的小助手认证用户。
 
 ## 7. 后续计划 / Next Steps
 

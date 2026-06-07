@@ -263,7 +263,20 @@ async function userFromRequest(req) {
       return rows[0];
     }
   }
-  return demoViewer();
+  return null;
+}
+
+async function viewerFromRequest(req) {
+  return (await userFromRequest(req)) || demoViewer();
+}
+
+async function requireVerifiedUser(req, res) {
+  const user = await userFromRequest(req);
+  if (!user || !user.is_verified) {
+    json(res, 401, { error: "AUTH_REQUIRED", message: "请先使用小助手完成校园身份验证" });
+    return null;
+  }
+  return user;
 }
 
 function nannaConfigured() {
@@ -829,6 +842,19 @@ async function handle(req, res) {
 
   if (req.method === "GET" && pathname === "/api/me") {
     const viewer = await userFromRequest(req);
+    if (!viewer) {
+      json(res, 200, {
+        user: null,
+        contactLimit: {
+          daily: DAILY_CONTACT_LIMIT,
+          used: 0,
+          remaining: 0
+        },
+        guest: true,
+        message: "游客模式仅可浏览物品，请使用小助手登录后发布或查看联系方式"
+      });
+      return;
+    }
     const used = await query("SELECT COUNT(*)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE", [viewer.id]);
     json(res, 200, {
       user: viewer,
@@ -842,21 +868,24 @@ async function handle(req, res) {
   }
 
   if (req.method === "GET" && pathname === "/api/me/items") {
-    const viewer = await userFromRequest(req);
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) {
+      return;
+    }
     const { rows } = await query("SELECT * FROM items WHERE owner_id = $1 ORDER BY created_at DESC", [viewer.id]);
     json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, { includeRoom: true })) });
     return;
   }
 
   if (req.method === "GET" && pathname === "/api/items") {
-    const viewer = await userFromRequest(req);
+    const viewer = await viewerFromRequest(req);
     await listItems(req, res, viewer);
     return;
   }
 
   const itemDetailMatch = pathname.match(/^\/api\/items\/([^/]+)$/);
   if (req.method === "GET" && itemDetailMatch) {
-    const viewer = await userFromRequest(req);
+    const viewer = await viewerFromRequest(req);
     const { rows } = await query("SELECT * FROM items WHERE id = $1", [itemDetailMatch[1]]);
     if (!rows[0]) {
       json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
@@ -867,14 +896,20 @@ async function handle(req, res) {
   }
 
   if (req.method === "POST" && pathname === "/api/items") {
-    const viewer = await userFromRequest(req);
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) {
+      return;
+    }
     await createItem(req, res, viewer);
     return;
   }
 
   const contactMatch = pathname.match(/^\/api\/items\/([^/]+)\/contact$/);
   if (req.method === "POST" && contactMatch) {
-    const viewer = await userFromRequest(req);
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) {
+      return;
+    }
     await viewContact(req, res, viewer, contactMatch[1]);
     return;
   }
