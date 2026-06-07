@@ -407,7 +407,7 @@ function adminPage() {
         <div class="card stat"><span>今日查看</span><strong id="s-contact">0</strong></div>
       </div>
       <div class="card row">
-        <select id="status" onchange="loadItems()">
+        <select id="item-status" onchange="loadItems()">
           <option value="reviewing">待审核</option>
           <option value="online">上架中</option>
           <option value="rejected">已驳回</option>
@@ -421,6 +421,12 @@ function adminPage() {
   </main>
   <script>
     let token = localStorage.getItem("nane_admin_token") || "";
+    function byId(id) { return document.getElementById(id); }
+    function escapeHtml(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, function(char) {
+        return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char];
+      });
+    }
     async function api(path, options = {}) {
       const res = await fetch(path, {
         ...options,
@@ -434,36 +440,42 @@ function adminPage() {
       try {
         const data = await api("/api/admin/login", {
           method: "POST",
-          body: JSON.stringify({username: username.value, password: password.value})
+          body: JSON.stringify({username: byId("username").value, password: byId("password").value})
         });
         token = data.token;
         localStorage.setItem("nane_admin_token", token);
-        document.getElementById("login").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
+        byId("login").style.display = "none";
+        byId("dashboard").style.display = "block";
         loadAll();
       } catch (error) { alert(error.message); }
     }
     async function loadAll(){ await Promise.all([loadStats(), loadItems()]); }
     async function loadStats() {
       const s = await api("/api/admin/stats");
-      document.getElementById("s-reviewing").textContent = s.reviewing;
-      document.getElementById("s-online").textContent = s.online;
-      document.getElementById("s-offline").textContent = s.offline;
-      document.getElementById("s-contact").textContent = s.contact_views_today;
+      byId("s-reviewing").textContent = s.reviewing;
+      byId("s-online").textContent = s.online;
+      byId("s-offline").textContent = s.offline;
+      byId("s-contact").textContent = s.contact_views_today;
     }
     async function loadItems() {
-      const data = await api("/api/admin/items?status=" + status.value);
-      items.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + item.title +
-        ' <span class="pill">' + item.status + '</span></h3><p>' + item.description +
-        '</p><p class="muted">' + item.category + ' · ' + item.campus + ' · ' + item.building + (item.room ? ' · ' + item.room : '') +
-        ' · 余 ' + item.quantity + item.unit + ' · 有效期 ' + item.expireDate +
-        '</p><p class="muted">发布者：' + item.ownerName + ' · 微信 ' + item.contact.wechat + ' · QQ ' + item.contact.qq +
-        (item.rejectReason ? '</p><p>驳回原因：' + item.rejectReason : '') +
-        '</p></div><div class="row">' +
-        '<button onclick="review(\\'' + item.id + '\\',\\'approve\\')">通过</button>' +
-        '<button class="secondary" onclick="review(\\'' + item.id + '\\',\\'reject\\')">驳回</button>' +
-        '<button class="danger" onclick="review(\\'' + item.id + '\\',\\'take-down\\')">下架</button>' +
-        '</div></div>').join("") || '<div class="card muted">暂无数据</div>';
+      const container = byId("items");
+      const statusValue = byId("item-status").value || "reviewing";
+      try {
+        const data = await api("/api/admin/items?status=" + encodeURIComponent(statusValue));
+        container.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + escapeHtml(item.title) +
+          ' <span class="pill">' + escapeHtml(item.status) + '</span></h3><p>' + escapeHtml(item.description) +
+          '</p><p class="muted">' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
+          ' · 余 ' + escapeHtml(item.quantity) + escapeHtml(item.unit) + ' · 有效期 ' + escapeHtml(item.expireDate) +
+          '</p><p class="muted">发布者：' + escapeHtml(item.ownerName) + ' · 微信 ' + escapeHtml(item.contact.wechat || "未填") + ' · QQ ' + escapeHtml(item.contact.qq || "未填") +
+          (item.rejectReason ? '</p><p>驳回原因：' + escapeHtml(item.rejectReason) : '') +
+          '</p></div><div class="row">' +
+          '<button onclick="review(\\'' + item.id + '\\',\\'approve\\')">通过</button>' +
+          '<button class="secondary" onclick="review(\\'' + item.id + '\\',\\'reject\\')">驳回</button>' +
+          '<button class="danger" onclick="review(\\'' + item.id + '\\',\\'take-down\\')">下架</button>' +
+          '</div></div>').join("") || '<div class="card muted">暂无数据</div>';
+      } catch (error) {
+        container.innerHTML = '<div class="card muted">列表加载失败：' + escapeHtml(error.message) + '</div>';
+      }
     }
     async function review(id, action) {
       const reason = action === "reject" ? prompt("请输入驳回原因", "不符合发布规范") : "";
@@ -472,8 +484,8 @@ function adminPage() {
       loadAll();
     }
     if (token) {
-      document.getElementById("login").style.display = "none";
-      document.getElementById("dashboard").style.display = "block";
+      byId("login").style.display = "none";
+      byId("dashboard").style.display = "block";
       loadAll().catch(() => {});
     }
   </script>
