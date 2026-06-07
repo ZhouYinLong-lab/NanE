@@ -88,6 +88,7 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
 可选参数：
 
 - `keyword`: 关键词
+- `itemType`: 物品类型，可选 `consumable` 或 `medicine`
 - `category`: 分类
 - `status`: 默认 `online`，可传 `all`
 
@@ -104,6 +105,7 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
 ```json
 {
   "title": "医用棉签 20 支",
+  "itemType": "consumable",
   "category": "消毒护理",
   "quantity": 20,
   "unit": "支",
@@ -112,6 +114,22 @@ Demo 登录接口，当前返回固定用户和 `demo-token`。后续可替换�
   "room": "321",
   "expireDate": "2026-12-31",
   "description": "未拆封，晚上可自取"
+}
+```
+
+药品类只接受笼统分类，例如：
+
+```json
+{
+  "title": "未拆封感冒药一盒",
+  "itemType": "medicine",
+  "category": "感冒药",
+  "quantity": 1,
+  "unit": "盒",
+  "campus": "仙林校区",
+  "building": "南苑 A 栋",
+  "expireDate": "2026-12-31",
+  "description": "仅限非处方常见药品免费互助，管理员审核后展示"
 }
 ```
 

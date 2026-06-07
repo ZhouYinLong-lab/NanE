@@ -65,9 +65,11 @@
         <view wx:if="{{item.description}}" class="aid-desc">{{item.description}}</view>
         <view wx:else class="aid-desc">发布者暂未填写补充说明。</view>
         <view class="aid-tags">
+          <text class="aid-tag accent">{{item.itemTypeText}}</text>
+          <text class="aid-tag">{{item.category}}</text>
           <text class="aid-tag">数量：{{item.quantity}}{{item.unit}}</text>
           <text class="aid-tag">人工审核通过</text>
-          <text class="aid-tag accent">{{item.expireDate}} 到期</text>
+          <text class="aid-tag">{{item.expireDate}} 到期</text>
         </view>
       </view>
     </view>

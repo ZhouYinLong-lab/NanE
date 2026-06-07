@@ -27,6 +27,17 @@ async function initializeDatabase() {
   const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
   await pool.query(schema);
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS room TEXT");
+  await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'consumable'");
+  await query(
+    `DO $$
+     BEGIN
+       IF NOT EXISTS (
+         SELECT 1 FROM pg_constraint WHERE conname = 'items_item_type_check'
+       ) THEN
+         ALTER TABLE items ADD CONSTRAINT items_item_type_check CHECK (item_type IN ('consumable', 'medicine'));
+       END IF;
+     END $$`
+  );
 
   await query(
     `INSERT INTO users (id, name, campus, building, wechat, qq, openid)
@@ -51,6 +62,7 @@ async function initializeDatabase() {
     {
       id: "item_iodine",
       title: "碘伏棉签 10 支",
+      itemType: "consumable",
       category: "消毒护理",
       description: "开学囤多了，独立包装未拆封，适合处理小伤口。",
       quantity: 10,
@@ -67,6 +79,7 @@ async function initializeDatabase() {
     {
       id: "item_patch",
       title: "创可贴 8 片",
+      itemType: "consumable",
       category: "外伤处理",
       description: "普通透气款，剩余 8 片，同楼栋可自取。",
       quantity: 8,
@@ -83,6 +96,7 @@ async function initializeDatabase() {
     {
       id: "item_cooling",
       title: "退烧贴 3 片",
+      itemType: "consumable",
       category: "退烧降温",
       description: "未拆封，夜间应急优先。",
       quantity: 3,
@@ -101,13 +115,14 @@ async function initializeDatabase() {
   for (const item of seeds) {
     await query(
       `INSERT INTO items (
-        id, title, category, description, quantity, unit, campus, building, room,
+        id, title, item_type, category, description, quantity, unit, campus, building, room,
         expire_date, status, owner_id, owner_name, contact_wechat, contact_qq, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, now())`,
       [
         item.id,
         item.title,
+        item.itemType,
         item.category,
         item.description,
         item.quantity,

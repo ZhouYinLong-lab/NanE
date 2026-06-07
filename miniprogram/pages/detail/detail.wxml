@@ -12,6 +12,7 @@
       <view class="detail-img"><text class="fa">{{icons.notesMedical}}</text></view>
       <view class="detail-title">{{item.title}}</view>
       <view class="badge-row">
+        <text class="badge badge-main">{{item.itemTypeText}}</text>
         <text class="badge badge-main">{{item.category}}</text>
         <text class="badge">{{item.distanceLabel}}</text>
         <text class="badge">{{item.expireDate}} 到期</text>
@@ -35,7 +36,7 @@
 
     <view class="info-callout">
       <text class="fa">{{icons.circleInfo}}</text>
-      <text>平台仅做校园互助信息撮合。请自行确认包装、有效期和适用风险；禁止处方药和管控药物。</text>
+      <text>平台仅做校园免费互助信息撮合。药品类仅限非处方常见分类，请自行确认包装、有效期和适用风险；禁止处方药、管控药和收费交易。</text>
     </view>
 
     <view class="contact-card soft-card">

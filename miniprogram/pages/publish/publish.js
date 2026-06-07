@@ -5,14 +5,34 @@ const icons = require("../../utils/icons");
 Page({
   data: {
     icons,
+    itemTypes: [
+      {
+        value: "consumable",
+        label: "耗材",
+        hint: "适用于创可贴、碘伏棉签、防护用品等低风险应急耗材。"
+      },
+      {
+        value: "medicine",
+        label: "药品",
+        hint: "仅限非处方常见药品笼统分类；禁止处方药、管控药、拆封不明药品和收费转让。"
+      }
+    ],
+    categoriesByType: {
+      consumable: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"],
+      medicine: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"]
+    },
     categories: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"],
+    itemTypeIndex: 0,
     categoryIndex: 1,
+    typeHint: "适用于创可贴、碘伏棉签、防护用品等低风险应急耗材。",
+    titlePlaceholder: "例如：碘伏棉签 10 支",
     locationText: "",
     locationColumns: [],
     locationSelection: [1, 0, 0],
     locationLabel: "",
     form: {
       title: "",
+      itemType: "consumable",
       quantity: "1",
       unit: "件",
       campus: "仙林校区",
@@ -40,6 +60,20 @@ Page({
 
   chooseCategory(event) {
     this.setData({ categoryIndex: Number(event.detail.value) });
+  },
+
+  chooseItemType(event) {
+    const itemTypeIndex = Number(event.currentTarget.dataset.index);
+    const itemType = this.data.itemTypes[itemTypeIndex].value;
+    const categories = this.data.categoriesByType[itemType];
+    this.setData({
+      itemTypeIndex,
+      categories,
+      categoryIndex: 0,
+      typeHint: this.data.itemTypes[itemTypeIndex].hint,
+      titlePlaceholder: itemType === "medicine" ? "例如：未拆封感冒药一盒" : "例如：碘伏棉签 10 支",
+      "form.itemType": itemType
+    });
   },
 
   updateLocationText(event) {
@@ -107,6 +141,10 @@ Page({
       wx.showToast({ title: "请选择校区和楼栋", icon: "none" });
       return;
     }
+    if (!this.data.categoriesByType[form.itemType]?.includes(this.data.categories[this.data.categoryIndex])) {
+      wx.showToast({ title: "请选择匹配的物品类型和分类", icon: "none" });
+      return;
+    }
     if (!Number.isInteger(Number(form.quantity)) || Number(form.quantity) <= 0) {
       wx.showToast({ title: "数量必须是正整数", icon: "none" });
       return;
@@ -134,6 +172,7 @@ Page({
       });
       this.setData({
         "form.title": "",
+        "form.itemType": this.data.itemTypes[this.data.itemTypeIndex].value,
         "form.description": "",
         "form.quantity": "1",
         "form.contactWechat": "",

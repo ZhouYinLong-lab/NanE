@@ -27,7 +27,7 @@
     <view class="my-item-info">
       <view class="my-item-name">{{item.title}}</view>
       <view class="my-item-meta">
-        {{item.category}} · {{item.building}}<text wx:if="{{item.room}}"> · {{item.room}}</text> · 余 {{item.quantity}}{{item.unit}}
+        {{item.itemTypeText}} · {{item.category}} · {{item.building}}<text wx:if="{{item.room}}"> · {{item.room}}</text> · 余 {{item.quantity}}{{item.unit}}
       </view>
       <view class="my-item-meta">有效期 {{item.expireDate}}</view>
       <view wx:if="{{item.rejectReason}}" class="reason">原因：{{item.rejectReason}}</view>

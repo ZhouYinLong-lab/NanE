@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS items (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
+  item_type TEXT NOT NULL DEFAULT 'consumable' CHECK (item_type IN ('consumable', 'medicine')),
   category TEXT NOT NULL,
   description TEXT NOT NULL,
   quantity INTEGER NOT NULL CHECK (quantity > 0),

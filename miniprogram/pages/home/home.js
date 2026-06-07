@@ -13,13 +13,14 @@ Page({
     iconCircleInfo: icons.circleInfo,
     keyword: "",
     showSearch: false,
+    itemType: "",
     category: "全部",
     activeChip: "building",
     filterChips: [
-      { key: "building", label: "同楼栋（本楼栋）", category: "" },
-      { key: "campus", label: "同校区（本校区）", category: "" },
-      { key: "medical", label: "医疗白名单", category: "" },
-      { key: "life", label: "生活应急", category: "其他耗材" }
+      { key: "building", label: "同楼栋（本楼栋）", itemType: "", category: "" },
+      { key: "campus", label: "同校区（本校区）", itemType: "", category: "" },
+      { key: "medicine", label: "非处方药品", itemType: "medicine", category: "" },
+      { key: "consumable", label: "应急耗材", itemType: "consumable", category: "" }
     ],
     items: [],
     viewer: {},
@@ -36,6 +37,7 @@ Page({
     try {
       const data = await api.getItems({
         keyword: this.data.keyword,
+        itemType: this.data.itemType,
         category: this.data.category === "全部" ? "" : this.data.category
       });
       this.setData({
@@ -55,10 +57,10 @@ Page({
 
   buildFilterChips(viewer = {}) {
     return [
-      { key: "building", label: `同楼栋（${viewer.building || "本楼栋"}）`, category: "" },
-      { key: "campus", label: `同校区（${viewer.campus || "本校区"}）`, category: "" },
-      { key: "medical", label: "医疗白名单", category: "" },
-      { key: "life", label: "生活应急", category: "其他耗材" }
+      { key: "building", label: `同楼栋（${viewer.building || "本楼栋"}）`, itemType: "", category: "" },
+      { key: "campus", label: `同校区（${viewer.campus || "本校区"}）`, itemType: "", category: "" },
+      { key: "medicine", label: "非处方药品", itemType: "medicine", category: "" },
+      { key: "consumable", label: "应急耗材", itemType: "consumable", category: "" }
     ];
   },
 
@@ -79,6 +81,7 @@ Page({
     if (!chip) return;
     this.setData({
       activeChip: chip.key,
+      itemType: chip.itemType || "",
       category: chip.category || "全部"
     }, () => this.loadItems());
   },

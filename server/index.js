@@ -12,7 +12,16 @@ const {
 const PORT = Number(process.env.PORT || 37878);
 const JWT_SECRET = process.env.JWT_SECRET || "nane-dev-secret";
 const DAILY_CONTACT_LIMIT = 5;
-const ALLOWED_CATEGORIES = ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"];
+const ITEM_TYPES = {
+  consumable: {
+    text: "耗材",
+    categories: ["退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"]
+  },
+  medicine: {
+    text: "非处方药品",
+    categories: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"]
+  }
+};
 
 function json(res, status, payload) {
   res.writeHead(status, {
@@ -107,6 +116,7 @@ function dateOnly(value) {
 function itemFromRow(row, viewer, options = {}) {
   const includeContact = Boolean(options.includeContact);
   const includeRoom = Boolean(options.includeRoom);
+  const itemType = row.item_type || "consumable";
   const distanceScope =
     row.building === viewer.building
       ? "same_building"
@@ -117,6 +127,8 @@ function itemFromRow(row, viewer, options = {}) {
   return {
     id: row.id,
     title: row.title,
+    itemType,
+    itemTypeText: ITEM_TYPES[itemType]?.text || "耗材",
     category: row.category,
     description: row.description,
     quantity: row.quantity,
@@ -148,13 +160,17 @@ async function demoViewer() {
 }
 
 function validateItemInput(input) {
-  const required = ["title", "category", "quantity", "unit", "campus", "building", "expireDate"];
+  const required = ["title", "itemType", "category", "quantity", "unit", "campus", "building", "expireDate"];
   const missing = required.filter(key => input[key] === undefined || input[key] === "");
   if (missing.length) {
     return `缺少字段: ${missing.join(", ")}`;
   }
-  if (!ALLOWED_CATEGORIES.includes(input.category)) {
-    return "分类不在白名单内";
+  const typeConfig = ITEM_TYPES[input.itemType];
+  if (!typeConfig) {
+    return "物品类型不在白名单内";
+  }
+  if (!typeConfig.categories.includes(input.category)) {
+    return "分类与物品类型不匹配";
   }
   if (!Number.isInteger(Number(input.quantity)) || Number(input.quantity) <= 0) {
     return "数量必须是正整数";
@@ -171,6 +187,7 @@ function validateItemInput(input) {
 async function listItems(req, res, viewer) {
   const url = new URL(req.url, "http://localhost");
   const keyword = (url.searchParams.get("keyword") || "").trim();
+  const itemType = (url.searchParams.get("itemType") || "").trim();
   const category = (url.searchParams.get("category") || "").trim();
   const status = url.searchParams.get("status") || "online";
 
@@ -180,13 +197,17 @@ async function listItems(req, res, viewer) {
     params.push(status);
     clauses.push(`status = $${params.length}`);
   }
+  if (itemType) {
+    params.push(itemType);
+    clauses.push(`item_type = $${params.length}`);
+  }
   if (category && category !== "全部") {
     params.push(category);
     clauses.push(`category = $${params.length}`);
   }
   if (keyword) {
     params.push(`%${keyword}%`);
-    clauses.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length} OR category ILIKE $${params.length})`);
+    clauses.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length} OR category ILIKE $${params.length} OR item_type ILIKE $${params.length})`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
@@ -228,14 +249,15 @@ async function createItem(req, res, viewer) {
   const itemId = makeId("item");
   const { rows } = await query(
     `INSERT INTO items (
-      id, title, category, description, quantity, unit, campus, building, room,
+      id, title, item_type, category, description, quantity, unit, campus, building, room,
       expire_date, status, owner_id, owner_name, contact_wechat, contact_qq
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'reviewing', $11, $12, $13, $14)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'reviewing', $12, $13, $14, $15)
     RETURNING *`,
     [
       itemId,
       String(input.title).trim(),
+      input.itemType,
       input.category,
       String(input.description || "发布者暂未填写补充说明。").trim(),
       Number(input.quantity),
@@ -468,7 +490,7 @@ function adminPage() {
         const data = await api("/api/admin/items?status=" + encodeURIComponent(statusValue));
         container.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + escapeHtml(item.title) +
           ' <span class="pill">' + escapeHtml(item.status) + '</span></h3><p>' + escapeHtml(item.description) +
-          '</p><p class="muted">' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
+          '</p><p class="muted">' + escapeHtml(item.itemTypeText) + ' · ' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
           ' · 余 ' + escapeHtml(item.quantity) + escapeHtml(item.unit) + ' · 有效期 ' + escapeHtml(item.expireDate) +
           '</p><p class="muted">发布者：' + escapeHtml(item.ownerName) + ' · 微信 ' + escapeHtml(item.contact.wechat || "未填") + ' · QQ ' + escapeHtml(item.contact.qq || "未填") +
           (item.rejectReason ? '</p><p>驳回原因：' + escapeHtml(item.rejectReason) : '') +
