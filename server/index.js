@@ -8,6 +8,7 @@ const {
   makeId,
   query
 } = require("./db");
+const { proximityForItem, sortByProximity } = require("./proximity");
 
 const PORT = Number(process.env.PORT || 37878);
 const JWT_SECRET = process.env.JWT_SECRET || "nane-dev-secret";
@@ -117,12 +118,7 @@ function itemFromRow(row, viewer, options = {}) {
   const includeContact = Boolean(options.includeContact);
   const includeRoom = Boolean(options.includeRoom);
   const itemType = row.item_type || "consumable";
-  const distanceScope =
-    row.building === viewer.building
-      ? "same_building"
-      : row.campus === viewer.campus
-        ? "same_campus"
-        : "other_campus";
+  const proximity = proximityForItem(row, viewer);
 
   return {
     id: row.id,
@@ -143,8 +139,8 @@ function itemFromRow(row, viewer, options = {}) {
     ownerName: row.owner_name,
     createdAt: row.created_at,
     reviewedAt: row.reviewed_at,
-    distanceScope,
-    distanceLabel: distanceScope === "same_building" ? "同楼栋优先" : distanceScope === "same_campus" ? "同校区" : "跨校区",
+    distanceScope: proximity.scope,
+    distanceLabel: proximity.label,
     contact: includeContact
       ? {
           wechat: row.contact_wechat,
@@ -213,18 +209,13 @@ async function listItems(req, res, viewer) {
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const { rows } = await query(
     `SELECT * FROM items ${where}
-     ORDER BY
-       CASE
-         WHEN building = $${params.length + 1} THEN 0
-         WHEN campus = $${params.length + 2} THEN 1
-         ELSE 2
-       END,
-       created_at DESC`,
-    [...params, viewer.building, viewer.campus]
+     ORDER BY created_at DESC`,
+    params
   );
+  const sortedRows = sortByProximity(rows, viewer);
 
   json(res, 200, {
-    items: rows.map(row => itemFromRow(row, viewer)),
+    items: sortedRows.map(row => itemFromRow(row, viewer)),
     viewer: {
       campus: viewer.campus,
       building: viewer.building
