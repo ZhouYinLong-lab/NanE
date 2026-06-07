@@ -44,8 +44,7 @@
   line-height: 1.5;
 }
 
-.rules-warn {
-  margin-top: 2rpx;
+.rules-emphasis {
   color: #6E0065;
   font-weight: 800;
 }

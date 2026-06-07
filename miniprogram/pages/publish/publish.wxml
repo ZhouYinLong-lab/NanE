@@ -9,8 +9,12 @@
     <view class="rules-mark"><text class="fa">{{icons.circleInfo}}</text></view>
     <view class="rules-copy">
       <view class="rules-title">发布规范</view>
-      <view class="rules-text">支持低风险应急耗材与非处方常见药品免费互助，发布后需人工审核。</view>
-      <view class="rules-text rules-warn">药品仅使用“感冒药/退烧药/过敏药”等笼统分类；禁止处方药、管控药、收费交易和拆封不明物品。</view>
+      <view class="rules-text">
+        <text class="rules-emphasis">支持</text>
+        <text>低风险应急耗材与非处方常见药品免费互助，发布后需</text>
+        <text class="rules-emphasis">人工审核</text>
+        <text>。</text>
+      </view>
     </view>
   </view>
 
