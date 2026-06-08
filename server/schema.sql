@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
   student_id_masked TEXT,
   major TEXT,
   is_verified BOOLEAN NOT NULL DEFAULT false,
+  agreement_version TEXT,
+  agreement_accepted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -26,7 +28,8 @@ CREATE TABLE IF NOT EXISTS items (
   campus TEXT NOT NULL,
   building TEXT NOT NULL,
   room TEXT,
-  expire_date DATE NOT NULL,
+  expire_date DATE,
+  no_expiry BOOLEAN NOT NULL DEFAULT false,
   status TEXT NOT NULL CHECK (status IN ('reviewing', 'online', 'rejected', 'expired', 'taken_down')),
   reject_reason TEXT,
   owner_id TEXT NOT NULL REFERENCES users(id),

@@ -20,6 +20,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -37,6 +41,7 @@ textarea {
 
 button {
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .app-shell {
@@ -111,8 +116,10 @@ button {
 }
 
 .small {
-  padding: 0 22px;
+  padding: 0 18px;
   min-height: 48px;
+  min-width: 86px;
+  font-size: 15px;
 }
 
 .wide {
@@ -162,6 +169,10 @@ button {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.auth-row input {
+  min-width: 0;
 }
 
 input,
@@ -228,6 +239,15 @@ textarea:focus {
   color: var(--muted);
   font-weight: 800;
   line-height: 1.55;
+}
+
+.link-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--purple);
+  font-weight: 950;
+  text-decoration: underline;
 }
 
 .section-head {
@@ -360,6 +380,18 @@ textarea:focus {
   color: var(--purple);
 }
 
+.badge.warning {
+  border-color: #d5ad47;
+  background: #fff6d9;
+  color: #7b5b07;
+}
+
+.badge.success {
+  border-color: #7ca56c;
+  background: #edf7e9;
+  color: #315d26;
+}
+
 .form-card {
   padding: 24px;
 }
@@ -369,6 +401,32 @@ textarea:focus {
   margin: 18px 0 8px;
   color: #4e4032;
   font-weight: 950;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.label-row > label {
+  margin: 0;
+}
+
+.inline-check {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted) !important;
+  font-size: 13px;
+  font-weight: 850 !important;
+}
+
+.inline-check input {
+  width: 16px;
+  height: 16px;
 }
 
 .field-grid {
@@ -400,7 +458,7 @@ textarea:focus {
 }
 
 .icon-option {
-  min-height: 74px;
+  min-height: 64px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--card-strong);
@@ -416,6 +474,13 @@ textarea:focus {
   color: var(--purple);
   font-family: "Font Awesome 7 Free";
   font-size: 22px;
+}
+
+.icon-more {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .icon-option.active {
@@ -444,6 +509,29 @@ textarea:focus {
   color: var(--purple);
   font-weight: 900;
   line-height: 1.5;
+}
+
+.login-block {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card-strong);
+}
+
+.login-block h4 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.secondary-login summary {
+  cursor: pointer;
+  color: var(--purple);
+  font-weight: 950;
+}
+
+.agreement-row {
+  margin-top: 16px !important;
 }
 
 .profile-card {
@@ -549,6 +637,44 @@ dialog::backdrop {
   line-height: 1.7;
 }
 
+.agreement-dialog {
+  width: min(760px, calc(100% - 24px));
+}
+
+.agreement-body {
+  max-height: min(68vh, 720px);
+  overflow: auto;
+  padding-right: 8px;
+  color: var(--muted);
+  line-height: 1.75;
+  font-weight: 650;
+}
+
+.agreement-body h1,
+.agreement-body h2,
+.agreement-body h3 {
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.agreement-body h1 {
+  font-size: 26px;
+}
+
+.agreement-body h2 {
+  margin-top: 26px;
+  font-size: 21px;
+}
+
+.agreement-body h3 {
+  margin-top: 18px;
+  font-size: 17px;
+}
+
+.agreement-list {
+  margin-left: 1em;
+}
+
 @media (max-width: 680px) {
   .app-shell {
     padding: 24px 16px 44px;
@@ -563,10 +689,20 @@ dialog::backdrop {
     letter-spacing: 0.22em;
   }
 
-  .search-row,
-  .auth-row,
   .section-head {
     align-items: stretch;
+  }
+
+  .search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .auth-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px;
   }
 
   .item-card {
@@ -600,10 +736,81 @@ dialog::backdrop {
   }
 
   .icon-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .icon-option {
+    min-height: 56px;
+    border-radius: 16px;
+  }
+
+  .icon-option strong {
+    font-size: 20px;
+  }
+
+  .icon-more {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .profile-card {
     padding: 22px;
+  }
+}
+
+@media (max-width: 460px) {
+  .app-shell {
+    padding-inline: 12px;
+  }
+
+  .small {
+    min-width: 72px;
+    padding-inline: 14px;
+    font-size: 14px;
+  }
+
+  .auth-row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-row .small,
+  .auth-row .secondary {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .label-row {
+    display: block;
+  }
+
+  .inline-check {
+    margin-top: 8px !important;
+  }
+
+  .item-card {
+    grid-template-columns: 68px 1fr;
+    gap: 12px;
+  }
+
+  .item-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    font-size: 24px;
+  }
+
+  .item-title-row h3 {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1080px) {
+  .app-shell {
+    width: min(1120px, 100%);
+  }
+
+  .view {
+    max-width: 980px;
+    margin: 0 auto;
   }
 }

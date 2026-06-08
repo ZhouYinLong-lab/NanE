@@ -71,5 +71,5 @@ https://nane.zylatent.com/admin
 简短说明：
 
 - 当前 Demo 登录已能打通发布、审核和展示链路。
-- 下一阶段接入小助手 challenge-code 身份验证，NanE 后端验证后签发自己的 JWT。
+- 下一阶段接入南哪小帮手 challenge-code 身份验证，NanE 后端验证后签发自己的 JWT。
 - 产品先上线微信小程序，再扩展 Web 站点和 Tauri/EXE 桌面端，仍然共用同一套 API 和数据库。

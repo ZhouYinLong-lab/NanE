@@ -29,11 +29,15 @@ async function initializeDatabase() {
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS room TEXT");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'consumable'");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_icon TEXT NOT NULL DEFAULT 'plus'");
+  await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS no_expiry BOOLEAN NOT NULL DEFAULT false");
+  await query("ALTER TABLE items ALTER COLUMN expire_date DROP NOT NULL");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT NOT NULL DEFAULT 'demo'");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS student_id_masked TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS major TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT false");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_version TEXT");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMPTZ");
   await query(
     `DO $$
      BEGIN

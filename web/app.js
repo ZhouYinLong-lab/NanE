@@ -1,6 +1,7 @@
 const API_BASE = "/api";
 const TOKEN_KEY = "nane_web_token";
 const USER_KEY = "nane_web_user";
+const AGREEMENT_VERSION_FALLBACK = "v1.0";
 
 const icons = {
   plus: "+",
@@ -54,8 +55,13 @@ const state = {
   itemType: "",
   selectedPublishType: "consumable",
   selectedIcon: "plus",
+  iconOtherOpen: false,
   selectedDetail: null,
-  challengeId: ""
+  challengeId: "",
+  locations: [],
+  selectedCampusIndex: 0,
+  selectedBuildingIndex: 0,
+  agreementVersion: AGREEMENT_VERSION_FALLBACK
 };
 
 function $(id) {
@@ -74,6 +80,13 @@ function escapeHtml(value) {
 
 function token() {
   return state.token || "";
+}
+
+function currentAgreementPayload() {
+  return {
+    agreementAccepted: Boolean($("agreementInput")?.checked),
+    agreementVersion: state.agreementVersion || AGREEMENT_VERSION_FALLBACK
+  };
 }
 
 async function api(path, options = {}) {
@@ -95,6 +108,30 @@ async function api(path, options = {}) {
   return data;
 }
 
+function markdownToHtml(markdown) {
+  return escapeHtml(markdown)
+    .replace(/^# (.*)$/gm, "<h1>$1</h1>")
+    .replace(/^## (.*)$/gm, "<h2>$1</h2>")
+    .replace(/^### (.*)$/gm, "<h3>$1</h3>")
+    .replace(/^\d+\. (.*)$/gm, "<p class=\"agreement-list\">$1</p>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\n{2,}/g, "</p><p>")
+    .replace(/^/, "<p>")
+    .replace(/$/, "</p>")
+    .replace(/<p><h/g, "<h")
+    .replace(/<\/h([1-3])><\/p>/g, "</h$1>");
+}
+
+async function loadAgreement() {
+  try {
+    const data = await api("/legal/agreement");
+    state.agreementVersion = data.version || AGREEMENT_VERSION_FALLBACK;
+    $("agreementBody").innerHTML = markdownToHtml(data.markdown || "协议暂不可用。");
+  } catch (error) {
+    $("agreementBody").textContent = "协议加载失败，请稍后重试。";
+  }
+}
+
 function saveSession(tokenValue, user) {
   state.token = tokenValue || "";
   state.user = user || null;
@@ -112,14 +149,14 @@ function clearSession() {
 }
 
 function isVerifiedUser() {
-  return Boolean(state.user?.is_verified);
+  return Boolean(state.user?.is_verified && state.user?.hasAgreement !== false);
 }
 
 function requireVerified(message) {
   if (isVerifiedUser()) {
     return true;
   }
-  const text = message || "请先在“我的”页使用小助手完成校园身份验证";
+  const text = message || "请先在“我的”页登录并同意用户协议";
   const activeMineTab = document.querySelector('.tab[data-view="mine"]');
   if (activeMineTab) {
     activeMineTab.click();
@@ -142,15 +179,46 @@ function statusText(status) {
   }[status] || status;
 }
 
+function expiryBadge(item) {
+  if (item.noExpiry) {
+    return `<span class="badge success">长期有效</span>`;
+  }
+  if (!item.expireDate) {
+    return "";
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(`${item.expireDate}T00:00:00`);
+  if (Number.isNaN(expiry.getTime())) {
+    return "";
+  }
+  const days = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+  if (days < 0) {
+    return `<span class="badge warning">已过期</span>`;
+  }
+  if (days <= 15) {
+    return `<span class="badge warning">还有 ${days} 天到期</span>`;
+  }
+  return "";
+}
+
+function expiryText(item) {
+  if (item.noExpiry) {
+    return "长期有效";
+  }
+  return item.expireDate || "未填写";
+}
+
 function renderItem(item, options = {}) {
   const badges = [
     `<span class="badge purple">${escapeHtml(item.itemTypeText || "耗材")}</span>`,
-    `<span class="badge">${escapeHtml(item.category || "应急耗材")}</span>`,
-    `<span class="badge">数量：${escapeHtml(item.quantity)}${escapeHtml(item.unit)}</span>`
+    `<span class="badge">${escapeHtml(item.category || "应急耗材")}</span>`
   ];
-  if (item.distanceLabel) badges.push(`<span class="badge">${escapeHtml(item.distanceLabel)}</span>`);
-  if (item.status) badges.push(`<span class="badge">${escapeHtml(statusText(item.status))}</span>`);
-  if (item.expireDate) badges.push(`<span class="badge">${escapeHtml(item.expireDate)} 到期</span>`);
+  if (options.showStatus && item.status && item.status !== "online") {
+    badges.push(`<span class="badge">${escapeHtml(statusText(item.status))}</span>`);
+  }
+  const expiry = expiryBadge(item);
+  if (expiry) badges.push(expiry);
   return `
     <article class="item-card" data-id="${escapeHtml(item.id)}">
       <div class="item-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>
@@ -192,7 +260,7 @@ async function loadProfile() {
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       $("profileName").textContent = data.user.name || "南易用户";
       $("profileCampus").textContent = `${data.user.campus || "未设置校区"} · ${data.user.building || "未设置楼栋"}`;
-      $("verifyBadge").textContent = data.user.is_verified ? "小助手校园身份已认证" : "未完成校园身份验证";
+      $("verifyBadge").textContent = data.user.is_verified ? "校园身份已认证" : "未完成校园身份验证";
       $("dailyLimit").textContent = data.contactLimit?.daily ?? 5;
       $("remainingLimit").textContent = data.contactLimit?.remaining ?? 0;
     } else {
@@ -209,17 +277,71 @@ async function loadProfile() {
   }
 }
 
+function optionHtml(value, selectedValue = "") {
+  return `<option value="${escapeHtml(value)}" ${value === selectedValue ? "selected" : ""}>${escapeHtml(value)}</option>`;
+}
+
+function currentCampus() {
+  return state.locations[state.selectedCampusIndex] || state.locations[0];
+}
+
+function currentBuilding() {
+  const campus = currentCampus();
+  return campus?.buildings?.[state.selectedBuildingIndex] || campus?.buildings?.[0];
+}
+
+function renderLocationSelects() {
+  if (!state.locations.length) {
+    $("campusSelect").innerHTML = optionHtml("仙林校区");
+    $("buildingSelect").innerHTML = optionHtml("南苑 A 栋");
+    $("roomSelect").innerHTML = `<option value="">不填写宿舍号</option>`;
+    return;
+  }
+  const campus = currentCampus();
+  const building = currentBuilding();
+  $("campusSelect").innerHTML = state.locations
+    .map((item, index) => `<option value="${escapeHtml(item.name)}" ${index === state.selectedCampusIndex ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
+    .join("");
+  $("buildingSelect").innerHTML = (campus?.buildings || [])
+    .map((item, index) => `<option value="${escapeHtml(item.name)}" ${index === state.selectedBuildingIndex ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
+    .join("");
+  $("roomSelect").innerHTML = `<option value="">不填写宿舍号</option>${(building?.rooms || [])
+    .map(room => optionHtml(room))
+    .join("")}`;
+}
+
+async function loadLocations() {
+  try {
+    const data = await api("/locations");
+    state.locations = Array.isArray(data.locations) ? data.locations : [];
+  } catch (error) {
+    state.locations = [];
+  }
+  const campusIndex = state.locations.findIndex(campus => campus.name === "仙林校区");
+  state.selectedCampusIndex = campusIndex >= 0 ? campusIndex : 0;
+  const campus = currentCampus();
+  const buildingIndex = (campus?.buildings || []).findIndex(building => building.name === "南苑 A 栋");
+  state.selectedBuildingIndex = buildingIndex >= 0 ? buildingIndex : 0;
+  renderLocationSelects();
+}
+
+function toggleNoExpiry() {
+  const checked = $("noExpiryInput").checked;
+  $("expireInput").disabled = checked;
+  $("expireInput").required = !checked;
+}
+
 async function loadMyItems() {
   const container = $("myItemList");
   if (!isVerifiedUser()) {
-    container.innerHTML = `<div class="state-card">请先使用小助手完成校园身份验证，再查看自己的发布。</div>`;
+    container.innerHTML = `<div class="state-card">请先登录并同意用户协议，再查看自己的发布。</div>`;
     return;
   }
   container.innerHTML = `<div class="state-card">正在加载...</div>`;
   try {
     const data = await api("/me/items");
     container.innerHTML = data.items.length
-      ? data.items.map(item => renderItem(item, { showRoom: true })).join("")
+      ? data.items.map(item => renderItem(item, { showRoom: true, showStatus: true })).join("")
       : `<div class="state-card">暂无发布记录</div>`;
   } catch (error) {
     container.innerHTML = `<div class="state-card">${escapeHtml(error.message || "加载失败")}</div>`;
@@ -235,7 +357,7 @@ async function openDetail(id) {
       <div class="item-icon">${iconGlyph(data.item.itemIcon, data.item.itemType)}</div>
       <p class="detail-meta">${escapeHtml(data.item.campus)} · ${escapeHtml(data.item.building)}<br>
       ${escapeHtml(data.item.itemTypeText)} · ${escapeHtml(data.item.category)} · 剩余 ${escapeHtml(data.item.quantity)}${escapeHtml(data.item.unit)}<br>
-      有效期：${escapeHtml(data.item.expireDate)} · ${escapeHtml(data.item.distanceLabel || "")}</p>
+      有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "发布者暂未填写补充说明。")}</p>
       <div class="notice-line">免费互助信息撮合；禁止处方药、管控药和收费交易。领取前请自行确认包装、有效期和适用风险。</div>
       <button class="primary wide" id="contactButton">${isVerifiedUser() ? "查看联系方式" : "登录后查看微信 / QQ"}</button>
@@ -249,7 +371,7 @@ async function openDetail(id) {
 
 async function viewContact() {
   if (!state.selectedDetail) return;
-  if (!requireVerified("请先使用小助手完成校园身份验证，再查看微信或 QQ 联系方式。")) {
+  if (!requireVerified("请先登录并同意用户协议，再查看微信或 QQ 联系方式。")) {
     $("detailDialog").close();
     return;
   }
@@ -269,22 +391,49 @@ async function viewContact() {
 }
 
 function renderIconGrid() {
-  $("iconGrid").innerHTML = iconOptions.map(([key, label]) => `
-    <button type="button" class="icon-option ${key === state.selectedIcon ? "active" : ""}" data-icon="${key}">
+  const commonKeys = state.selectedPublishType === "medicine"
+    ? ["capsules", "pills", "tablets", "prescriptionBottleMedical"]
+    : ["plus", "bandage", "pumpMedical", "temperatureHalf"];
+  const common = iconOptions.filter(([key]) => commonKeys.includes(key));
+  const hidden = iconOptions.filter(([key]) => !commonKeys.includes(key));
+  const isHiddenSelected = hidden.some(([key]) => key === state.selectedIcon);
+  const commonHtml = common.map(([key]) => `
+    <button type="button" class="icon-option ${key === state.selectedIcon ? "active" : ""}" data-icon="${key}" aria-label="选择图标">
       <strong>${iconGlyph(key, state.selectedPublishType)}</strong>
-      <span>${escapeHtml(label)}</span>
     </button>
   `).join("");
+  const otherHtml = `
+    <button type="button" class="icon-option ${isHiddenSelected || state.iconOtherOpen ? "active" : ""}" data-toggle-icons="true" aria-label="更多图标">
+      <strong></strong>
+    </button>
+  `;
+  const hiddenHtml = state.iconOtherOpen ? `
+    <div class="icon-more">
+      ${hidden.map(([key]) => `
+        <button type="button" class="icon-option ${key === state.selectedIcon ? "active" : ""}" data-icon="${key}" aria-label="选择图标">
+          <strong>${iconGlyph(key, state.selectedPublishType)}</strong>
+        </button>
+      `).join("")}
+    </div>
+  ` : "";
+  $("iconGrid").innerHTML = `${commonHtml}${otherHtml}${hiddenHtml}`;
 }
 
 function setPublishType(itemType) {
   state.selectedPublishType = itemType;
   state.selectedIcon = itemType === "medicine" ? "capsules" : "plus";
+  state.iconOtherOpen = false;
   $("medicineCategoryWrap").hidden = itemType !== "medicine";
   $("typeHint").textContent = itemType === "medicine"
     ? "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、拆封不明药品和收费转让。"
     : "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
   $("titleInput").placeholder = itemType === "medicine" ? "例如：未拆封感冒药一盒" : "例如：碘伏棉签 10 支";
+  $("noExpiryWrap").hidden = itemType === "medicine";
+  if (itemType === "medicine") {
+    $("noExpiryInput").checked = false;
+    $("expireInput").disabled = false;
+    $("expireInput").required = true;
+  }
   document.querySelectorAll(".segment").forEach(button => {
     button.classList.toggle("active", button.dataset.itemType === itemType);
   });
@@ -295,7 +444,7 @@ async function submitPublish(event) {
   event.preventDefault();
   const message = $("publishMessage");
   if (!isVerifiedUser()) {
-    message.textContent = "请先在“我的”页使用小助手完成校园身份验证，再发布互助。";
+    message.textContent = "请先在“我的”页登录并同意用户协议，再发布互助。";
     requireVerified(message.textContent);
     return;
   }
@@ -316,10 +465,11 @@ async function submitPublish(event) {
     category: state.selectedPublishType === "medicine" ? $("categorySelect").value : "应急耗材",
     quantity: Number($("quantityInput").value),
     unit: $("unitInput").value.trim(),
-    campus: $("campusInput").value.trim(),
-    building: $("buildingInput").value.trim(),
-    room: $("roomInput").value.trim(),
-    expireDate: $("expireInput").value,
+    campus: $("campusSelect").value.trim(),
+    building: $("buildingSelect").value.trim(),
+    room: $("roomSelect").value.trim(),
+    expireDate: $("noExpiryInput").checked ? "" : $("expireInput").value,
+    noExpiry: state.selectedPublishType === "consumable" && $("noExpiryInput").checked,
     description: $("descriptionInput").value.trim(),
     contactWechat,
     contactQq,
@@ -335,10 +485,12 @@ async function submitPublish(event) {
     event.target.reset();
     $("quantityInput").value = "1";
     $("unitInput").value = "件";
-    $("campusInput").value = payload.campus || "仙林校区";
-    $("buildingInput").value = payload.building || "南苑 A 栋";
     $("expireInput").value = "2026-12-31";
+    $("expireInput").disabled = false;
+    $("expireInput").required = true;
+    $("noExpiryInput").checked = false;
     setPublishType(state.selectedPublishType);
+    renderLocationSelects();
     loadMyItems();
   } catch (error) {
     message.textContent = error.message || "提交失败";
@@ -349,18 +501,23 @@ async function sendCode() {
   const message = $("authMessage");
   const email = $("authEmail").value.trim();
   const studentId = $("authStudentId").value.trim();
+  const agreement = currentAgreementPayload();
+  if (!agreement.agreementAccepted) {
+    message.textContent = "请先阅读并同意用户协议";
+    return;
+  }
   if (!email && !studentId) {
     message.textContent = "请填写邮箱或学号";
     return;
   }
   try {
-    message.textContent = "正在向小助手发送验证码...";
+    message.textContent = "正在向南哪小帮手发送验证码...";
     const data = await api("/auth/nanna/challenge", {
       method: "POST",
-      body: JSON.stringify({ email, studentId })
+      body: JSON.stringify({ email, studentId, ...agreement })
     });
     state.challengeId = data.challengeId || "";
-    message.textContent = data.message || `验证码已发送至 ${data.maskedTarget || "小助手"}`;
+    message.textContent = data.message || `验证码已发送至 ${data.maskedTarget || "南哪小帮手"}`;
   } catch (error) {
     message.textContent = error.message || "发送失败";
   }
@@ -371,6 +528,11 @@ async function verifyCode() {
   const email = $("authEmail").value.trim();
   const studentId = $("authStudentId").value.trim();
   const code = $("authCode").value.trim();
+  const agreement = currentAgreementPayload();
+  if (!agreement.agreementAccepted) {
+    message.textContent = "请先阅读并同意用户协议";
+    return;
+  }
   if (!code) {
     message.textContent = "请填写验证码";
     return;
@@ -379,13 +541,39 @@ async function verifyCode() {
     message.textContent = "正在验证...";
     const data = await api("/auth/nanna/verify", {
       method: "POST",
-      body: JSON.stringify({ email, studentId, code, challengeId: state.challengeId })
+      body: JSON.stringify({ email, studentId, code, challengeId: state.challengeId, ...agreement })
     });
     saveSession(data.token, data.user);
     message.textContent = "校园身份验证成功";
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
   } catch (error) {
     message.textContent = error.message || "验证失败";
+  }
+}
+
+async function emailLogin() {
+  const message = $("authMessage");
+  const email = $("emailLoginInput").value.trim().toLowerCase();
+  const agreement = currentAgreementPayload();
+  if (!agreement.agreementAccepted) {
+    message.textContent = "请先阅读并同意用户协议";
+    return;
+  }
+  if (!email.endsWith("@smail.nju.edu.cn")) {
+    message.textContent = "邮箱登录仅支持 @smail.nju.edu.cn 后缀";
+    return;
+  }
+  try {
+    message.textContent = "正在登录...";
+    const data = await api("/auth/email-login", {
+      method: "POST",
+      body: JSON.stringify({ email, ...agreement })
+    });
+    saveSession(data.token, data.user);
+    message.textContent = "邮箱登录成功";
+    await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
+  } catch (error) {
+    message.textContent = error.message || "登录失败";
   }
 }
 
@@ -429,19 +617,40 @@ function bindEvents() {
     button.addEventListener("click", () => setPublishType(button.dataset.itemType));
   });
   $("iconGrid").addEventListener("click", event => {
+    const toggle = event.target.closest("[data-toggle-icons]");
+    if (toggle) {
+      state.iconOtherOpen = !state.iconOtherOpen;
+      renderIconGrid();
+      return;
+    }
     const button = event.target.closest(".icon-option");
     if (!button) return;
     state.selectedIcon = button.dataset.icon;
     renderIconGrid();
   });
+  $("campusSelect").addEventListener("change", event => {
+    state.selectedCampusIndex = Math.max(0, state.locations.findIndex(campus => campus.name === event.target.value));
+    state.selectedBuildingIndex = 0;
+    renderLocationSelects();
+  });
+  $("buildingSelect").addEventListener("change", event => {
+    const buildings = currentCampus()?.buildings || [];
+    state.selectedBuildingIndex = Math.max(0, buildings.findIndex(building => building.name === event.target.value));
+    renderLocationSelects();
+  });
+  $("noExpiryInput").addEventListener("change", toggleNoExpiry);
   $("publishForm").addEventListener("submit", submitPublish);
+  $("emailLoginButton").addEventListener("click", emailLogin);
   $("sendCodeButton").addEventListener("click", sendCode);
   $("verifyCodeButton").addEventListener("click", verifyCode);
   $("loadMineButton").addEventListener("click", loadMyItems);
+  $("openAgreementButton").addEventListener("click", () => $("agreementDialog").showModal());
+  $("closeAgreementButton").addEventListener("click", () => $("agreementDialog").close());
 }
 
 async function init() {
   bindEvents();
+  await Promise.all([loadAgreement(), loadLocations()]);
   renderIconGrid();
   setPublishType("consumable");
   await Promise.all([loadHome(), loadProfile()]);

@@ -50,4 +50,4 @@
 
 ## 后续账号系统
 
-当前登录仍为 Demo 链路。正式账号能力建议接入小助手 challenge-code 身份验证，由 NanE 后端保存 API Key 并签发 NanE 自己的登录态；小程序端不直接持有第三方密钥。
+当前登录仍为 Demo 链路。正式账号能力建议接入南哪小帮手 challenge-code 身份验证，由 NanE 后端保存 API Key 并签发 NanE 自己的登录态；小程序端不直接持有第三方密钥。

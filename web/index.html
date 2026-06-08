@@ -32,7 +32,7 @@
     <main>
       <section class="view active" id="view-home">
         <div class="search-row">
-          <input id="keywordInput" type="search" placeholder="搜索创可贴、感冒药、碘伏棉签">
+          <input id="keywordInput" type="search" placeholder="搜索物品">
           <button class="primary small" id="searchButton">搜索</button>
         </div>
         <div class="chips" id="filterChips">
@@ -40,7 +40,6 @@
           <button class="chip" data-type="consumable">应急耗材</button>
           <button class="chip" data-type="medicine">非处方药品</button>
         </div>
-        <div class="notice-line">免费共享 · 同楼栋/同宿舍群优先 · 人工审核 · 禁止处方药、管控药和收费交易</div>
         <div class="section-head">
           <div>
             <h2>附近物品</h2>
@@ -101,19 +100,27 @@
 
           <div class="field-grid">
             <div>
-              <label for="campusInput">校区 *</label>
-              <input id="campusInput" required value="仙林校区">
+              <label for="campusSelect">校区 *</label>
+              <select id="campusSelect" required></select>
             </div>
             <div>
-              <label for="buildingInput">楼栋 *</label>
-              <input id="buildingInput" required value="南苑 A 栋">
+              <label for="buildingSelect">楼栋 *</label>
+              <select id="buildingSelect" required></select>
             </div>
           </div>
 
-          <label for="roomInput">宿舍号（选填，不公开展示）</label>
-          <input id="roomInput" placeholder="例如：321">
+          <label for="roomSelect">宿舍号（选填，不公开展示）</label>
+          <select id="roomSelect">
+            <option value="">不填写宿舍号</option>
+          </select>
 
-          <label for="expireInput">有效期 *</label>
+          <div class="label-row">
+            <label for="expireInput">有效期 *</label>
+            <label class="inline-check" id="noExpiryWrap">
+              <input id="noExpiryInput" type="checkbox">
+              <span>长期有效 / 无保质期</span>
+            </label>
+          </div>
           <input id="expireInput" required type="date" value="2026-12-31">
 
           <label for="descriptionInput">补充说明</label>
@@ -157,17 +164,34 @@
         </div>
 
         <div class="card form-card">
-          <h3>小助手身份验证</h3>
-          <p class="hint">输入邮箱或学号后，小助手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
-          <div class="field-grid">
-            <input id="authEmail" placeholder="邮箱（可选）">
-            <input id="authStudentId" placeholder="学号（可选）">
+          <h3>登录 NanE</h3>
+          <p class="hint">首选南京大学学生邮箱登录，仅支持 <strong>@smail.nju.edu.cn</strong> 后缀。南哪小帮手登录作为备用方式。</p>
+          <label class="checkbox-row agreement-row">
+            <input id="agreementInput" type="checkbox">
+            <span>我已阅读并同意 <button type="button" class="link-button" id="openAgreementButton">《NanE 南易用户协议》</button></span>
+          </label>
+
+          <div class="login-block primary-login">
+            <h4>邮箱登录</h4>
+            <div class="auth-row">
+              <input id="emailLoginInput" type="email" placeholder="你的 @smail.nju.edu.cn 邮箱">
+              <button class="primary small" id="emailLoginButton">登录</button>
+            </div>
           </div>
-          <div class="auth-row">
-            <input id="authCode" placeholder="小助手验证码">
-            <button class="secondary" id="sendCodeButton">发送</button>
-            <button class="primary small" id="verifyCodeButton">验证</button>
-          </div>
+
+          <details class="login-block secondary-login">
+            <summary>使用南哪小帮手验证码登录</summary>
+            <p class="hint">输入邮箱或学号后，南哪小帮手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
+            <div class="field-grid">
+              <input id="authEmail" placeholder="邮箱（可选）">
+              <input id="authStudentId" placeholder="学号（可选）">
+            </div>
+            <div class="auth-row">
+              <input id="authCode" placeholder="南哪小帮手验证码">
+              <button class="secondary" id="sendCodeButton">发送</button>
+              <button class="primary small" id="verifyCodeButton">验证</button>
+            </div>
+          </details>
           <div class="form-message" id="authMessage"></div>
         </div>
 
@@ -189,6 +213,14 @@
       <button id="closeDetailButton" class="icon-button"></button>
     </div>
     <div id="detailBody"></div>
+  </dialog>
+
+  <dialog id="agreementDialog" class="agreement-dialog">
+    <div class="dialog-head">
+      <h3>NanE 南易用户协议</h3>
+      <button id="closeAgreementButton" class="icon-button"></button>
+    </div>
+    <article id="agreementBody" class="agreement-body">正在加载协议...</article>
   </dialog>
 
   <script src="/web/app.js"></script>

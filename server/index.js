@@ -11,6 +11,7 @@ const {
   query
 } = require("./db");
 const { proximityForItem, sortByProximity } = require("./proximity");
+const locations = require("../miniprogram/data/locations");
 
 const PORT = Number(process.env.PORT || 37878);
 const JWT_SECRET = process.env.JWT_SECRET || "nane-dev-secret";
@@ -19,6 +20,8 @@ const NANNA_APP_UID = process.env.NANNA_APP_UID || "";
 const NANNA_API_KEY = process.env.NANNA_API_KEY || "";
 const NANNA_SCOPES = ["identity:basic:read", "identity:student_id:read", "identity:campus:read", "identity:major:read"];
 const DAILY_CONTACT_LIMIT = 5;
+const AGREEMENT_VERSION = "v1.0";
+const NJU_STUDENT_EMAIL_SUFFIX = "@smail.nju.edu.cn";
 const ITEM_TYPES = {
   consumable: {
     text: "耗材",
@@ -212,6 +215,25 @@ function dateOnly(value) {
   return String(value).slice(0, 10);
 }
 
+function agreementAccepted(input) {
+  return input?.agreementAccepted === true && String(input.agreementVersion || AGREEMENT_VERSION) === AGREEMENT_VERSION;
+}
+
+function userHasAgreement(user) {
+  return Boolean(user?.agreement_accepted_at && user?.agreement_version === AGREEMENT_VERSION);
+}
+
+function publicUser(user) {
+  if (!user) {
+    return null;
+  }
+  return {
+    ...user,
+    hasAgreement: userHasAgreement(user),
+    agreementVersion: user.agreement_version || ""
+  };
+}
+
 function itemFromRow(row, viewer, options = {}) {
   const includeContact = Boolean(options.includeContact);
   const includeRoom = Boolean(options.includeRoom);
@@ -232,6 +254,7 @@ function itemFromRow(row, viewer, options = {}) {
     building: row.building,
     room: includeRoom ? row.room || "" : undefined,
     expireDate: dateOnly(row.expire_date),
+    noExpiry: Boolean(row.no_expiry),
     status: row.status,
     rejectReason: row.reject_reason || "",
     ownerId: row.owner_id,
@@ -273,7 +296,11 @@ async function viewerFromRequest(req) {
 async function requireVerifiedUser(req, res) {
   const user = await userFromRequest(req);
   if (!user || !user.is_verified) {
-    json(res, 401, { error: "AUTH_REQUIRED", message: "请先使用小助手完成校园身份验证" });
+    json(res, 401, { error: "AUTH_REQUIRED", message: "请先登录或使用南哪小帮手完成校园身份验证" });
+    return null;
+  }
+  if (!userHasAgreement(user)) {
+    json(res, 403, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
     return null;
   }
   return user;
@@ -321,7 +348,7 @@ async function callNanna(pathname, payload) {
     }
   }
   if (!response.ok) {
-    const message = data.message || data.error_description || data.error || "小助手接口请求失败";
+    const message = data.message || data.error_description || data.error || "南哪小帮手接口请求失败";
     const error = new Error(message);
     error.statusCode = response.status;
     throw error;
@@ -347,16 +374,17 @@ function normalizeNannaIdentity(data, input = {}) {
   };
 }
 
-async function upsertNannaUser(identity) {
+async function upsertNannaUser(identity, agreementVersion = AGREEMENT_VERSION) {
   if (!identity.openid) {
-    throw new Error("小助手未返回 openid，无法建立 NanE 账号");
+    throw new Error("南哪小帮手未返回 openid，无法建立 NanE 账号");
   }
   const userId = makeId("user");
   const { rows } = await query(
     `INSERT INTO users (
-      id, name, campus, building, wechat, qq, openid, auth_provider, email, student_id_masked, major, is_verified
+      id, name, campus, building, wechat, qq, openid, auth_provider, email, student_id_masked, major, is_verified,
+      agreement_version, agreement_accepted_at
     )
-    VALUES ($1, $2, $3, $4, '', '', $5, 'nanna', $6, $7, $8, true)
+    VALUES ($1, $2, $3, $4, '', '', $5, 'nanna', $6, $7, $8, true, $9, now())
     ON CONFLICT (openid) DO UPDATE SET
       name = EXCLUDED.name,
       campus = EXCLUDED.campus,
@@ -365,7 +393,9 @@ async function upsertNannaUser(identity) {
       email = EXCLUDED.email,
       student_id_masked = EXCLUDED.student_id_masked,
       major = EXCLUDED.major,
-      is_verified = true
+      is_verified = true,
+      agreement_version = EXCLUDED.agreement_version,
+      agreement_accepted_at = EXCLUDED.agreement_accepted_at
     RETURNING *`,
     [
       userId,
@@ -375,18 +405,72 @@ async function upsertNannaUser(identity) {
       identity.openid,
       identity.email || null,
       identity.studentIdMasked || null,
-      identity.major || null
+      identity.major || null,
+      agreementVersion
     ]
   );
   return rows[0];
 }
 
+function normalizeEmail(input) {
+  return String(input || "").trim().toLowerCase();
+}
+
+function validateStudentEmail(email) {
+  return email.endsWith(NJU_STUDENT_EMAIL_SUFFIX);
+}
+
+async function emailLogin(req, res) {
+  const input = await readBody(req);
+  const email = normalizeEmail(input.email);
+  if (!email) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写南京大学学生邮箱" });
+    return;
+  }
+  if (!validateStudentEmail(email)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "邮箱登录仅支持 @smail.nju.edu.cn 后缀" });
+    return;
+  }
+  if (!agreementAccepted(input)) {
+    json(res, 400, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
+    return;
+  }
+
+  const userId = `email_${crypto.createHash("sha1").update(email).digest("hex").slice(0, 16)}`;
+  const name = email.split("@")[0] || "南易用户";
+  const { rows } = await query(
+    `INSERT INTO users (
+      id, name, campus, building, wechat, qq, openid, auth_provider, email, is_verified,
+      agreement_version, agreement_accepted_at
+    )
+    VALUES ($1, $2, '仙林校区', '未设置楼栋', '', '', $3, 'email', $4, true, $5, now())
+    ON CONFLICT (id) DO UPDATE SET
+      auth_provider = 'email',
+      email = EXCLUDED.email,
+      is_verified = true,
+      agreement_version = EXCLUDED.agreement_version,
+      agreement_accepted_at = EXCLUDED.agreement_accepted_at
+    RETURNING *`,
+    [userId, name, `email:${email}`, email, AGREEMENT_VERSION]
+  );
+  const user = rows[0];
+  json(res, 200, {
+    token: signToken({ sub: user.id, role: "user", provider: "email" }),
+    user: publicUser(user),
+    loginMode: "email"
+  });
+}
+
 async function nannaChallenge(req, res) {
   if (!nannaConfigured()) {
-    json(res, 503, { error: "NANNA_NOT_CONFIGURED", message: "服务器尚未配置小助手身份验证参数" });
+    json(res, 503, { error: "NANNA_NOT_CONFIGURED", message: "服务器尚未配置南哪小帮手身份验证参数" });
     return;
   }
   const input = await readBody(req);
+  if (!agreementAccepted(input)) {
+    json(res, 400, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
+    return;
+  }
   const email = String(input.email || "").trim();
   const studentId = String(input.studentId || input.student_id || "").trim();
   if (!email && !studentId) {
@@ -402,20 +486,24 @@ async function nannaChallenge(req, res) {
     challengeId: pick(data, ["challenge_id", "challengeId", "id"], ""),
     maskedTarget: pick(data, ["masked_target", "maskedTarget", "target"], email || studentId),
     expiresIn: pick(data, ["expires_in", "expiresIn"], 300),
-    message: data.message || "验证码已通过小助手发送"
+    message: data.message || "验证码已通过南哪小帮手发送"
   });
 }
 
 async function nannaVerify(req, res) {
   if (!nannaConfigured()) {
-    json(res, 503, { error: "NANNA_NOT_CONFIGURED", message: "服务器尚未配置小助手身份验证参数" });
+    json(res, 503, { error: "NANNA_NOT_CONFIGURED", message: "服务器尚未配置南哪小帮手身份验证参数" });
     return;
   }
   const input = await readBody(req);
+  if (!agreementAccepted(input)) {
+    json(res, 400, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
+    return;
+  }
   const code = String(input.code || input.challengeCode || "").trim();
   const challengeId = String(input.challengeId || input.challenge_id || "").trim();
   if (!code) {
-    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写小助手验证码" });
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写南哪小帮手验证码" });
     return;
   }
   const data = await callNanna("/api/v1/oauth/verify", {
@@ -427,16 +515,16 @@ async function nannaVerify(req, res) {
     student_id: String(input.studentId || input.student_id || "").trim() || undefined
   });
   const identity = normalizeNannaIdentity(data, input);
-  const user = await upsertNannaUser(identity);
+  const user = await upsertNannaUser(identity, AGREEMENT_VERSION);
   json(res, 200, {
     token: signToken({ sub: user.id, role: "user", provider: "nanna" }),
-    user,
+    user: publicUser(user),
     loginMode: "nanna"
   });
 }
 
 function validateItemInput(input) {
-  const required = ["title", "itemType", "quantity", "unit", "campus", "building", "expireDate"];
+  const required = ["title", "itemType", "quantity", "unit", "campus", "building"];
   const missing = required.filter(key => input[key] === undefined || input[key] === "");
   if (missing.length) {
     return `缺少字段: ${missing.join(", ")}`;
@@ -455,7 +543,11 @@ function validateItemInput(input) {
   if (!Number.isInteger(Number(input.quantity)) || Number(input.quantity) <= 0) {
     return "数量必须是正整数";
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(input.expireDate))) {
+  const noExpiry = input.noExpiry === true;
+  if (input.itemType === "medicine" && noExpiry) {
+    return "药品必须填写有效期，不能设置为长期有效";
+  }
+  if (!noExpiry && !/^\d{4}-\d{2}-\d{2}$/.test(String(input.expireDate))) {
     return "有效期格式必须是 YYYY-MM-DD";
   }
   if (input.disclaimerAccepted !== true) {
@@ -525,12 +617,13 @@ async function createItem(req, res, viewer) {
   const typeConfig = ITEM_TYPES[input.itemType] || ITEM_TYPES.consumable;
   const category = String(input.category || typeConfig.defaultCategory).trim();
   const itemIcon = normalizeItemIcon(input.itemIcon, input.itemType);
+  const noExpiry = input.noExpiry === true && input.itemType === "consumable";
   const { rows } = await query(
     `INSERT INTO items (
       id, title, item_type, item_icon, category, description, quantity, unit, campus, building, room,
-      expire_date, status, owner_id, owner_name, contact_wechat, contact_qq
+      expire_date, no_expiry, status, owner_id, owner_name, contact_wechat, contact_qq
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'reviewing', $13, $14, $15, $16)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'reviewing', $14, $15, $16, $17)
     RETURNING *`,
     [
       itemId,
@@ -544,7 +637,8 @@ async function createItem(req, res, viewer) {
       String(input.campus).trim(),
       String(input.building).trim(),
       String(input.room || "").trim() || null,
-      input.expireDate,
+      noExpiry ? null : input.expireDate,
+      noExpiry,
       viewer.id,
       viewer.name,
       contactWechat,
@@ -770,7 +864,7 @@ function adminPage() {
         container.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + escapeHtml(item.title) +
           ' <span class="pill">' + escapeHtml(item.status) + '</span></h3><p>' + escapeHtml(item.description) +
           '</p><p class="muted">图标 ' + escapeHtml(item.itemIcon) + ' · ' + escapeHtml(item.itemTypeText) + ' · ' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
-          ' · 余 ' + escapeHtml(item.quantity) + escapeHtml(item.unit) + ' · 有效期 ' + escapeHtml(item.expireDate) +
+          ' · 余 ' + escapeHtml(item.quantity) + escapeHtml(item.unit) + ' · 有效期 ' + escapeHtml(item.noExpiry ? "长期有效" : item.expireDate) +
           '</p><p class="muted">发布者：' + escapeHtml(item.ownerName) + ' · 微信 ' + escapeHtml(item.contact.wechat || "未填") + ' · QQ ' + escapeHtml(item.contact.qq || "未填") +
           (item.rejectReason ? '</p><p>驳回原因：' + escapeHtml(item.rejectReason) : '') +
           '</p></div><div class="row">' +
@@ -823,10 +917,26 @@ async function handle(req, res) {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/legal/agreement") {
+    const markdown = fs.readFileSync(path.join(__dirname, "..", "docs", "user-agreement.md"), "utf8");
+    json(res, 200, { version: AGREEMENT_VERSION, markdown });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/locations") {
+    json(res, 200, { locations });
+    return;
+  }
+
   if (req.method === "POST" && pathname === "/api/auth/wx-login") {
     const viewer = await demoViewer();
     const input = await readBody(req);
-    json(res, 200, { token: signToken({ sub: viewer.id, role: "user" }), user: viewer, loginMode: input.code ? "wx-code-demo" : "fallback-demo" });
+    json(res, 200, { token: signToken({ sub: viewer.id, role: "user" }), user: publicUser(viewer), loginMode: input.code ? "wx-code-demo" : "fallback-demo" });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/email-login") {
+    await emailLogin(req, res);
     return;
   }
 
@@ -851,13 +961,15 @@ async function handle(req, res) {
           remaining: 0
         },
         guest: true,
-        message: "游客模式仅可浏览物品，请使用小助手登录后发布或查看联系方式"
+        agreementVersion: AGREEMENT_VERSION,
+        message: "游客模式仅可浏览物品，请登录后发布或查看联系方式"
       });
       return;
     }
     const used = await query("SELECT COUNT(*)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE", [viewer.id]);
     json(res, 200, {
-      user: viewer,
+      user: publicUser(viewer),
+      agreementVersion: AGREEMENT_VERSION,
       contactLimit: {
         daily: DAILY_CONTACT_LIMIT,
         used: used.rows[0].count,
