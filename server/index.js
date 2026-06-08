@@ -995,8 +995,8 @@ async function requestClaim(req, res, viewer, itemId) {
   }
 
   const created = await query(
-    `INSERT INTO claim_requests (id, item_id, requester_id, requester_name, quantity)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO claim_requests (id, item_id, requester_id, requester_name, quantity, status)
+     VALUES ($1, $2, $3, $4, $5, 'pending')
      RETURNING *`,
     [makeId("claim"), itemId, viewer.id, viewer.name, quantity]
   );

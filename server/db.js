@@ -63,11 +63,12 @@ async function initializeDatabase() {
       requester_id TEXT NOT NULL REFERENCES users(id),
       requester_name TEXT NOT NULL,
       quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
-      status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'rejected')),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected')),
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       reviewed_at TIMESTAMPTZ
     )`
   );
+  await query("ALTER TABLE claim_requests ALTER COLUMN status SET DEFAULT 'pending'");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC)");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC)");
   await query(

@@ -290,3 +290,4 @@
   - `POST /api/claims/:id/reject`：发布者忽略误触或无效领取提醒。
 - `/api/me/items` 返回本人发布物品的待确认领取提醒，网页“我的发布”可直接确认或忽略。
 - 确认领取后如剩余数量为 `0`，物品状态自动变为 `claimed`，不再进入首页 `online` 列表。
+- 修复线上 `claim_requests.status` 默认值缺失导致领取提醒插入失败的问题：schema 和启动迁移均设置默认 `pending`，接口插入时也显式写入 `pending`。
