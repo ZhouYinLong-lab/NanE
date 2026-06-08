@@ -412,7 +412,7 @@ async function sendMail({ to, subject, text }) {
     await smtpCommand(socket, "AUTH LOGIN");
     await smtpCommand(socket, Buffer.from(SMTP_USER).toString("base64"));
     await smtpCommand(socket, Buffer.from(SMTP_PASS).toString("base64"));
-    await smtpCommand(socket, `MAIL FROM:<${from.address}>`);
+    await smtpCommand(socket, `MAIL FROM:<${SMTP_USER}>`);
     await smtpCommand(socket, `RCPT TO:<${to}>`);
     await smtpCommand(socket, "DATA");
     const message = [
