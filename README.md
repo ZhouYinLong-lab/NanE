@@ -1,273 +1,83 @@
-# NanE 南易互助平台
+# NanE 南易校园互助平台
 
-NanE（南易）是面向南京大学校园场景的免费互助信息平台。当前工程优先服务微信小程序上线，同时保留 Web 站点和桌面 EXE 的扩展路径；所有客户端最终共用同一套 Node.js API、PostgreSQL 数据库和审核后台。
+NanE（南易）是面向南京大学校园场景的免费互助信息平台，目标是把宿舍和校园内临时闲置的低风险应急耗材、非处方常见药品笼统分类信息，以“同楼栋、同宿舍群、同校区优先”的方式撮合给真正需要的同学。
 
-## 当前打通的链路
+平台坚持三个边界：
 
-- 小程序端：首页按关键词、类型和推荐距离浏览互助物品，同楼栋、同宿舍群、同校区依次优先
-- 小程序端：UI 已切换为米色底、南大纯紫强调和线性附近物品列表，不再使用渐变主视觉
-- 小程序端：详情页查看物品信息，点击后调用 API 获取联系方式
-- 小程序端：发布页支持耗材 / 非处方常见药品、位置识别、图标选择、微信或 QQ 联系方式校验，提交后写入审核队列
-- 小程序端：我的页显示校园身份、联系方式查看额度、API 连接状态
-- 后端 API：健康检查、登录 Demo、物品列表、物品详情、发布物品、联系方式限流
-- 管理后台：管理员登录、待审列表、通过/驳回/下架、统计
+- 只做校园互助信息撮合，不做买卖平台。
+- 所有发布内容免费共享，禁止收费转让。
+- 药品类只允许非处方常见笼统分类，禁止处方药、管控药、拆封不明药品和医疗建议。
+
+当前工程已经从小程序 Demo 演进为可部署的完整后端 + 网页端 + 管理后台。微信小程序文件仍完整保留，因小程序备案流程较长，现阶段优先通过网页版继续演示和测试。
+
+## 项目目的
+
+大学宿舍里常见“应急物品买多了但用不完”的情况，例如创可贴、碘伏棉签、退烧贴、口罩等。另一方面，同楼栋或附近楼栋的同学可能正好急需这些物品，但通过宿舍群、朋友圈或表白墙求助容易错过，信息也难以沉淀。
+
+NanE 希望解决的是一个很轻但很真实的问题：
+
+- 降低同学临时寻找应急物品的成本。
+- 减少宿舍小药箱和耗材囤积造成的浪费。
+- 利用校园身份和楼栋信息建立更可信、更近距离的互助网络。
+- 用人工审核和合规文案避免平台滑向药品交易或医疗服务。
+
+## 当前状态
+
+已打通：
+
+- 网页端：`https://nane.zylatent.com`
+- API：`https://api.zylatent.com/api`
+- 管理后台：`https://nane.zylatent.com/admin`
+- PostgreSQL 数据库
+- Azure VM 部署
+- Nginx + HTTPS
+- PM2 进程管理
+- 小助手 challenge-code 身份验证接口骨架
+
+当前权限模型：
+
+- 游客：可浏览首页列表和详情公开信息。
+- 小助手认证用户：可发布互助、查看微信 / QQ、查看自己的发布记录。
+- 管理员：可审核、驳回、下架、查看统计。
 
 ## 产品形态
 
-- 微信小程序：当前主线，负责移动端发布、浏览、查看联系方式和我的发布。
-- Web 站点：已新增初版 `web/`，由同一个 Node 服务托管；部署后 `https://nane.zylatent.com` 可直接打开网页版。
-- 桌面 EXE：建议以 Web 优先方式封装，后续可用 Tauri（优先）或 Electron 打包，不重新写一套业务后端。
-
-推荐架构：
-
 ```text
-微信小程序 / Web / EXE
-  -> https://api.zylatent.com/api
-  -> Azure VM Nginx
-  -> NanE Node API :37878
+浏览器网页版
+  -> https://nane.zylatent.com
+  -> NanE Node 服务
   -> PostgreSQL
+
+微信小程序
+  -> https://api.zylatent.com/api
+  -> NanE Node 服务
+  -> PostgreSQL
+
+管理后台
+  -> https://nane.zylatent.com/admin
+  -> NanE Node 服务
+  -> PostgreSQL
+
+未来 EXE
+  -> 封装 Web 客户端
+  -> 复用同一套 API 和数据库
 ```
 
-## 环境变量
-
-复制 `.env.example` 中的变量到服务器环境：
-
-```text
-PORT=37878
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/nane
-JWT_SECRET=replace-with-a-long-random-secret
-ADMIN_PASSWORD=replace-with-a-strong-admin-password
-NANNA_API_BASE=https://assistant.example.com
-NANNA_APP_UID=replace-with-nanna-app-uid
-NANNA_API_KEY=replace-with-nanna-api-key
-```
-
-`NANNA_*` 变量用于下一阶段接入小助手身份验证。当前生产链路仍使用 Demo 登录，API Key 只能放在服务器环境变量中，不能写入小程序端。
-
-## 本地运行
-
-```bash
-npm install
-npm run dev:api
-```
-
-服务默认启动在：
-
-```text
-http://localhost:37878
-```
-
-微信开发者工具导入本目录，项目配置已写在 `project.config.json`。当前小程序端默认请求生产 API：
-
-```text
-https://api.zylatent.com/api
-```
-
-本地或服务器需要先准备 PostgreSQL 数据库，例如：
-
-```bash
-createdb nane
-cp .env.example .env
-```
-
-然后按实际账号密码修改 `.env` 中的 `DATABASE_URL`。
-
-如部署到服务器，请修改 `miniprogram/config.js` 中的 `prod.apiBase` 为服务器 HTTPS 域名，并把 `env` 改为 `prod`，例如：
-
-```js
-const env = "prod";
-```
-
-当前 Azure 部署计划中的生产 API 域名为：
-
-```text
-https://api.zylatent.com/api
-```
-
-注意：当前 `env` 已切换为 `prod`，小程序会请求 `https://api.zylatent.com/api`。如需本地开发，可临时改回 `dev`。
-
-正式小程序项目还需要把 `project.config.json` 中的 `appid` 替换为真实小程序 AppID。
-
-## API 合约
-
-### GET `/api/health`
-
-检查服务状态。
-
-### POST `/api/auth/wx-login`
-
-Demo 登录接口，当前返回固定用户和 `demo-token`。下一阶段计划接入小助手身份验证和账号系统：
-
-1. 小程序或 Web 输入邮箱 / 学号等身份线索。
-2. NanE 后端携带 `NANNA_API_KEY` 调用小助手 `/api/v1/oauth/challenge`。
-3. 用户在小助手侧收到验证码。
-4. NanE 后端调用 `/api/v1/oauth/verify` 验证 challenge code。
-5. 验证成功后按小助手返回的 `openid` upsert NanE 用户，并签发 NanE 自己的 JWT。
-
-建议申请的 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
-
-### POST `/api/auth/nanna/challenge`
-
-向小助手发起 challenge-code 验证。服务器必须配置：
-
-```text
-NANNA_API_BASE
-NANNA_APP_UID
-NANNA_API_KEY
-```
-
-请求示例：
-
-```json
-{
-  "email": "student@example.com",
-  "studentId": "251000000"
-}
-```
-
-`email` 和 `studentId` 至少填写一项。成功后返回 `challengeId`、`maskedTarget`、`expiresIn` 和提示文案。
-
-### POST `/api/auth/nanna/verify`
-
-验证小助手验证码，并在 NanE 中创建或更新用户。成功后返回 NanE 自己签发的 JWT。
-
-请求示例：
-
-```json
-{
-  "email": "student@example.com",
-  "studentId": "251000000",
-  "challengeId": "challenge_xxx",
-  "code": "123456"
-}
-```
-
-验证成功后，后续 `/api/me`、`/api/me/items`、发布、联系方式查看等接口会按 Bearer token 中的 NanE 用户读取数据；没有有效 token 时仍降级为 Demo 用户，便于演示。
-
-### GET `/api/me`
-
-返回当前用户信息，以及今日联系方式查看额度。
-
-### GET `/api/items`
-
-查询物品列表。
-
-可选参数：
-
-- `keyword`: 关键词
-- `itemType`: 物品类型，可选 `consumable` 或 `medicine`
-- `category`: 分类
-- `status`: 默认 `online`，可传 `all`
-
-### GET `/api/items/:id`
-
-查询物品详情。默认不返回发布者联系方式。
-
-### POST `/api/items`
-
-发布物品，当前状态为 `reviewing`。
-
-示例：
-
-```json
-{
-  "title": "医用棉签 20 支",
-  "itemType": "consumable",
-  "itemIcon": "bandage",
-  "quantity": 20,
-  "unit": "支",
-  "campus": "仙林校区",
-  "building": "南苑 A 栋",
-  "room": "321",
-  "expireDate": "2026-12-31",
-  "description": "未拆封，晚上可自取"
-}
-```
-
-耗材发布无需选择细分类；未传 `category` 时后端默认保存为 `应急耗材`。
-
-药品类只接受笼统分类，例如：
-
-```json
-{
-  "title": "未拆封感冒药一盒",
-  "itemType": "medicine",
-  "itemIcon": "capsules",
-  "category": "感冒药",
-  "quantity": 1,
-  "unit": "盒",
-  "campus": "仙林校区",
-  "building": "南苑 A 栋",
-  "expireDate": "2026-12-31",
-  "description": "仅限非处方常见药品免费互助，管理员审核后展示"
-}
-```
-
-### POST `/api/items/:id/contact`
-
-查看发布者联系方式。当前每人每天最多 5 次，记录保存在 PostgreSQL 的 `contact_views` 表。
-
-### POST `/api/admin/login`
-
-管理员登录。返回用于管理接口的 Bearer token。
-
-### GET `/api/admin/items`
-
-管理员查询物品列表。可选参数：
-
-- `status`: 默认 `reviewing`，可传 `online`、`rejected`、`taken_down`、`all`
-
-### POST `/api/admin/items/:id/approve`
-
-审核通过物品，状态变为 `online`。
-
-### POST `/api/admin/items/:id/reject`
-
-驳回物品，状态变为 `rejected`。请求体可传 `reason`。
-
-### POST `/api/admin/items/:id/take-down`
-
-管理员下架物品，状态变为 `taken_down`。
-
-### GET `/api/admin/stats`
-
-返回待审核、上架中、已下架和今日联系方式查看次数统计。
-
-## 数据库初始化
-
-首次启动会自动执行 `server/schema.sql` 并插入 Demo 用户、管理员和种子物品。
-
-默认管理员：
-
-```text
-用户名：admin
-密码：使用 ADMIN_PASSWORD；未设置时为 nane-admin-demo
-```
-
-## 管理后台
-
-本地访问：
-
-```text
-http://localhost:37878/admin
-```
-
-管理后台与小程序共用 PostgreSQL 数据。管理员审核通过后，小程序首页刷新即可看到新物品。
-
-## 网页版
-
-网页版位于 `web/`，用于在小程序备案流程较慢时先完成浏览器端演示和测试。它保留小程序业务链路，不改动 `miniprogram/`：
-
-- 首页：搜索、类型筛选、同楼栋/同宿舍群优先列表。
-- 详情：游客可查看物品信息；小助手登录后才可调用联系方式限流 API 查看微信 / QQ。
-- 发布：小助手登录后可发布耗材 / 非处方药品、图标选择、位置输入、微信或 QQ 联系方式、免责声明确认。
-- 我的：小助手身份验证入口、联系方式查看额度、我的发布。
-
-账号权限：
-
-- 游客：只能浏览首页列表和详情公开信息。
-- 小助手认证用户：可发布互助、查看微信 / QQ、查看自己的发布记录。
-- 管理员：继续通过 `/admin` 审核内容。
+### 网页端
+
+`web/` 是当前主演示端，由同一个 Node 服务托管，不需要额外前端构建流程。
+
+主要能力：
+
+- 首页浏览审核通过的互助物品。
+- 搜索关键词。
+- 按耗材 / 非处方药品筛选。
+- 物品详情展示公开信息。
+- 游客不可查看联系方式。
+- 小助手认证后可查看微信 / QQ。
+- 小助手认证后可发布互助。
+- 小助手认证后可查看“我的发布”。
+- 使用本地 PNG logo 作为网页 favicon。
 
 本地访问：
 
@@ -281,18 +91,305 @@ http://localhost:37878/
 https://nane.zylatent.com
 ```
 
-## 部署建议
+### 微信小程序
 
-当前后端依赖 Node 18+ 和 PostgreSQL。服务器部署时建议：
+`miniprogram/` 保留完整微信小程序工程。小程序端已经实现：
 
-- 使用 Nginx 反向代理到 Node 服务
-- 配置 HTTPS，小程序正式环境必须使用合法 HTTPS 域名
-- 在微信公众平台配置 `request 合法域名`
-- 使用 PostgreSQL 存储用户、物品、审核记录和联系方式查看记录
-- 后续可将联系方式查看限流迁移到 Redis
-- 将 `/api/auth/wx-login` 替换为真实微信登录与校园认证
+- 首页线性列表 UI。
+- 米色背景 + 南大纯紫视觉风格。
+- 发布表单。
+- 校区 / 楼栋 / 宿舍号数据。
+- “鼓楼 南二 321”等自然语言位置识别。
+- 详情页。
+- 我的页。
+- 我的发布。
+- 小助手身份验证入口。
 
-### 当前 Azure 部署信息
+当前由于小程序备案较繁琐，短期不以小程序上线为阻塞项；后续备案完成后，小程序可继续复用同一套 API。
+
+### 管理后台
+
+管理后台由同一个 Node 服务内嵌提供：
+
+```text
+https://nane.zylatent.com/admin
+```
+
+主要能力：
+
+- 管理员登录。
+- 查看待审核、上架中、已驳回、已下架物品。
+- 通过审核。
+- 驳回并填写原因。
+- 下架物品。
+- 查看待审数、上架数、下架数、今日联系方式查看次数。
+- 查看发布者联系方式和宿舍号，辅助审核。
+
+## 功能设计
+
+### 物品发布
+
+发布内容分为两类：
+
+- 耗材：不要求用户选择细分类，后端默认保存为 `应急耗材`。
+- 药品：只允许笼统分类，包括 `感冒药`、`退烧药`、`过敏药`、`肠胃药`、`其他非处方药`。
+
+发布必填信息：
+
+- 物品名称
+- 物品类型
+- 数量
+- 单位
+- 校区
+- 楼栋
+- 有效期
+- 微信或 QQ 至少一项
+- 免费互助和合规声明确认
+
+发布选填信息：
+
+- 宿舍号
+- 补充说明
+- 图标
+
+发布后默认状态为 `reviewing`，只有管理员审核通过后才会进入首页。
+
+### 推荐排序
+
+首页排序不依赖 GPS，而是使用校区和楼栋信息：
+
+1. 同楼栋
+2. 同宿舍群
+3. 同校区
+4. 其他校区
+
+宿舍群规则位于 `server/proximity.js`，目前覆盖仙林、苏州、浦口的主要宿舍群。
+
+### 联系方式保护
+
+联系方式不会直接公开在首页或详情接口中。
+
+- 游客不能查看微信 / QQ。
+- 小助手认证用户点击查看后才会调用 `/api/items/:id/contact`。
+- 每个用户每日最多查看 5 次联系方式。
+- 查看记录写入 `contact_views` 表。
+
+### 隐私边界
+
+- 首页和详情只展示到楼栋。
+- 宿舍号仅发布者本人和管理员可见。
+- 联系方式默认隐藏。
+- 管理员查看完整信息仅用于审核和风险处理。
+
+## 技术栈
+
+| 模块 | 技术 |
+|------|------|
+| 网页端 | 原生 HTML / CSS / JavaScript |
+| 小程序端 | 微信小程序 WXML / WXSS / JS |
+| 后端 | Node.js 原生 `http` 服务 |
+| 数据库 | PostgreSQL |
+| 数据库访问 | `pg` |
+| 管理后台 | Node 服务内嵌 HTML 页面 |
+| 身份验证 | 小助手 challenge-code + NanE 自签 JWT |
+| 图标 | Font Awesome Free 本地字体 + NanE PNG logo |
+| 部署 | Azure VM, Ubuntu 24.04 |
+| 反向代理 | Nginx |
+| HTTPS | Let's Encrypt / Certbot |
+| 进程管理 | PM2 |
+
+项目没有引入 React / Vue 构建流程。当前选择偏保守，目标是降低部署复杂度，让 API、网页和后台都能由同一个 Node 进程提供。
+
+## 目录结构
+
+```text
+NanE
+├─ web/                         # 网页端
+│  ├─ index.html
+│  ├─ styles.css
+│  └─ app.js
+├─ miniprogram/                 # 微信小程序端
+│  ├─ pages/
+│  ├─ utils/
+│  ├─ data/
+│  └─ assets/
+├─ server/                      # 后端、管理后台、数据库初始化
+│  ├─ index.js
+│  ├─ db.js
+│  ├─ env.js
+│  ├─ proximity.js
+│  └─ schema.sql
+├─ docs/                        # 上线清单、隐私草稿、演示脚本、开发日志
+├─ README.md
+├─ PROJECT_CONTEXT.md
+├─ package.json
+└─ project.config.json
+```
+
+## 系统架构
+
+```text
+用户浏览器
+  -> Nginx HTTPS
+  -> Node 静态网页 /
+  -> Node API /api/*
+  -> PostgreSQL
+
+微信小程序
+  -> HTTPS request 合法域名
+  -> Node API /api/*
+  -> PostgreSQL
+
+管理员浏览器
+  -> /admin
+  -> 管理 API
+  -> PostgreSQL
+```
+
+同一套后端负责：
+
+- 静态托管网页端。
+- 提供用户 API。
+- 提供管理后台。
+- 初始化数据库 schema。
+- 执行身份验证。
+- 执行发布、审核、联系方式限流等业务逻辑。
+
+## 账号系统
+
+### 小助手登录流程
+
+NanE 不把小助手 API Key 暴露给前端。登录流程为：
+
+1. 用户在网页或小程序输入邮箱 / 学号。
+2. NanE 后端携带 `NANNA_API_KEY` 调用小助手 `/api/v1/oauth/challenge`。
+3. 小助手向用户发送验证码。
+4. 用户在 NanE 输入验证码。
+5. NanE 后端调用小助手 `/api/v1/oauth/verify`。
+6. 小助手返回身份信息。
+7. NanE 按 `openid` 创建或更新用户。
+8. NanE 签发自己的 JWT。
+9. 前端后续请求携带 NanE JWT。
+
+建议 scope：
+
+```text
+identity:basic:read
+identity:student_id:read
+identity:campus:read
+identity:major:read
+```
+
+### 权限规则
+
+| 操作 | 游客 | 小助手认证用户 | 管理员 |
+|------|------|----------------|--------|
+| 浏览首页 | 可以 | 可以 | 可以 |
+| 查看公开详情 | 可以 | 可以 | 可以 |
+| 查看微信 / QQ | 不可以 | 可以 | 可以 |
+| 发布互助 | 不可以 | 可以 | 不适用 |
+| 查看我的发布 | 不可以 | 可以 | 不适用 |
+| 审核内容 | 不可以 | 不可以 | 可以 |
+
+## 数据模型
+
+核心表：
+
+- `users`：用户、openid、认证状态、校区楼栋、联系方式。
+- `items`：互助物品、类型、分类、图标、数量、位置、状态、联系方式。
+- `contact_views`：联系方式查看记录和每日限流依据。
+- `review_logs`：审核动作记录。
+- `admins`：管理员账号。
+
+物品状态：
+
+- `reviewing`：待审核
+- `online`：已上架
+- `rejected`：已驳回
+- `taken_down`：已下架
+- `expired`：已过期
+
+## API 概览
+
+### 用户与身份
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/health` | 健康检查 |
+| `POST` | `/api/auth/wx-login` | Demo 微信登录兜底 |
+| `POST` | `/api/auth/nanna/challenge` | 发起小助手验证码 |
+| `POST` | `/api/auth/nanna/verify` | 验证小助手验证码并签发 NanE JWT |
+| `GET` | `/api/me` | 当前用户与联系方式额度 |
+| `GET` | `/api/me/items` | 我的发布，需要认证 |
+
+### 物品
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/items` | 首页列表，游客可用 |
+| `GET` | `/api/items/:id` | 物品详情，游客可用 |
+| `POST` | `/api/items` | 发布物品，需要认证 |
+| `POST` | `/api/items/:id/contact` | 查看联系方式，需要认证 |
+
+### 管理后台
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/admin/login` | 管理员登录 |
+| `GET` | `/api/admin/items` | 管理员查询物品 |
+| `POST` | `/api/admin/items/:id/approve` | 审核通过 |
+| `POST` | `/api/admin/items/:id/reject` | 驳回 |
+| `POST` | `/api/admin/items/:id/take-down` | 下架 |
+| `GET` | `/api/admin/stats` | 后台统计 |
+
+## 本地运行
+
+准备 PostgreSQL：
+
+```bash
+createdb nane
+cp .env.example .env
+```
+
+编辑 `.env`，至少设置：
+
+```text
+PORT=37878
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/nane
+JWT_SECRET=replace-with-a-long-random-secret
+ADMIN_PASSWORD=replace-with-a-strong-admin-password
+NANNA_API_BASE=https://assistant.example.com
+NANNA_APP_UID=replace-with-nanna-app-uid
+NANNA_API_KEY=replace-with-nanna-api-key
+```
+
+安装依赖并启动：
+
+```bash
+npm install
+npm run dev:api
+```
+
+访问：
+
+```text
+http://localhost:37878/
+http://localhost:37878/admin
+http://localhost:37878/api/health
+```
+
+首次启动会自动执行 `server/schema.sql` 并插入 Demo 用户、默认管理员和种子物品。
+
+默认管理员：
+
+```text
+用户名：admin
+密码：使用 ADMIN_PASSWORD；未设置时为 nane-admin-demo
+```
+
+## 服务器部署
+
+当前生产部署：
 
 ```text
 VM: nane-vm
@@ -301,28 +398,30 @@ OS: Ubuntu 24.04
 Size: Standard B2ats_v2
 Public IP: 72.155.72.104
 API domain: api.zylatent.com
-Admin/domain entry: nane.zylatent.com
-Node API local port: 37878
+Web/Admin domain: nane.zylatent.com
+Node local port: 37878
 Process manager: PM2, process name nane-api
 ```
 
-已完成：
-
-- `api.zylatent.com` 和 `nane.zylatent.com` 均已解析到 `72.155.72.104`。
-- VM 本机 `curl http://127.0.0.1:37878/api/health` 返回正常。
-- Nginx + Certbot HTTPS 已配置完成。
-- `curl https://api.zylatent.com/api/health` 返回正常。
-- `sudo certbot renew --dry-run` 成功。
-
-待完成：
-
-- 微信后台配置 request 合法域名 `https://api.zylatent.com`。
-- 微信开发者工具刷新项目配置并回归测试首页、发布、详情、我的发布。
-
-### 服务器启动示例
+服务器更新：
 
 ```bash
-PORT=37878 npm start
+cd ~/apps/NanE
+git pull
+pm2 restart nane-api --update-env
+```
+
+检查：
+
+```bash
+curl https://api.zylatent.com/api/health
+```
+
+常用日志：
+
+```bash
+pm2 logs nane-api --lines 100
+pm2 info nane-api
 ```
 
 Nginx 反向代理示例：
@@ -330,7 +429,7 @@ Nginx 反向代理示例：
 ```nginx
 server {
   listen 443 ssl;
-  server_name api.zylatent.com;
+  server_name nane.zylatent.com api.zylatent.com;
 
   location / {
     proxy_pass http://127.0.0.1:37878;
@@ -342,34 +441,55 @@ server {
 }
 ```
 
-## 后续工程化路线
+## 合规与安全
 
-### 近期上线
+项目在产品和技术上做了以下限制：
 
-1. 微信后台配置 `request 合法域名`：`https://api.zylatent.com`。
-2. 微信开发者工具刷新项目配置，回归首页、发布、详情、我的发布、后台审核。
-3. 补齐小程序基础资料、服务类目、隐私保护指引和审核说明。
-4. 继续压测发布、审核、联系方式查看 5 次限流和到期字段校验。
+- 所有物品免费互助。
+- 药品只允许非处方常见笼统分类。
+- 禁止处方药、管控药、收费交易、拆封不明药品。
+- 发布内容需人工审核。
+- 游客不可查看联系方式。
+- 宿舍号不对普通浏览者公开。
+- 联系方式每日查看次数有限制。
+- 小助手 API Key 只存服务器 `.env`，不进入前端和 Git 仓库。
 
-### 账号与安全
+## 后续路线
 
-1. 接入小助手 challenge-code 身份验证，替换 Demo 登录。
-2. NanE 后端保存 `openid`、校园身份摘要、校区楼栋和联系方式，签发自己的 JWT。
-3. 增加管理员账号管理、操作审计、联系方式脱敏展示和更严格频控。
-4. 药品类继续保持笼统分类、人工审核、禁止处方药/管控药/收费交易。
+近期：
 
-### 多端产品
+1. 实测小助手 challenge / verify 真实链路。
+2. 给认证日志增加脱敏记录，方便排查登录问题。
+3. 网页发布页接入和小程序一致的校区 / 楼栋 / 宿舍号下拉数据。
+4. 增加“退出登录”“联系方式设置/补全”“当前身份展示”。
+5. 管理后台增加搜索、类型筛选和认证用户信息展示。
 
-1. Web 站点：继续完善位置三级选择、移动端细节、公开介绍页和更完整的账号设置。
-2. EXE：Web 稳定后用 Tauri 打包桌面端，复用网页 UI 和 API。
-3. 图片上传、收藏、消息通知、过期自动下架作为后续功能扩展，不影响当前 MVP 上线。
+中期：
+
+1. 完善移动端网页体验。
+2. 增加过期自动下架。
+3. 增加图片上传和内容安全审核。
+4. 增加消息通知或审核结果提示。
+5. 准备演示视频、PPT 和比赛提交材料。
+
+长期：
+
+1. 小程序备案完成后恢复小程序上线流程。
+2. 将 Web 稳定版本封装为 Tauri / EXE。
+3. 引入更细的审计、风控和管理员权限管理。
 
 ## 配套文档
 
-- 微信小程序上线配置清单：`docs/miniprogram-release-checklist.md`
-- 隐私保护指引草稿：`docs/privacy-guideline-draft.md`
-- 演示脚本：`docs/demo-script.md`
+- `PROJECT_CONTEXT.md`：项目上下文和快速恢复说明。
+- `docs/development-log.md`：开发日志。
+- `docs/miniprogram-release-checklist.md`：微信小程序上线配置清单。
+- `docs/privacy-guideline-draft.md`：隐私保护指引草稿。
+- `docs/demo-script.md`：演示脚本。
 
-## 开发日志
+## 仓库
 
-见 `docs/development-log.md`。
+GitHub：
+
+```text
+https://github.com/ZhouYinLong-lab/NanE
+```
