@@ -4,7 +4,7 @@
     <view class="profile-info">
       <view class="profile-name">{{user.name || 'Demo 用户'}}</view>
       <view class="profile-campus">{{user.campus || '仙林校区'}} · {{user.building || '南苑 A 栋'}}</view>
-      <view class="auth-badge"><text class="fa">{{icons.check}}</text> {{user.is_verified ? '小助手校园身份已认证' : '校园身份认证 Demo'}}</view>
+      <view class="auth-badge"><text class="fa">{{icons.check}}</text> {{user.is_verified ? '南哪小帮手校园身份已认证' : '校园身份认证 Demo'}}</view>
     </view>
   </view>
 
@@ -24,14 +24,14 @@
   </view>
 
   <view class="auth-card">
-    <view class="auth-title">小助手身份验证</view>
-    <view class="auth-desc">输入邮箱或学号后，小助手会发送验证码；验证成功后 NanE 会使用真实校园身份登录。</view>
+    <view class="auth-title">南哪小帮手身份验证</view>
+    <view class="auth-desc">输入邮箱或学号后，南哪小帮手会发送验证码；验证成功后 NanE 会使用真实校园身份登录。</view>
     <view class="auth-grid">
       <input class="auth-input" value="{{authForm.email}}" data-field="email" bindinput="onAuthInput" placeholder="邮箱（可选）" />
       <input class="auth-input" value="{{authForm.studentId}}" data-field="studentId" bindinput="onAuthInput" placeholder="学号（可选）" />
     </view>
     <view class="auth-code-row">
-      <input class="auth-input auth-code-input" value="{{authForm.code}}" data-field="code" bindinput="onAuthInput" placeholder="小助手验证码" />
+      <input class="auth-input auth-code-input" value="{{authForm.code}}" data-field="code" bindinput="onAuthInput" placeholder="南哪小帮手验证码" />
       <button class="auth-button" loading="{{authLoading}}" bindtap="sendNannaCode">发送</button>
       <button class="auth-button primary" loading="{{authLoading}}" bindtap="verifyNannaCode">验证</button>
     </view>

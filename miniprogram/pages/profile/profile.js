@@ -57,16 +57,16 @@ Page({
       wx.showToast({ title: "请填写邮箱或学号", icon: "none" });
       return;
     }
-    this.setData({ authLoading: true, authMessage: "正在向小助手发送验证码..." });
+    this.setData({ authLoading: true, authMessage: "正在向南哪小帮手发送验证码..." });
     try {
       const data = await api.nannaChallenge({ email, studentId });
       this.setData({
         "authForm.challengeId": data.challengeId || "",
-        authMessage: data.message || `验证码已发送至 ${data.maskedTarget || "小助手"}`
+        authMessage: data.message || `验证码已发送至 ${data.maskedTarget || "南哪小帮手"}`
       });
       wx.showToast({ title: "验证码已发送", icon: "success" });
     } catch (error) {
-      this.setData({ authMessage: error.message || "小助手验证尚未配置或发送失败" });
+      this.setData({ authMessage: error.message || "南哪小帮手验证尚未配置或发送失败" });
       wx.showToast({ title: error.message || "发送失败", icon: "none" });
     } finally {
       this.setData({ authLoading: false });
@@ -80,7 +80,7 @@ Page({
       wx.showToast({ title: "请填写验证码", icon: "none" });
       return;
     }
-    this.setData({ authLoading: true, authMessage: "正在验证小助手身份..." });
+    this.setData({ authLoading: true, authMessage: "正在验证南哪小帮手身份..." });
     try {
       const data = await api.nannaVerify({ email, studentId, code, challengeId });
       app.setSession(data.token, data.user);
@@ -108,7 +108,7 @@ Page({
     const app = getApp();
     app.clearSession();
     app.login();
-    this.setData({ authMessage: "已切回 Demo 登录，可重新进行小助手验证" });
+    this.setData({ authMessage: "已切回 Demo 登录，可重新进行南哪小帮手验证" });
     setTimeout(() => this.loadProfile(), 600);
   }
 });

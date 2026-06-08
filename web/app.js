@@ -209,6 +209,7 @@ function statusText(status) {
     online: "上架中",
     rejected: "已驳回",
     taken_down: "已下架",
+    claimed: "已领取",
     expired: "已过期"
   }[status] || status;
 }
@@ -253,6 +254,20 @@ function renderItem(item, options = {}) {
   }
   const expiry = expiryBadge(item);
   if (expiry) badges.push(expiry);
+  const claimPanel = options.showClaims && item.claimRequests?.length
+    ? `<div class="claim-panel">
+        <div class="claim-title">待确认领取提醒 ${escapeHtml(item.claimRequests.length)} 条</div>
+        ${item.claimRequests.map(claim => `
+          <div class="claim-row">
+            <span>${escapeHtml(claim.requesterName || "同学")} 提醒已领取 ${escapeHtml(claim.quantity || 1)}${escapeHtml(item.unit || "件")}</span>
+            <span class="claim-actions">
+              <button type="button" class="primary small" data-claim-action="confirm" data-claim-id="${escapeHtml(claim.id)}">确认领取</button>
+              <button type="button" class="secondary small" data-claim-action="reject" data-claim-id="${escapeHtml(claim.id)}">忽略</button>
+            </span>
+          </div>
+        `).join("")}
+      </div>`
+    : "";
   return `
     <article class="item-card" data-id="${escapeHtml(item.id)}">
       <div class="item-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>
@@ -264,6 +279,7 @@ function renderItem(item, options = {}) {
         <p class="item-desc">${escapeHtml(item.description || "发布者暂未填写补充说明。")}</p>
         <div class="badges">${badges.join("")}</div>
         ${item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(item.rejectReason)}</p>` : ""}
+        ${claimPanel}
       </div>
     </article>
   `;
@@ -394,7 +410,7 @@ async function loadMyItems() {
   try {
     const data = await api("/me/items");
     container.innerHTML = data.items.length
-      ? data.items.map(item => renderItem(item, { showRoom: true, showStatus: true })).join("")
+      ? data.items.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true })).join("")
       : `<div class="state-card">暂无发布记录</div>`;
   } catch (error) {
     container.innerHTML = `<div class="state-card">${escapeHtml(error.message || "加载失败")}</div>`;
@@ -436,10 +452,47 @@ async function viewContact() {
         QQ：${escapeHtml(data.contact?.qq || "未填写")}<br>
         今日剩余查看次数：${escapeHtml(data.remaining)}
       </div>
+      <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
+      <div id="claimResult"></div>
     `;
     loadProfile();
   } catch (error) {
     $("contactResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "查看失败")}</div>`;
+  }
+}
+
+async function requestClaim() {
+  if (!state.selectedDetail) return;
+  if (!requireVerified("请先登录并补全账号资料，再提醒发布者确认领取。")) {
+    $("detailDialog").close();
+    return;
+  }
+  try {
+    const data = await api(`/items/${encodeURIComponent(state.selectedDetail.id)}/claim`, {
+      method: "POST",
+      body: JSON.stringify({ quantity: 1 })
+    });
+    $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "已发送领取提醒")}</div>`;
+  } catch (error) {
+    $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "发送领取提醒失败")}</div>`;
+  }
+}
+
+async function reviewClaimFromButton(button) {
+  const claimId = button.dataset.claimId;
+  const action = button.dataset.claimAction;
+  if (!claimId || !action) return;
+  button.disabled = true;
+  button.textContent = action === "confirm" ? "确认中..." : "处理中...";
+  try {
+    const data = await api(`/claims/${encodeURIComponent(claimId)}/${action}`, { method: "POST" });
+    alert(data.message || "已处理");
+    await Promise.all([loadHome(), loadProfile(), loadMyItems()]);
+  } catch (error) {
+    alert(error.message || "处理失败");
+  } finally {
+    button.disabled = false;
+    button.textContent = action === "confirm" ? "确认领取" : "忽略";
   }
 }
 
@@ -730,12 +783,19 @@ function bindEvents() {
     if (card) openDetail(card.dataset.id);
   });
   $("myItemList").addEventListener("click", event => {
+    const claimButton = event.target.closest("[data-claim-action]");
+    if (claimButton) {
+      event.stopPropagation();
+      reviewClaimFromButton(claimButton);
+      return;
+    }
     const card = event.target.closest(".item-card");
     if (card) openDetail(card.dataset.id);
   });
   $("closeDetailButton").addEventListener("click", () => $("detailDialog").close());
   $("detailDialog").addEventListener("click", event => {
     if (event.target.id === "contactButton") viewContact();
+    if (event.target.id === "claimButton") requestClaim();
   });
   document.querySelectorAll(".segment").forEach(button => {
     button.addEventListener("click", () => setPublishType(button.dataset.itemType));

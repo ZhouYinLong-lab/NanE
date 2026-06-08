@@ -6,7 +6,8 @@ const statusText = {
   reviewing: "审核中",
   rejected: "未通过",
   expired: "已下架",
-  taken_down: "已下架"
+  taken_down: "已下架",
+  claimed: "已领取"
 };
 
 Page({

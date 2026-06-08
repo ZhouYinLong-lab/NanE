@@ -422,6 +422,45 @@ textarea:focus {
   color: #315d26;
 }
 
+.claim-panel {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 250, 242, 0.82);
+}
+
+.claim-title {
+  margin-bottom: 10px;
+  color: var(--purple);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.claim-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.claim-row + .claim-row {
+  margin-top: 10px;
+}
+
+.claim-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.claim-button {
+  margin-top: 12px;
+}
+
 .form-card {
   padding: 24px;
 }
@@ -785,6 +824,20 @@ dialog::backdrop {
 
   .profile-card {
     padding: 22px;
+  }
+
+  .claim-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .claim-actions {
+    width: 100%;
+  }
+
+  .claim-actions .small {
+    flex: 1;
+    min-width: 0;
   }
 }
 

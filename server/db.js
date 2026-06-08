@@ -31,6 +31,12 @@ async function initializeDatabase() {
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_icon TEXT NOT NULL DEFAULT 'plus'");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS no_expiry BOOLEAN NOT NULL DEFAULT false");
   await query("ALTER TABLE items ALTER COLUMN expire_date DROP NOT NULL");
+  await query("ALTER TABLE items DROP CONSTRAINT IF EXISTS items_quantity_check");
+  await query("ALTER TABLE items ADD CONSTRAINT items_quantity_check CHECK (quantity >= 0)");
+  await query("ALTER TABLE items DROP CONSTRAINT IF EXISTS items_status_check");
+  await query(
+    "ALTER TABLE items ADD CONSTRAINT items_status_check CHECK (status IN ('reviewing', 'online', 'rejected', 'expired', 'taken_down', 'claimed'))"
+  );
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider TEXT NOT NULL DEFAULT 'demo'");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS student_id_masked TEXT");
@@ -50,6 +56,20 @@ async function initializeDatabase() {
     )`
   );
   await query("CREATE INDEX IF NOT EXISTS idx_email_challenges_email_created ON email_challenges(email, created_at DESC)");
+  await query(
+    `CREATE TABLE IF NOT EXISTS claim_requests (
+      id TEXT PRIMARY KEY,
+      item_id TEXT NOT NULL REFERENCES items(id),
+      requester_id TEXT NOT NULL REFERENCES users(id),
+      requester_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+      status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'rejected')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      reviewed_at TIMESTAMPTZ
+    )`
+  );
+  await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC)");
+  await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC)");
   await query(
     `DO $$
      BEGIN

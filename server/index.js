@@ -282,6 +282,7 @@ function itemFromRow(row, viewer, options = {}) {
     ownerName: row.owner_name,
     createdAt: row.created_at,
     reviewedAt: row.reviewed_at,
+    pendingClaimCount: Number(row.pending_claim_count || 0),
     distanceScope: proximity.scope,
     distanceLabel: proximity.label,
     contact: includeContact
@@ -941,6 +942,128 @@ async function viewContact(req, res, viewer, itemId) {
   });
 }
 
+function claimFromRow(row) {
+  return {
+    id: row.id,
+    itemId: row.item_id,
+    requesterId: row.requester_id,
+    requesterName: row.requester_name,
+    quantity: row.quantity,
+    status: row.status,
+    createdAt: row.created_at,
+    reviewedAt: row.reviewed_at
+  };
+}
+
+async function requestClaim(req, res, viewer, itemId) {
+  const input = await readBody(req);
+  const quantity = Math.max(1, Number(input.quantity || 1));
+  if (!Number.isInteger(quantity)) {
+    json(res, 400, { error: "INVALID_QUANTITY", message: "领取数量必须是正整数" });
+    return;
+  }
+
+  const { rows } = await query("SELECT * FROM items WHERE id = $1", [itemId]);
+  const item = rows[0];
+  if (!item) {
+    json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
+    return;
+  }
+  if (item.status !== "online") {
+    json(res, 409, { error: "ITEM_NOT_ONLINE", message: "该物品当前不可领取" });
+    return;
+  }
+  if (item.owner_id === viewer.id) {
+    json(res, 400, { error: "OWNER_CANNOT_CLAIM", message: "不能领取自己发布的物品" });
+    return;
+  }
+  if (quantity > item.quantity) {
+    json(res, 400, { error: "QUANTITY_EXCEEDED", message: "领取数量不能超过当前剩余数量" });
+    return;
+  }
+
+  const existing = await query(
+    "SELECT * FROM claim_requests WHERE item_id = $1 AND requester_id = $2 AND status = 'pending' ORDER BY created_at DESC LIMIT 1",
+    [itemId, viewer.id]
+  );
+  if (existing.rows[0]) {
+    json(res, 200, {
+      claimRequest: claimFromRow(existing.rows[0]),
+      message: "你已提醒过发布者确认领取，请等待对方处理"
+    });
+    return;
+  }
+
+  const created = await query(
+    `INSERT INTO claim_requests (id, item_id, requester_id, requester_name, quantity)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [makeId("claim"), itemId, viewer.id, viewer.name, quantity]
+  );
+  json(res, 201, {
+    claimRequest: claimFromRow(created.rows[0]),
+    message: "已提醒发布者确认领取，确认后会自动更新库存"
+  });
+}
+
+async function reviewClaim(req, res, viewer, claimId, action) {
+  const { rows } = await query(
+    `SELECT cr.*, i.owner_id, i.quantity AS item_quantity, i.status AS item_status
+     FROM claim_requests cr
+     JOIN items i ON i.id = cr.item_id
+     WHERE cr.id = $1`,
+    [claimId]
+  );
+  const claim = rows[0];
+  if (!claim) {
+    json(res, 404, { error: "CLAIM_NOT_FOUND", message: "领取提醒不存在" });
+    return;
+  }
+  if (claim.owner_id !== viewer.id) {
+    json(res, 403, { error: "FORBIDDEN", message: "只能处理自己发布物品的领取提醒" });
+    return;
+  }
+  if (claim.status !== "pending") {
+    json(res, 409, { error: "CLAIM_ALREADY_REVIEWED", message: "该领取提醒已经处理过" });
+    return;
+  }
+
+  if (action === "reject") {
+    const rejected = await query(
+      "UPDATE claim_requests SET status = 'rejected', reviewed_at = now() WHERE id = $1 RETURNING *",
+      [claimId]
+    );
+    json(res, 200, { claimRequest: claimFromRow(rejected.rows[0]), message: "已忽略该领取提醒" });
+    return;
+  }
+
+  if (claim.item_status !== "online") {
+    json(res, 409, { error: "ITEM_NOT_ONLINE", message: "该物品已不在上架状态，无法确认领取" });
+    return;
+  }
+
+  const claimedQuantity = Math.min(Number(claim.quantity), Number(claim.item_quantity));
+  const remainingQuantity = Math.max(Number(claim.item_quantity) - claimedQuantity, 0);
+  const nextStatus = remainingQuantity === 0 ? "claimed" : "online";
+  const reviewed = await query(
+    "UPDATE claim_requests SET status = 'confirmed', reviewed_at = now() WHERE id = $1 RETURNING *",
+    [claimId]
+  );
+  const item = await query(
+    `UPDATE items
+     SET quantity = $1, status = $2, reviewed_at = CASE WHEN $2 = 'claimed' THEN now() ELSE reviewed_at END
+     WHERE id = $3
+     RETURNING *`,
+    [remainingQuantity, nextStatus, claim.item_id]
+  );
+
+  json(res, 200, {
+    claimRequest: claimFromRow(reviewed.rows[0]),
+    item: itemFromRow(item.rows[0], viewer, { includeRoom: true }),
+    message: remainingQuantity === 0 ? "已确认领取，物品已自动下架" : `已确认领取，剩余 ${remainingQuantity}${item.rows[0].unit}`
+  });
+}
+
 async function adminLogin(req, res) {
   const input = await readBody(req);
   const { rows } = await query("SELECT * FROM admins WHERE username = $1", [input.username || ""]);
@@ -1008,7 +1131,7 @@ async function adminStats(req, res) {
     `SELECT
        COUNT(*) FILTER (WHERE status = 'reviewing')::int AS reviewing,
        COUNT(*) FILTER (WHERE status = 'online')::int AS online,
-       COUNT(*) FILTER (WHERE status IN ('expired', 'taken_down'))::int AS offline,
+       COUNT(*) FILTER (WHERE status IN ('expired', 'taken_down', 'claimed'))::int AS offline,
        (SELECT COUNT(*)::int FROM contact_views WHERE view_date = CURRENT_DATE) AS contact_views_today
      FROM items`
   );
@@ -1061,6 +1184,7 @@ function adminPage() {
           <option value="online">上架中</option>
           <option value="rejected">已驳回</option>
           <option value="taken_down">已下架</option>
+          <option value="claimed">已领取</option>
           <option value="all">全部</option>
         </select>
         <button onclick="loadAll()">刷新</button>
@@ -1253,8 +1377,42 @@ async function handle(req, res) {
     if (!viewer) {
       return;
     }
-    const { rows } = await query("SELECT * FROM items WHERE owner_id = $1 ORDER BY created_at DESC", [viewer.id]);
-    json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, { includeRoom: true })) });
+    const { rows } = await query(
+      `SELECT i.*, COALESCE(c.pending_claim_count, 0)::int AS pending_claim_count
+       FROM items i
+       LEFT JOIN (
+         SELECT item_id, COUNT(*)::int AS pending_claim_count
+         FROM claim_requests
+         WHERE status = 'pending'
+         GROUP BY item_id
+       ) c ON c.item_id = i.id
+       WHERE i.owner_id = $1
+       ORDER BY i.created_at DESC`,
+      [viewer.id]
+    );
+    const items = rows.map(row => itemFromRow(row, viewer, { includeRoom: true }));
+    if (items.length) {
+      const pendingClaims = await query(
+        `SELECT cr.*
+         FROM claim_requests cr
+         JOIN items i ON i.id = cr.item_id
+         WHERE i.owner_id = $1 AND cr.status = 'pending'
+         ORDER BY cr.created_at ASC`,
+        [viewer.id]
+      );
+      const byItem = new Map();
+      for (const claim of pendingClaims.rows) {
+        if (!byItem.has(claim.item_id)) {
+          byItem.set(claim.item_id, []);
+        }
+        byItem.get(claim.item_id).push(claimFromRow(claim));
+      }
+      for (const item of items) {
+        item.claimRequests = byItem.get(item.id) || [];
+        item.pendingClaimCount = item.claimRequests.length;
+      }
+    }
+    json(res, 200, { items });
     return;
   }
 
@@ -1292,6 +1450,26 @@ async function handle(req, res) {
       return;
     }
     await viewContact(req, res, viewer, contactMatch[1]);
+    return;
+  }
+
+  const claimMatch = pathname.match(/^\/api\/items\/([^/]+)\/claim$/);
+  if (req.method === "POST" && claimMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) {
+      return;
+    }
+    await requestClaim(req, res, viewer, claimMatch[1]);
+    return;
+  }
+
+  const claimReviewMatch = pathname.match(/^\/api\/claims\/([^/]+)\/(confirm|reject)$/);
+  if (req.method === "POST" && claimReviewMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) {
+      return;
+    }
+    await reviewClaim(req, res, viewer, claimReviewMatch[1], claimReviewMatch[2]);
     return;
   }
 

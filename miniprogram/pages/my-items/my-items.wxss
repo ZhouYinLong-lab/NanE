@@ -129,7 +129,8 @@
 
 .rejected,
 .expired,
-.taken_down {
+.taken_down,
+.claimed {
   background: #f8dfd8;
   color: #9b3d32;
 }

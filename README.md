@@ -32,12 +32,12 @@ NanE 希望解决的是一个很轻但很真实的问题：
 - Azure VM 部署
 - Nginx + HTTPS
 - PM2 进程管理
-- 小助手 challenge-code 身份验证接口骨架
+- 南哪小帮手 challenge-code 身份验证接口骨架
 
 当前权限模型：
 
 - 游客：可浏览首页列表和详情公开信息。
-- 小助手认证用户：可发布互助、查看微信 / QQ、查看自己的发布记录。
+- 南哪小帮手认证用户：可发布互助、查看微信 / QQ、查看自己的发布记录。
 - 管理员：可审核、驳回、下架、查看统计。
 
 ## 产品形态
@@ -74,9 +74,9 @@ NanE 希望解决的是一个很轻但很真实的问题：
 - 按耗材 / 非处方药品筛选。
 - 物品详情展示公开信息。
 - 游客不可查看联系方式。
-- 小助手认证后可查看微信 / QQ。
-- 小助手认证后可发布互助。
-- 小助手认证后可查看“我的发布”。
+- 南哪小帮手认证后可查看微信 / QQ。
+- 南哪小帮手认证后可发布互助。
+- 南哪小帮手认证后可查看“我的发布”。
 - 使用本地 PNG logo 作为网页 favicon。
 
 本地访问：
@@ -103,7 +103,7 @@ https://nane.zylatent.com
 - 详情页。
 - 我的页。
 - 我的发布。
-- 小助手身份验证入口。
+- 南哪小帮手身份验证入口。
 
 当前由于小程序备案较繁琐，短期不以小程序上线为阻塞项；后续备案完成后，小程序可继续复用同一套 API。
 
@@ -170,7 +170,7 @@ https://nane.zylatent.com/admin
 联系方式不会直接公开在首页或详情接口中。
 
 - 游客不能查看微信 / QQ。
-- 小助手认证用户点击查看后才会调用 `/api/items/:id/contact`。
+- 南哪小帮手认证用户点击查看后才会调用 `/api/items/:id/contact`。
 - 每个用户每日最多查看 5 次联系方式。
 - 查看记录写入 `contact_views` 表。
 
@@ -191,7 +191,7 @@ https://nane.zylatent.com/admin
 | 数据库 | PostgreSQL |
 | 数据库访问 | `pg` |
 | 管理后台 | Node 服务内嵌 HTML 页面 |
-| 身份验证 | 小助手 challenge-code + NanE 自签 JWT |
+| 身份验证 | 南哪小帮手 challenge-code + NanE 自签 JWT |
 | 图标 | Font Awesome Free 本地字体 + NanE PNG logo |
 | 部署 | Azure VM, Ubuntu 24.04 |
 | 反向代理 | Nginx |
@@ -257,16 +257,16 @@ NanE
 
 ## 账号系统
 
-### 小助手登录流程
+### 南哪小帮手登录流程
 
-NanE 不把小助手 API Key 暴露给前端。登录流程为：
+NanE 不把南哪小帮手 API Key 暴露给前端。登录流程为：
 
 1. 用户在网页或小程序输入邮箱 / 学号。
-2. NanE 后端携带 `NANNA_API_KEY` 调用小助手 `/api/v1/oauth/challenge`。
-3. 小助手向用户发送验证码。
+2. NanE 后端携带 `NANNA_API_KEY` 调用南哪小帮手 `/api/v1/oauth/challenge`。
+3. 南哪小帮手向用户发送验证码。
 4. 用户在 NanE 输入验证码。
-5. NanE 后端调用小助手 `/api/v1/oauth/verify`。
-6. 小助手返回身份信息。
+5. NanE 后端调用南哪小帮手 `/api/v1/oauth/verify`。
+6. 南哪小帮手返回身份信息。
 7. NanE 按 `openid` 创建或更新用户。
 8. NanE 签发自己的 JWT。
 9. 前端后续请求携带 NanE JWT。
@@ -282,7 +282,7 @@ identity:major:read
 
 ### 权限规则
 
-| 操作 | 游客 | 小助手认证用户 | 管理员 |
+| 操作 | 游客 | 南哪小帮手认证用户 | 管理员 |
 |------|------|----------------|--------|
 | 浏览首页 | 可以 | 可以 | 可以 |
 | 查看公开详情 | 可以 | 可以 | 可以 |
@@ -317,8 +317,8 @@ identity:major:read
 |------|------|------|
 | `GET` | `/api/health` | 健康检查 |
 | `POST` | `/api/auth/wx-login` | Demo 微信登录兜底 |
-| `POST` | `/api/auth/nanna/challenge` | 发起小助手验证码 |
-| `POST` | `/api/auth/nanna/verify` | 验证小助手验证码并签发 NanE JWT |
+| `POST` | `/api/auth/nanna/challenge` | 发起南哪小帮手验证码 |
+| `POST` | `/api/auth/nanna/verify` | 验证南哪小帮手验证码并签发 NanE JWT |
 | `GET` | `/api/me` | 当前用户与联系方式额度 |
 | `GET` | `/api/me/items` | 我的发布，需要认证 |
 
@@ -330,6 +330,9 @@ identity:major:read
 | `GET` | `/api/items/:id` | 物品详情，游客可用 |
 | `POST` | `/api/items` | 发布物品，需要认证 |
 | `POST` | `/api/items/:id/contact` | 查看联系方式，需要认证 |
+| `POST` | `/api/items/:id/claim` | 领取者提醒发布者确认领取 |
+| `POST` | `/api/claims/:id/confirm` | 发布者确认领取并扣减数量 |
+| `POST` | `/api/claims/:id/reject` | 发布者忽略领取提醒 |
 
 ### 管理后台
 
@@ -452,13 +455,13 @@ server {
 - 游客不可查看联系方式。
 - 宿舍号不对普通浏览者公开。
 - 联系方式每日查看次数有限制。
-- 小助手 API Key 只存服务器 `.env`，不进入前端和 Git 仓库。
+- 南哪小帮手 API Key 只存服务器 `.env`，不进入前端和 Git 仓库。
 
 ## 后续路线
 
 近期：
 
-1. 实测小助手 challenge / verify 真实链路。
+1. 实测南哪小帮手 challenge / verify 真实链路。
 2. 给认证日志增加脱敏记录，方便排查登录问题。
 3. 网页发布页接入和小程序一致的校区 / 楼栋 / 宿舍号下拉数据。
 4. 增加“退出登录”“联系方式设置/补全”“当前身份展示”。

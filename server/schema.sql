@@ -24,14 +24,14 @@ CREATE TABLE IF NOT EXISTS items (
   item_icon TEXT NOT NULL DEFAULT 'plus',
   category TEXT NOT NULL,
   description TEXT NOT NULL,
-  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  quantity INTEGER NOT NULL CHECK (quantity >= 0),
   unit TEXT NOT NULL,
   campus TEXT NOT NULL,
   building TEXT NOT NULL,
   room TEXT,
   expire_date DATE,
   no_expiry BOOLEAN NOT NULL DEFAULT false,
-  status TEXT NOT NULL CHECK (status IN ('reviewing', 'online', 'rejected', 'expired', 'taken_down')),
+  status TEXT NOT NULL CHECK (status IN ('reviewing', 'online', 'rejected', 'expired', 'taken_down', 'claimed')),
   reject_reason TEXT,
   owner_id TEXT NOT NULL REFERENCES users(id),
   owner_name TEXT NOT NULL,
@@ -47,6 +47,17 @@ CREATE TABLE IF NOT EXISTS contact_views (
   item_id TEXT NOT NULL REFERENCES items(id),
   view_date DATE NOT NULL DEFAULT CURRENT_DATE,
   viewed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS claim_requests (
+  id TEXT PRIMARY KEY,
+  item_id TEXT NOT NULL REFERENCES items(id),
+  requester_id TEXT NOT NULL REFERENCES users(id),
+  requester_name TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'rejected')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  reviewed_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS email_challenges (
@@ -76,5 +87,7 @@ CREATE TABLE IF NOT EXISTS admins (
 
 CREATE INDEX IF NOT EXISTS idx_items_status_created ON items(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contact_views_daily ON contact_views(viewer_id, view_date);
+CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_email_challenges_email_created ON email_challenges(email, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_review_logs_item ON review_logs(item_id, created_at DESC);
