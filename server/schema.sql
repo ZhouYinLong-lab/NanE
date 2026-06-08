@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   campus TEXT NOT NULL,
   building TEXT NOT NULL,
+  room TEXT,
   wechat TEXT NOT NULL,
   qq TEXT NOT NULL,
   openid TEXT UNIQUE,

@@ -60,8 +60,10 @@ const state = {
   challengeId: "",
   emailChallengeId: "",
   locations: [],
-  selectedCampusIndex: 0,
-  selectedBuildingIndex: 0,
+  publishCampusIndex: 0,
+  publishBuildingIndex: 0,
+  profileCampusIndex: 0,
+  profileBuildingIndex: 0,
   agreementVersion: AGREEMENT_VERSION_FALLBACK
 };
 
@@ -153,17 +155,48 @@ function isVerifiedUser() {
   return Boolean(state.user?.is_verified && state.user?.hasAgreement !== false);
 }
 
+function profileComplete() {
+  return Boolean(state.user?.profileComplete);
+}
+
 function requireVerified(message) {
-  if (isVerifiedUser()) {
+  if (isVerifiedUser() && profileComplete()) {
     return true;
   }
-  const text = message || "请先在“我的”页登录并同意用户协议";
+  const text = message || (isVerifiedUser() ? "请先补全昵称、校区和楼栋" : "请先在“我的”页登录并同意用户协议");
   const activeMineTab = document.querySelector('.tab[data-view="mine"]');
   if (activeMineTab) {
     activeMineTab.click();
   }
   $("authMessage").textContent = text;
   return false;
+}
+
+function emailFromPrefix() {
+  const prefix = $("emailLoginInput").value.trim().toLowerCase().replace(/@.*$/, "");
+  return prefix ? `${prefix}@smail.nju.edu.cn` : "";
+}
+
+function setSelectionByLocation(kind, campusName, buildingName, roomName = "") {
+  const keys = selectionKeys(kind);
+  const campusIndex = state.locations.findIndex(campus => campus.name === campusName);
+  state[keys.campus] = campusIndex >= 0 ? campusIndex : state[keys.campus];
+  const campus = currentCampus(kind);
+  const buildingIndex = (campus?.buildings || []).findIndex(building => building.name === buildingName);
+  state[keys.building] = buildingIndex >= 0 ? buildingIndex : state[keys.building];
+  renderLocationSelects(kind, roomName || "");
+}
+
+function syncProfileForm() {
+  const card = $("profileFormCard");
+  if (!card) return;
+  card.hidden = !isVerifiedUser();
+  if (!isVerifiedUser()) {
+    return;
+  }
+  $("nicknameInput").value = state.user?.name || "";
+  setSelectionByLocation("profile", state.user?.campus || "仙林校区", state.user?.building || "南苑 A 栋", state.user?.room || "");
+  $("profileMessage").textContent = profileComplete() ? "" : "请补全账号资料后再发布或查看联系方式";
 }
 
 function iconGlyph(key, itemType) {
@@ -260,8 +293,8 @@ async function loadProfile() {
     if (data.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       $("profileName").textContent = data.user.name || "南易用户";
-      $("profileCampus").textContent = `${data.user.campus || "未设置校区"} · ${data.user.building || "未设置楼栋"}`;
-      $("verifyBadge").textContent = data.user.is_verified ? "校园身份已认证" : "未完成校园身份验证";
+      $("profileCampus").textContent = `${data.user.campus || "未设置校区"} · ${data.user.building || "未设置楼栋"}${data.user.room ? ` · ${data.user.room}` : ""}`;
+      $("verifyBadge").textContent = data.user.profileComplete ? "校园身份与楼栋已设置" : "请补全楼栋资料";
       $("dailyLimit").textContent = data.contactLimit?.daily ?? 5;
       $("remainingLimit").textContent = data.contactLimit?.remaining ?? 0;
     } else {
@@ -272,6 +305,7 @@ async function loadProfile() {
       $("dailyLimit").textContent = 5;
       $("remainingLimit").textContent = 0;
     }
+    syncProfileForm();
     $("apiStatus").textContent = "已连接";
   } catch (error) {
     $("apiStatus").textContent = "未连接";
@@ -282,32 +316,47 @@ function optionHtml(value, selectedValue = "") {
   return `<option value="${escapeHtml(value)}" ${value === selectedValue ? "selected" : ""}>${escapeHtml(value)}</option>`;
 }
 
-function currentCampus() {
-  return state.locations[state.selectedCampusIndex] || state.locations[0];
+function selectionKeys(kind) {
+  return kind === "profile"
+    ? { campus: "profileCampusIndex", building: "profileBuildingIndex", campusId: "profileCampusSelect", buildingId: "profileBuildingSelect", roomId: "profileRoomSelect" }
+    : { campus: "publishCampusIndex", building: "publishBuildingIndex", campusId: "campusSelect", buildingId: "buildingSelect", roomId: "roomSelect" };
 }
 
-function currentBuilding() {
-  const campus = currentCampus();
-  return campus?.buildings?.[state.selectedBuildingIndex] || campus?.buildings?.[0];
+function currentCampus(kind = "publish") {
+  const keys = selectionKeys(kind);
+  return state.locations[state[keys.campus]] || state.locations[0];
 }
 
-function renderLocationSelects() {
-  if (!state.locations.length) {
-    $("campusSelect").innerHTML = optionHtml("仙林校区");
-    $("buildingSelect").innerHTML = optionHtml("南苑 A 栋");
-    $("roomSelect").innerHTML = `<option value="">不填写宿舍号</option>`;
+function currentBuilding(kind = "publish") {
+  const keys = selectionKeys(kind);
+  const campus = currentCampus(kind);
+  return campus?.buildings?.[state[keys.building]] || campus?.buildings?.[0];
+}
+
+function renderLocationSelects(kind = "publish", selectedRoom = "") {
+  const keys = selectionKeys(kind);
+  const campusSelect = $(keys.campusId);
+  const buildingSelect = $(keys.buildingId);
+  const roomSelect = $(keys.roomId);
+  if (!campusSelect || !buildingSelect || !roomSelect) {
     return;
   }
-  const campus = currentCampus();
-  const building = currentBuilding();
-  $("campusSelect").innerHTML = state.locations
-    .map((item, index) => `<option value="${escapeHtml(item.name)}" ${index === state.selectedCampusIndex ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
+  if (!state.locations.length) {
+    campusSelect.innerHTML = optionHtml("仙林校区");
+    buildingSelect.innerHTML = optionHtml("南苑 A 栋");
+    roomSelect.innerHTML = `<option value="">不填写宿舍号</option>`;
+    return;
+  }
+  const campus = currentCampus(kind);
+  const building = currentBuilding(kind);
+  campusSelect.innerHTML = state.locations
+    .map((item, index) => `<option value="${escapeHtml(item.name)}" ${index === state[keys.campus] ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
     .join("");
-  $("buildingSelect").innerHTML = (campus?.buildings || [])
-    .map((item, index) => `<option value="${escapeHtml(item.name)}" ${index === state.selectedBuildingIndex ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
+  buildingSelect.innerHTML = (campus?.buildings || [])
+    .map((item, index) => `<option value="${escapeHtml(item.name)}" ${index === state[keys.building] ? "selected" : ""}>${escapeHtml(item.name)}</option>`)
     .join("");
-  $("roomSelect").innerHTML = `<option value="">不填写宿舍号</option>${(building?.rooms || [])
-    .map(room => optionHtml(room))
+  roomSelect.innerHTML = `<option value="">不填写宿舍号</option>${(building?.rooms || [])
+    .map(room => optionHtml(room, selectedRoom))
     .join("")}`;
 }
 
@@ -319,11 +368,14 @@ async function loadLocations() {
     state.locations = [];
   }
   const campusIndex = state.locations.findIndex(campus => campus.name === "仙林校区");
-  state.selectedCampusIndex = campusIndex >= 0 ? campusIndex : 0;
-  const campus = currentCampus();
+  state.publishCampusIndex = campusIndex >= 0 ? campusIndex : 0;
+  state.profileCampusIndex = state.publishCampusIndex;
+  const campus = currentCampus("publish");
   const buildingIndex = (campus?.buildings || []).findIndex(building => building.name === "南苑 A 栋");
-  state.selectedBuildingIndex = buildingIndex >= 0 ? buildingIndex : 0;
-  renderLocationSelects();
+  state.publishBuildingIndex = buildingIndex >= 0 ? buildingIndex : 0;
+  state.profileBuildingIndex = state.publishBuildingIndex;
+  renderLocationSelects("publish");
+  renderLocationSelects("profile");
 }
 
 function toggleNoExpiry() {
@@ -361,7 +413,7 @@ async function openDetail(id) {
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "发布者暂未填写补充说明。")}</p>
       <div class="notice-line">免费互助信息撮合；禁止处方药、管控药和收费交易。领取前请自行确认包装、有效期和适用风险。</div>
-      <button class="primary wide" id="contactButton">${isVerifiedUser() ? "查看联系方式" : "登录后查看微信 / QQ"}</button>
+      <button class="primary wide" id="contactButton">${isVerifiedUser() && profileComplete() ? "查看联系方式" : "登录并补全资料后查看微信 / QQ"}</button>
       <div id="contactResult"></div>
     `;
     $("detailDialog").showModal();
@@ -449,6 +501,11 @@ async function submitPublish(event) {
     requireVerified(message.textContent);
     return;
   }
+  if (!profileComplete()) {
+    message.textContent = "请先在“我的”页补全昵称、校区和楼栋";
+    requireVerified(message.textContent);
+    return;
+  }
   const contactWechat = $("wechatInput").value.trim();
   const contactQq = $("qqInput").value.trim();
   if (!contactWechat && !contactQq) {
@@ -459,6 +516,10 @@ async function submitPublish(event) {
     message.textContent = "请先确认发布声明";
     return;
   }
+  const useProfileLocation = $("useProfileLocationInput").checked;
+  const campus = useProfileLocation ? state.user.campus : $("campusSelect").value.trim();
+  const building = useProfileLocation ? state.user.building : $("buildingSelect").value.trim();
+  const room = useProfileLocation ? state.user.room || "" : $("roomSelect").value.trim();
   const payload = {
     title: $("titleInput").value.trim(),
     itemType: state.selectedPublishType,
@@ -466,9 +527,9 @@ async function submitPublish(event) {
     category: state.selectedPublishType === "medicine" ? $("categorySelect").value : "应急耗材",
     quantity: Number($("quantityInput").value),
     unit: $("unitInput").value.trim(),
-    campus: $("campusSelect").value.trim(),
-    building: $("buildingSelect").value.trim(),
-    room: $("roomSelect").value.trim(),
+    campus,
+    building,
+    room,
     expireDate: $("noExpiryInput").checked ? "" : $("expireInput").value,
     noExpiry: state.selectedPublishType === "consumable" && $("noExpiryInput").checked,
     description: $("descriptionInput").value.trim(),
@@ -491,7 +552,9 @@ async function submitPublish(event) {
     $("expireInput").required = true;
     $("noExpiryInput").checked = false;
     setPublishType(state.selectedPublishType);
-    renderLocationSelects();
+    $("useProfileLocationInput").checked = true;
+    $("publishLocationFields").hidden = true;
+    renderLocationSelects("publish");
     loadMyItems();
   } catch (error) {
     message.textContent = error.message || "提交失败";
@@ -554,14 +617,14 @@ async function verifyCode() {
 
 async function sendEmailCode() {
   const message = $("authMessage");
-  const email = $("emailLoginInput").value.trim().toLowerCase();
+  const email = emailFromPrefix();
   const agreement = currentAgreementPayload();
   if (!agreement.agreementAccepted) {
     message.textContent = "请先阅读并同意用户协议";
     return;
   }
-  if (!email.endsWith("@smail.nju.edu.cn")) {
-    message.textContent = "邮箱登录仅支持 @smail.nju.edu.cn 后缀";
+  if (!email) {
+    message.textContent = "请填写南京大学学生邮箱前缀";
     return;
   }
   try {
@@ -579,15 +642,15 @@ async function sendEmailCode() {
 
 async function verifyEmailCode() {
   const message = $("authMessage");
-  const email = $("emailLoginInput").value.trim().toLowerCase();
+  const email = emailFromPrefix();
   const code = $("emailCodeInput").value.trim();
   const agreement = currentAgreementPayload();
   if (!agreement.agreementAccepted) {
     message.textContent = "请先阅读并同意用户协议";
     return;
   }
-  if (!email.endsWith("@smail.nju.edu.cn")) {
-    message.textContent = "邮箱登录仅支持 @smail.nju.edu.cn 后缀";
+  if (!email) {
+    message.textContent = "请填写南京大学学生邮箱前缀";
     return;
   }
   if (!/^\d{6}$/.test(code)) {
@@ -605,6 +668,36 @@ async function verifyEmailCode() {
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
   } catch (error) {
     message.textContent = error.message || "验证码验证失败";
+  }
+}
+
+async function saveProfile() {
+  const message = $("profileMessage");
+  if (!isVerifiedUser()) {
+    message.textContent = "请先登录";
+    return;
+  }
+  const payload = {
+    name: $("nicknameInput").value.trim(),
+    campus: $("profileCampusSelect").value,
+    building: $("profileBuildingSelect").value,
+    room: $("profileRoomSelect").value
+  };
+  if (!payload.name) {
+    message.textContent = "请填写昵称";
+    return;
+  }
+  try {
+    message.textContent = "正在保存...";
+    const data = await api("/me/profile", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    saveSession(state.token, data.user);
+    message.textContent = data.message || "账号资料已更新";
+    await Promise.all([loadProfile(), loadHome()]);
+  } catch (error) {
+    message.textContent = error.message || "保存失败";
   }
 }
 
@@ -660,14 +753,27 @@ function bindEvents() {
     renderIconGrid();
   });
   $("campusSelect").addEventListener("change", event => {
-    state.selectedCampusIndex = Math.max(0, state.locations.findIndex(campus => campus.name === event.target.value));
-    state.selectedBuildingIndex = 0;
-    renderLocationSelects();
+    state.publishCampusIndex = Math.max(0, state.locations.findIndex(campus => campus.name === event.target.value));
+    state.publishBuildingIndex = 0;
+    renderLocationSelects("publish");
   });
   $("buildingSelect").addEventListener("change", event => {
-    const buildings = currentCampus()?.buildings || [];
-    state.selectedBuildingIndex = Math.max(0, buildings.findIndex(building => building.name === event.target.value));
-    renderLocationSelects();
+    const buildings = currentCampus("publish")?.buildings || [];
+    state.publishBuildingIndex = Math.max(0, buildings.findIndex(building => building.name === event.target.value));
+    renderLocationSelects("publish");
+  });
+  $("profileCampusSelect").addEventListener("change", event => {
+    state.profileCampusIndex = Math.max(0, state.locations.findIndex(campus => campus.name === event.target.value));
+    state.profileBuildingIndex = 0;
+    renderLocationSelects("profile");
+  });
+  $("profileBuildingSelect").addEventListener("change", event => {
+    const buildings = currentCampus("profile")?.buildings || [];
+    state.profileBuildingIndex = Math.max(0, buildings.findIndex(building => building.name === event.target.value));
+    renderLocationSelects("profile");
+  });
+  $("useProfileLocationInput").addEventListener("change", event => {
+    $("publishLocationFields").hidden = event.target.checked;
   });
   $("noExpiryInput").addEventListener("change", toggleNoExpiry);
   $("publishForm").addEventListener("submit", submitPublish);
@@ -675,6 +781,7 @@ function bindEvents() {
   $("verifyEmailCodeButton").addEventListener("click", verifyEmailCode);
   $("sendCodeButton").addEventListener("click", sendCode);
   $("verifyCodeButton").addEventListener("click", verifyCode);
+  $("saveProfileButton").addEventListener("click", saveProfile);
   $("loadMineButton").addEventListener("click", loadMyItems);
   $("openAgreementButton").addEventListener("click", () => $("agreementDialog").showModal());
   $("closeAgreementButton").addEventListener("click", () => $("agreementDialog").close());

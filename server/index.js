@@ -66,6 +66,8 @@ const ALLOWED_ITEM_ICONS = new Set([
   "syringe",
   "soap"
 ]);
+const NICKNAME_ADJECTIVES = ["热心", "快乐", "靠谱", "温柔", "元气", "清醒", "友善", "机灵", "真诚", "阳光", "安静", "勇敢"];
+const NICKNAME_NOUNS = ["小蓝鲸", "小猫", "同学", "室友", "小南瓜", "小紫薯", "小云朵", "小星星", "小书包", "小梧桐", "小灯塔", "小雨伞"];
 
 function defaultItemIcon(itemType) {
   return ITEM_TYPES[itemType]?.defaultIcon || ITEM_TYPES.consumable.defaultIcon;
@@ -74,6 +76,12 @@ function defaultItemIcon(itemType) {
 function normalizeItemIcon(input, itemType) {
   const value = String(input || "").trim();
   return ALLOWED_ITEM_ICONS.has(value) ? value : defaultItemIcon(itemType);
+}
+
+function randomNickname() {
+  const adjective = NICKNAME_ADJECTIVES[crypto.randomInt(0, NICKNAME_ADJECTIVES.length)];
+  const noun = NICKNAME_NOUNS[crypto.randomInt(0, NICKNAME_NOUNS.length)];
+  return `${adjective}${noun}`;
 }
 
 function json(res, status, payload) {
@@ -231,6 +239,10 @@ function userHasAgreement(user) {
   return Boolean(user?.agreement_accepted_at && user?.agreement_version === AGREEMENT_VERSION);
 }
 
+function userProfileComplete(user) {
+  return Boolean(user?.name && user?.campus && user?.building && user.building !== "未设置楼栋");
+}
+
 function publicUser(user) {
   if (!user) {
     return null;
@@ -238,6 +250,7 @@ function publicUser(user) {
   return {
     ...user,
     hasAgreement: userHasAgreement(user),
+    profileComplete: userProfileComplete(user),
     agreementVersion: user.agreement_version || ""
   };
 }
@@ -301,6 +314,21 @@ async function viewerFromRequest(req) {
   return (await userFromRequest(req)) || demoViewer();
 }
 
+function locationExists(campusName, buildingName, roomName = "") {
+  const campus = locations.find(item => item.name === campusName);
+  if (!campus) {
+    return false;
+  }
+  const building = (campus.buildings || []).find(item => item.name === buildingName);
+  if (!building) {
+    return false;
+  }
+  if (!roomName) {
+    return true;
+  }
+  return (building.rooms || []).includes(roomName);
+}
+
 async function requireVerifiedUser(req, res) {
   const user = await userFromRequest(req);
   if (!user || !user.is_verified) {
@@ -311,7 +339,44 @@ async function requireVerifiedUser(req, res) {
     json(res, 403, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
     return null;
   }
+  if (!userProfileComplete(user)) {
+    json(res, 403, { error: "PROFILE_REQUIRED", message: "请先在“我的”页设置昵称、校区和楼栋" });
+    return null;
+  }
   return user;
+}
+
+async function updateProfile(req, res) {
+  const user = await userFromRequest(req);
+  if (!user || !user.is_verified) {
+    json(res, 401, { error: "AUTH_REQUIRED", message: "请先登录后再设置账号资料" });
+    return;
+  }
+  if (!userHasAgreement(user)) {
+    json(res, 403, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
+    return;
+  }
+  const input = await readBody(req);
+  const name = String(input.name || "").trim();
+  const campus = String(input.campus || "").trim();
+  const building = String(input.building || "").trim();
+  const room = String(input.room || "").trim();
+  if (name.length < 2 || name.length > 16) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "昵称需为 2-16 个字符" });
+    return;
+  }
+  if (!locationExists(campus, building, room)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请选择有效的校区、楼栋和宿舍号" });
+    return;
+  }
+  const { rows } = await query(
+    `UPDATE users
+     SET name = $1, campus = $2, building = $3, room = $4
+     WHERE id = $5
+     RETURNING *`,
+    [name, campus, building, room || null, user.id]
+  );
+  json(res, 200, { user: publicUser(rows[0]), message: "账号资料已更新" });
 }
 
 function nannaConfigured() {
@@ -587,7 +652,7 @@ async function emailChallenge(req, res) {
 
 async function upsertEmailUser(email) {
   const userId = `email_${crypto.createHash("sha1").update(email).digest("hex").slice(0, 16)}`;
-  const name = email.split("@")[0] || "南易用户";
+  const name = randomNickname();
   const { rows } = await query(
     `INSERT INTO users (
       id, name, campus, building, wechat, qq, openid, auth_provider, email, is_verified,
@@ -595,6 +660,10 @@ async function upsertEmailUser(email) {
     )
     VALUES ($1, $2, '仙林校区', '未设置楼栋', '', '', $3, 'email', $4, true, $5, now())
     ON CONFLICT (id) DO UPDATE SET
+      name = CASE
+        WHEN users.name = split_part(EXCLUDED.email, '@', 1) THEN EXCLUDED.name
+        ELSE users.name
+      END,
       auth_provider = 'email',
       email = EXCLUDED.email,
       is_verified = true,
@@ -1171,6 +1240,11 @@ async function handle(req, res) {
         remaining: Math.max(DAILY_CONTACT_LIMIT - used.rows[0].count, 0)
       }
     });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/me/profile") {
+    await updateProfile(req, res);
     return;
   }
 

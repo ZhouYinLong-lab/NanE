@@ -35,6 +35,7 @@ async function initializeDatabase() {
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS student_id_masked TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS major TEXT");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS room TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT false");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_version TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMPTZ");

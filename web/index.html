@@ -98,21 +98,28 @@
           <label>选择图标（可选）</label>
           <div class="icon-grid" id="iconGrid"></div>
 
-          <div class="field-grid">
-            <div>
-              <label for="campusSelect">校区 *</label>
-              <select id="campusSelect" required></select>
-            </div>
-            <div>
-              <label for="buildingSelect">楼栋 *</label>
-              <select id="buildingSelect" required></select>
-            </div>
-          </div>
+          <label class="checkbox-row">
+            <input id="useProfileLocationInput" type="checkbox" checked>
+            <span>使用账号对应楼栋及宿舍号</span>
+          </label>
 
-          <label for="roomSelect">宿舍号（选填，不公开展示）</label>
-          <select id="roomSelect">
-            <option value="">不填写宿舍号</option>
-          </select>
+          <div id="publishLocationFields" hidden>
+            <div class="field-grid">
+              <div>
+                <label for="campusSelect">校区 *</label>
+                <select id="campusSelect" required></select>
+              </div>
+              <div>
+                <label for="buildingSelect">楼栋 *</label>
+                <select id="buildingSelect" required></select>
+              </div>
+            </div>
+
+            <label for="roomSelect">宿舍号（选填，不公开展示）</label>
+            <select id="roomSelect">
+              <option value="">不填写宿舍号</option>
+            </select>
+          </div>
 
           <div class="label-row">
             <label for="expireInput">有效期 *</label>
@@ -174,8 +181,11 @@
           <div class="login-block primary-login">
             <h4>邮箱登录</h4>
             <div class="auth-row">
-              <input id="emailLoginInput" type="email" placeholder="你的 @smail.nju.edu.cn 邮箱">
-              <button class="secondary" id="sendEmailCodeButton">发送验证码</button>
+              <div class="email-combo">
+                <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
+                <span>@smail.nju.edu.cn</span>
+              </div>
+              <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
             </div>
             <div class="auth-row email-code-row">
               <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
@@ -192,11 +202,34 @@
             </div>
             <div class="auth-row">
               <input id="authCode" placeholder="南哪小帮手验证码">
-              <button class="secondary" id="sendCodeButton">发送</button>
+              <button class="primary small" id="sendCodeButton">发送</button>
               <button class="primary small" id="verifyCodeButton">验证</button>
             </div>
           </details>
           <div class="form-message" id="authMessage"></div>
+        </div>
+
+        <div class="card form-card" id="profileFormCard" hidden>
+          <h3>账号资料</h3>
+          <p class="hint">发布和查看联系方式前，需要设置昵称、校区和楼栋。宿舍号可选，仅用于本人发布和后台审核。</p>
+          <label for="nicknameInput">昵称 *</label>
+          <input id="nicknameInput" maxlength="16" placeholder="例如：热心小蓝鲸">
+          <div class="field-grid">
+            <div>
+              <label for="profileCampusSelect">校区 *</label>
+              <select id="profileCampusSelect"></select>
+            </div>
+            <div>
+              <label for="profileBuildingSelect">楼栋 *</label>
+              <select id="profileBuildingSelect"></select>
+            </div>
+          </div>
+          <label for="profileRoomSelect">宿舍号（选填）</label>
+          <select id="profileRoomSelect">
+            <option value="">不填写宿舍号</option>
+          </select>
+          <button class="primary wide" id="saveProfileButton">保存账号资料</button>
+          <div class="form-message" id="profileMessage"></div>
         </div>
 
         <div class="section-head">
@@ -204,7 +237,7 @@
             <h2>我的发布</h2>
             <p>审核中、上架中、已驳回都会显示在这里。</p>
           </div>
-          <button class="secondary" id="loadMineButton">刷新</button>
+          <button class="primary small" id="loadMineButton">刷新</button>
         </div>
         <div class="item-list" id="myItemList"></div>
       </section>
