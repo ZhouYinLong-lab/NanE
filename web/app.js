@@ -58,6 +58,7 @@ const state = {
   iconOtherOpen: false,
   selectedDetail: null,
   challengeId: "",
+  emailChallengeId: "",
   locations: [],
   selectedCampusIndex: 0,
   selectedBuildingIndex: 0,
@@ -551,7 +552,7 @@ async function verifyCode() {
   }
 }
 
-async function emailLogin() {
+async function sendEmailCode() {
   const message = $("authMessage");
   const email = $("emailLoginInput").value.trim().toLowerCase();
   const agreement = currentAgreementPayload();
@@ -564,16 +565,46 @@ async function emailLogin() {
     return;
   }
   try {
-    message.textContent = "正在登录...";
-    const data = await api("/auth/email-login", {
+    message.textContent = "正在发送邮箱验证码...";
+    const data = await api("/auth/email/challenge", {
       method: "POST",
       body: JSON.stringify({ email, ...agreement })
+    });
+    state.emailChallengeId = data.challengeId || "";
+    message.textContent = data.message || "验证码已发送，请查收邮箱";
+  } catch (error) {
+    message.textContent = error.message || "验证码发送失败";
+  }
+}
+
+async function verifyEmailCode() {
+  const message = $("authMessage");
+  const email = $("emailLoginInput").value.trim().toLowerCase();
+  const code = $("emailCodeInput").value.trim();
+  const agreement = currentAgreementPayload();
+  if (!agreement.agreementAccepted) {
+    message.textContent = "请先阅读并同意用户协议";
+    return;
+  }
+  if (!email.endsWith("@smail.nju.edu.cn")) {
+    message.textContent = "邮箱登录仅支持 @smail.nju.edu.cn 后缀";
+    return;
+  }
+  if (!/^\d{6}$/.test(code)) {
+    message.textContent = "请填写 6 位邮箱验证码";
+    return;
+  }
+  try {
+    message.textContent = "正在验证邮箱验证码...";
+    const data = await api("/auth/email/verify", {
+      method: "POST",
+      body: JSON.stringify({ email, code, challengeId: state.emailChallengeId, ...agreement })
     });
     saveSession(data.token, data.user);
     message.textContent = "邮箱登录成功";
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
   } catch (error) {
-    message.textContent = error.message || "登录失败";
+    message.textContent = error.message || "验证码验证失败";
   }
 }
 
@@ -640,7 +671,8 @@ function bindEvents() {
   });
   $("noExpiryInput").addEventListener("change", toggleNoExpiry);
   $("publishForm").addEventListener("submit", submitPublish);
-  $("emailLoginButton").addEventListener("click", emailLogin);
+  $("sendEmailCodeButton").addEventListener("click", sendEmailCode);
+  $("verifyEmailCodeButton").addEventListener("click", verifyEmailCode);
   $("sendCodeButton").addEventListener("click", sendCode);
   $("verifyCodeButton").addEventListener("click", verifyCode);
   $("loadMineButton").addEventListener("click", loadMyItems);

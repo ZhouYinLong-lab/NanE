@@ -48,6 +48,15 @@ CREATE TABLE IF NOT EXISTS contact_views (
   viewed_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS email_challenges (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  code_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS review_logs (
   id TEXT PRIMARY KEY,
   item_id TEXT NOT NULL REFERENCES items(id),
@@ -66,4 +75,5 @@ CREATE TABLE IF NOT EXISTS admins (
 
 CREATE INDEX IF NOT EXISTS idx_items_status_created ON items(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contact_views_daily ON contact_views(viewer_id, view_date);
+CREATE INDEX IF NOT EXISTS idx_email_challenges_email_created ON email_challenges(email, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_review_logs_item ON review_logs(item_id, created_at DESC);

@@ -39,6 +39,17 @@ async function initializeDatabase() {
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_version TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMPTZ");
   await query(
+    `CREATE TABLE IF NOT EXISTS email_challenges (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      code_hash TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`
+  );
+  await query("CREATE INDEX IF NOT EXISTS idx_email_challenges_email_created ON email_challenges(email, created_at DESC)");
+  await query(
     `DO $$
      BEGIN
        IF NOT EXISTS (

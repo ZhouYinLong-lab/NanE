@@ -2,6 +2,7 @@ const http = require("http");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const tls = require("tls");
 require("./env");
 const {
   DEMO_USER_ID,
@@ -22,6 +23,13 @@ const NANNA_SCOPES = ["identity:basic:read", "identity:student_id:read", "identi
 const DAILY_CONTACT_LIMIT = 5;
 const AGREEMENT_VERSION = "v1.0";
 const NJU_STUDENT_EMAIL_SUFFIX = "@smail.nju.edu.cn";
+const EMAIL_CODE_TTL_MINUTES = 5;
+const SMTP_HOST = process.env.SMTP_HOST || "";
+const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || "true").toLowerCase() !== "false";
+const SMTP_USER = process.env.SMTP_USER || "";
+const SMTP_PASS = process.env.SMTP_PASS || "";
+const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
 const ITEM_TYPES = {
   consumable: {
     text: "耗材",
@@ -326,6 +334,105 @@ function nannaHeaders() {
   };
 }
 
+function smtpConfigured() {
+  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && SMTP_FROM);
+}
+
+function encodeHeader(value) {
+  return `=?UTF-8?B?${Buffer.from(String(value), "utf8").toString("base64")}?=`;
+}
+
+function dotStuff(value) {
+  return String(value).replace(/^\./gm, "..");
+}
+
+function parseAddress(input) {
+  const value = String(input || "").trim();
+  const match = value.match(/^(.*)<([^>]+)>$/);
+  if (!match) {
+    return {
+      header: value,
+      address: value
+    };
+  }
+  const name = match[1].trim();
+  const address = match[2].trim();
+  return {
+    header: `${encodeHeader(name)} <${address}>`,
+    address
+  };
+}
+
+function smtpResponse(socket) {
+  return new Promise((resolve, reject) => {
+    let buffer = "";
+    const onData = chunk => {
+      buffer += chunk.toString("utf8");
+      const lines = buffer.split(/\r?\n/).filter(Boolean);
+      if (!lines.length) return;
+      const last = lines[lines.length - 1];
+      if (/^\d{3} /.test(last)) {
+        socket.off("data", onData);
+        const code = Number(last.slice(0, 3));
+        if (code >= 400) {
+          reject(new Error(last));
+          return;
+        }
+        resolve(buffer);
+      }
+    };
+    socket.on("data", onData);
+    socket.once("error", reject);
+  });
+}
+
+async function smtpCommand(socket, command) {
+  socket.write(`${command}\r\n`);
+  return smtpResponse(socket);
+}
+
+async function sendMail({ to, subject, text }) {
+  if (!smtpConfigured()) {
+    throw new Error("服务器尚未配置 SMTP 发信参数");
+  }
+  const from = parseAddress(SMTP_FROM);
+  const socket = tls.connect({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    servername: SMTP_HOST,
+    rejectUnauthorized: SMTP_SECURE
+  });
+  await new Promise((resolve, reject) => {
+    socket.once("secureConnect", resolve);
+    socket.once("error", reject);
+  });
+  try {
+    await smtpResponse(socket);
+    await smtpCommand(socket, `EHLO ${SMTP_HOST}`);
+    await smtpCommand(socket, "AUTH LOGIN");
+    await smtpCommand(socket, Buffer.from(SMTP_USER).toString("base64"));
+    await smtpCommand(socket, Buffer.from(SMTP_PASS).toString("base64"));
+    await smtpCommand(socket, `MAIL FROM:<${from.address}>`);
+    await smtpCommand(socket, `RCPT TO:<${to}>`);
+    await smtpCommand(socket, "DATA");
+    const message = [
+      `From: ${from.header}`,
+      `To: <${to}>`,
+      `Subject: ${encodeHeader(subject)}`,
+      "MIME-Version: 1.0",
+      "Content-Type: text/plain; charset=utf-8",
+      "Content-Transfer-Encoding: 8bit",
+      "",
+      dotStuff(text),
+      "."
+    ].join("\r\n");
+    await smtpCommand(socket, message);
+    await smtpCommand(socket, "QUIT");
+  } finally {
+    socket.end();
+  }
+}
+
 async function callNanna(pathname, payload) {
   const response = await fetch(`${NANNA_API_BASE}${pathname}`, {
     method: "POST",
@@ -420,7 +527,15 @@ function validateStudentEmail(email) {
   return email.endsWith(NJU_STUDENT_EMAIL_SUFFIX);
 }
 
-async function emailLogin(req, res) {
+function hashEmailCode(email, code) {
+  return crypto.createHash("sha256").update(`nane-email:${email}:${code}:${JWT_SECRET}`).digest("hex");
+}
+
+function makeEmailCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+async function emailChallenge(req, res) {
   const input = await readBody(req);
   const email = normalizeEmail(input.email);
   if (!email) {
@@ -436,6 +551,41 @@ async function emailLogin(req, res) {
     return;
   }
 
+  const recent = await query(
+    "SELECT created_at FROM email_challenges WHERE email = $1 AND created_at > now() - interval '60 seconds' ORDER BY created_at DESC LIMIT 1",
+    [email]
+  );
+  if (recent.rows[0]) {
+    json(res, 429, { error: "EMAIL_RATE_LIMIT", message: "验证码发送太频繁，请稍后再试" });
+    return;
+  }
+
+  const code = makeEmailCode();
+  const challengeId = makeId("email_challenge");
+  await query(
+    `INSERT INTO email_challenges (id, email, code_hash, expires_at)
+     VALUES ($1, $2, $3, now() + ($4 || ' minutes')::interval)`,
+    [challengeId, email, hashEmailCode(email, code), EMAIL_CODE_TTL_MINUTES]
+  );
+  await sendMail({
+    to: email,
+    subject: "NanE 南易登录验证码",
+    text: [
+      `你的 NanE 南易登录验证码是：${code}`,
+      "",
+      `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`,
+      "如果这不是你本人操作，可以忽略这封邮件。"
+    ].join("\n")
+  });
+
+  json(res, 200, {
+    challengeId,
+    expiresIn: EMAIL_CODE_TTL_MINUTES * 60,
+    message: `验证码已发送至 ${email}`
+  });
+}
+
+async function upsertEmailUser(email) {
   const userId = `email_${crypto.createHash("sha1").update(email).digest("hex").slice(0, 16)}`;
   const name = email.split("@")[0] || "南易用户";
   const { rows } = await query(
@@ -453,7 +603,42 @@ async function emailLogin(req, res) {
     RETURNING *`,
     [userId, name, `email:${email}`, email, AGREEMENT_VERSION]
   );
-  const user = rows[0];
+  return rows[0];
+}
+
+async function emailVerify(req, res) {
+  const input = await readBody(req);
+  const email = normalizeEmail(input.email);
+  const code = String(input.code || "").trim();
+  const challengeId = String(input.challengeId || input.challenge_id || "").trim();
+  if (!email || !validateStudentEmail(email)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "邮箱登录仅支持 @smail.nju.edu.cn 后缀" });
+    return;
+  }
+  if (!agreementAccepted(input)) {
+    json(res, 400, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
+    return;
+  }
+  if (!/^\d{6}$/.test(code)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写 6 位邮箱验证码" });
+    return;
+  }
+  const params = challengeId ? [challengeId, email] : [email];
+  const sql = challengeId
+    ? `SELECT * FROM email_challenges
+       WHERE id = $1 AND email = $2 AND used_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 1`
+    : `SELECT * FROM email_challenges
+       WHERE email = $1 AND used_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 1`;
+  const { rows } = await query(sql, params);
+  const challenge = rows[0];
+  if (!challenge || challenge.code_hash !== hashEmailCode(email, code)) {
+    json(res, 400, { error: "INVALID_CODE", message: "验证码错误或已过期" });
+    return;
+  }
+  await query("UPDATE email_challenges SET used_at = now() WHERE id = $1", [challenge.id]);
+  const user = await upsertEmailUser(email);
   json(res, 200, {
     token: signToken({ sub: user.id, role: "user", provider: "email" }),
     user: publicUser(user),
@@ -936,7 +1121,17 @@ async function handle(req, res) {
   }
 
   if (req.method === "POST" && pathname === "/api/auth/email-login") {
-    await emailLogin(req, res);
+    json(res, 410, { error: "ENDPOINT_DEPRECATED", message: "请使用邮箱验证码登录接口" });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/email/challenge") {
+    await emailChallenge(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/email/verify") {
+    await emailVerify(req, res);
     return;
   }
 
