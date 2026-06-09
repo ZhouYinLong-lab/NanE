@@ -77,6 +77,19 @@ function $(id) {
   return document.getElementById(id);
 }
 
+function showToast(message, type = "info") {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  toast.addEventListener("click", () => toast.remove());
+  container.appendChild(toast);
+  setTimeout(() => {
+    if (toast.parentNode) toast.remove();
+  }, 4500);
+}
+
 function escapeHtml(value) {
   return String(value == null ? "" : value).replace(/[&<>"']/g, char => ({
     "&": "&amp;",
@@ -292,7 +305,7 @@ function renderItem(item, options = {}) {
           <h3>${escapeHtml(item.title)}</h3>
           <div class="item-location">${escapeHtml(item.campus)} · ${escapeHtml(item.building)}${options.showRoom && item.room ? ` · ${escapeHtml(item.room)}` : ""}</div>
         </div>
-        <p class="item-desc">${escapeHtml(item.description || "发布者暂未填写补充说明。")}</p>
+        <p class="item-desc">${escapeHtml(item.description || "暂未填写补充信息")}</p>
         <div class="badges">${badges.join("")}</div>
         ${item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(item.rejectReason)}</p>` : ""}
         ${claimPanel}
@@ -303,8 +316,9 @@ function renderItem(item, options = {}) {
 }
 
 async function loadHome() {
-  $("homeState").textContent = "正在加载...";
-  $("itemList").innerHTML = "";
+  $("homeState").textContent = "";
+  const skeletonHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
+  $("itemList").innerHTML = skeletonHTML + skeletonHTML + skeletonHTML;
   try {
     const keyword = $("keywordInput").value.trim();
     const params = new URLSearchParams();
@@ -379,8 +393,8 @@ async function loadProfile() {
       $("verifyBadge").textContent = data.user.profileComplete ? "校园身份与楼栋已设置" : "请补全楼栋资料";
     } else {
       clearSession();
-      $("profileName").textContent = "游客模式";
-      $("profileCampus").textContent = "可浏览物品，登录后可发布和查看联系方式";
+      $("profileName").textContent = "欢迎来访";
+      $("profileCampus").textContent = "登录后即可发布物品、查看联系方式";
       $("verifyBadge").textContent = "未登录";
     }
     syncProfileForm();
@@ -457,58 +471,28 @@ async function loadLocations() {
   renderLocationSelects("profile");
 }
 
-function daysInMonth(year, month) {
-  return new Date(year, month, 0).getDate();
-}
-
 function initDateControls() {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const yearSelect = $("expireYearSelect");
-  yearSelect.innerHTML = "";
-  for (let y = currentYear; y <= currentYear + 5; y++) {
-    yearSelect.innerHTML += `<option value="${y}" ${y === currentYear ? "selected" : ""}>${y}</option>`;
-  }
-  const monthSelect = $("expireMonthSelect");
-  monthSelect.innerHTML = "";
-  for (let m = 1; m <= 12; m++) {
-    monthSelect.innerHTML += `<option value="${m}" ${m === 12 ? "selected" : ""}>${m}</option>`;
-  }
-  refreshDayOptions();
-}
-
-function refreshDayOptions() {
-  const year = Number($("expireYearSelect").value) || new Date().getFullYear();
-  const month = Number($("expireMonthSelect").value) || 12;
-  const maxDay = daysInMonth(year, month);
-  const daySelect = $("expireDaySelect");
-  const currentDay = Number(daySelect.value) || maxDay;
-  daySelect.innerHTML = "";
-  for (let d = 1; d <= maxDay; d++) {
-    daySelect.innerHTML += `<option value="${d}" ${d === Math.min(currentDay, maxDay) ? "selected" : ""}>${d}</option>`;
-  }
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  $("expireDateInput").setAttribute("min", todayStr);
+  $("expireDateInput").value = `${yyyy}-12-31`;
 }
 
 function getExpireDate() {
-  const year = $("expireYearSelect").value;
-  const month = String($("expireMonthSelect").value).padStart(2, "0");
-  const day = String($("expireDaySelect").value).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return $("expireDateInput").value;
 }
 
 function setExpireDate(dateStr) {
-  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
-  const [year, month, day] = dateStr.split("-").map(Number);
-  if ($("expireYearSelect")) $("expireYearSelect").value = year;
-  if ($("expireMonthSelect")) $("expireMonthSelect").value = month;
-  refreshDayOptions();
-  if ($("expireDaySelect")) $("expireDaySelect").value = day;
+  if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    $("expireDateInput").value = dateStr;
+  }
 }
 
 function setDateRowDisabled(disabled) {
-  $("expireYearSelect").disabled = disabled;
-  $("expireMonthSelect").disabled = disabled;
-  $("expireDaySelect").disabled = disabled;
+  $("expireDateInput").disabled = disabled;
 }
 
 function toggleNoExpiry() {
@@ -593,7 +577,8 @@ async function loadMyItems() {
     $("pendingClaimsBanner").hidden = true;
     return;
   }
-  container.innerHTML = `<div class="state-card">正在加载...</div>`;
+  const skHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
+  container.innerHTML = skHTML + skHTML + skHTML;
   try {
     const data = await api("/me/items");
     const sorted = [...data.items];
@@ -628,14 +613,14 @@ async function openDetail(id) {
       <p class="detail-meta">${escapeHtml(data.item.campus)} · ${escapeHtml(data.item.building)}<br>
       ${escapeHtml(data.item.itemTypeText)} · ${escapeHtml(data.item.category)} · 剩余 ${escapeHtml(data.item.quantity)}${escapeHtml(data.item.unit)}<br>
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
-      <p class="item-desc">${escapeHtml(data.item.description || "发布者暂未填写补充说明。")}</p>
-      <div class="notice-line">免费互助信息撮合；禁止处方药、管控药和收费交易。领取前请自行确认包装、有效期和适用风险。</div>
-      <button class="primary wide" id="contactButton">${isVerifiedUser() && profileComplete() ? "查看联系方式" : "登录并补全资料后查看微信 / QQ"}</button>
+      <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
+      <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行确认包装完好与有效期，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
+      <button class="primary wide" id="contactButton">${isVerifiedUser() && profileComplete() ? `查看联系方式（今日剩余 ${state.user?.dailyContactRemaining ?? 5} 次）` : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
     `;
     $("detailDialog").showModal();
   } catch (error) {
-    alert(error.message || "详情加载失败");
+    showToast(error.message || "详情加载失败", "error");
   }
 }
 
@@ -655,7 +640,7 @@ async function openMyItemDetail(id) {
         状态：${escapeHtml(statusText(data.item.status))}${statusLabel}
       </p>
       ${data.item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(data.item.rejectReason)}</p>` : ""}
-      <p class="item-desc">${escapeHtml(data.item.description || "发布者暂未填写补充说明。")}</p>
+      <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
       <div class="contact-box">
         微信：${escapeHtml(data.item.contact?.wechat || "未填写")}<br>
         QQ：${escapeHtml(data.item.contact?.qq || "未填写")}
@@ -682,7 +667,7 @@ async function openMyItemDetail(id) {
     `;
     $("detailDialog").showModal();
   } catch (error) {
-    alert(error.message || "详情加载失败");
+    showToast(error.message || "详情加载失败", "error");
   }
 }
 
@@ -714,11 +699,11 @@ function startEditItem() {
     if (toolCat) toolCat.value = item.category || "常用工具";
   }
   if (item.itemType === "tool") {
-    $("typeHint").textContent = "适用于锤子、镊子、砂纸、热熔胶枪等偶发需求但不常备的小工具。请约定归还方式或说明是否赠送。";
+    $("typeHint").textContent = "适用于偶尔需要但不常备的小工具，如锤子、镊子、砂纸、热熔胶枪等。建议注明是借用还是赠送。";
   } else if (item.itemType === "medicine") {
-    $("typeHint").textContent = "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。";
+    $("typeHint").textContent = "药品仅限非处方常见药品，按大类选择即可。禁止处方药、管制药品及任何收费转让。";
   } else {
-    $("typeHint").textContent = "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
+    $("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
   }
   if (item.noExpiry) {
     $("noExpiryInput").checked = true;
@@ -760,7 +745,7 @@ async function handleListDelete(itemId, button) {
     await api(`/me/items/${encodeURIComponent(itemId)}/delete`, { method: "POST" });
     await Promise.all([loadHome(), loadMyItems()]);
   } catch (error) {
-    alert(error.message || "删除失败");
+    showToast(error.message || "删除失败", "error");
     button.disabled = false;
     button.textContent = "删除";
   }
@@ -777,8 +762,8 @@ async function viewContact() {
     const data = await api(`/items/${encodeURIComponent(state.selectedDetail.id)}/contact`, { method: "POST" });
     state.contactViewedForItem = state.selectedDetail.id;
     const noteText = data.alreadyViewed
-      ? "你今天已查看过该物品联系方式，本次不重复消耗额度。"
-      : "为防止联系方式滥用和隐私泄露，每位用户每日查看次数有限。";
+      ? "今天已查看过该联系方式，本次不重复计入次数。"
+      : "为保护每位同学的隐私，每日查看次数设有上限。";
     $("contactResult").innerHTML = `
       <div class="contact-box">
         微信：${escapeHtml(data.contact?.wechat || "未填写")}<br>
@@ -830,7 +815,7 @@ async function reviewClaimFromButton(button) {
     const data = await api(`/claims/${encodeURIComponent(claimId)}/${action}`, { method: "POST" });
     await Promise.all([loadHome(), loadProfile(), loadMyItems()]);
   } catch (error) {
-    alert(error.message || "处理失败");
+    showToast(error.message || "处理失败", "error");
   } finally {
     button.disabled = false;
     button.textContent = action === "confirm" ? "确认领取" : "忽略";
@@ -875,18 +860,18 @@ function setPublishType(itemType) {
   $("medicineCategoryWrap").hidden = itemType !== "medicine";
   $("toolCategoryWrap").hidden = itemType !== "tool";
   if (itemType === "tool") {
-    $("typeHint").textContent = "适用于锤子、镊子、砂纸、热熔胶枪等偶发需求但不常备的小工具。请约定归还方式或说明是否赠送。";
+    $("typeHint").textContent = "适用于偶尔需要但不常备的小工具，如锤子、镊子、砂纸、热熔胶枪等。建议注明是借用还是赠送。";
     $("titleInput").placeholder = "例如：热熔胶枪借用";
     $("noExpiryWrap").hidden = false;
     setDateRowDisabled(false);
   } else if (itemType === "medicine") {
-    $("typeHint").textContent = "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。";
+    $("typeHint").textContent = "药品仅限非处方常见药品，按大类选择即可。禁止处方药、管制药品及任何收费转让。";
     $("titleInput").placeholder = "例如：未拆封感冒药一盒";
     $("noExpiryWrap").hidden = true;
     $("noExpiryInput").checked = false;
     setDateRowDisabled(false);
   } else {
-    $("typeHint").textContent = "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
+    $("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
     $("titleInput").placeholder = "例如：碘伏棉签 10 支";
     $("noExpiryWrap").hidden = false;
     setDateRowDisabled(false);
@@ -966,18 +951,32 @@ async function submitPublish(event) {
         body: JSON.stringify(payload)
       });
     }
-    message.textContent = result.message || (isEdit ? "已保存" : "已提交审核");
-    event.target.reset();
-    $("quantityInput").value = "1";
-    $("unitInput").value = "件";
-    setExpireDate("2026-12-31");
-    setDateRowDisabled(false);
-    $("noExpiryInput").checked = false;
-    $("useProfileLocationInput").checked = true;
-    $("publishLocationFields").hidden = true;
-    $("disclaimerInput").checked = false;
-    setPublishType(state.selectedPublishType);
-    renderLocationSelects("publish");
+    message.textContent = "";
+    if (isEdit) {
+      event.target.reset();
+      $("quantityInput").value = "1";
+      $("unitInput").value = "件";
+      setExpireDate("2026-12-31");
+      setDateRowDisabled(false);
+      $("noExpiryInput").checked = false;
+      $("useProfileLocationInput").checked = true;
+      $("publishLocationFields").hidden = true;
+      $("disclaimerInput").checked = false;
+      setPublishType(state.selectedPublishType);
+      renderLocationSelects("publish");
+      showToast(result.message || "已保存", "success");
+    } else {
+      // Show confirmation card
+      const form = $("publishForm");
+      const successCard = $("publishSuccessCard");
+      if (form && successCard) {
+        form.hidden = true;
+        successCard.hidden = false;
+        $("publishSuccessTitle").textContent = "发布成功";
+        $("publishSuccessDesc").textContent = "你的「" + payload.title + "」已提交确认，通过后同楼同学就能看到了";
+        successCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
     loadMyItems();
   } catch (error) {
     message.textContent = error.message || "提交失败";
@@ -1033,6 +1032,7 @@ async function verifyCode() {
     saveSession(data.token, data.user);
     message.textContent = "校园身份验证成功";
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
+    syncPublishView();
   } catch (error) {
     message.textContent = error.message || "验证失败";
   }
@@ -1121,6 +1121,7 @@ async function passwordLogin() {
     message.textContent = "密码登录成功";
     switchLoginMode("code");
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
+    syncPublishView();
   } catch (error) {
     message.textContent = error.message || "密码登录失败";
   }
@@ -1293,6 +1294,7 @@ async function verifyEmailCode() {
       switchLoginMode("code");
     }
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
+    syncPublishView();
   } catch (error) {
     message.textContent = error.message || "验证码验证失败";
   }
@@ -1324,6 +1326,7 @@ async function saveProfile() {
     message.textContent = data.message || "账号资料已更新";
     $("profileFormCard").hidden = true;
     await Promise.all([loadProfile(), loadHome()]);
+    syncPublishView();
   } catch (error) {
     message.textContent = error.message || "保存失败";
   }
@@ -1367,16 +1370,29 @@ async function loadNotificationPrefs() {
   }
 }
 
-function syncSettingsAccount() {
-  const loggedOut = $("settingsLoggedOut");
-  const loggedIn = $("settingsLoggedIn");
-  if (!loggedOut || !loggedIn) return;
-  if (isVerifiedUser()) {
-    loggedOut.hidden = true;
-    loggedIn.hidden = false;
+function syncPublishView() {
+  const form = $("publishForm");
+  const guestCard = $("publishGuestCard");
+  if (!form || !guestCard) return;
+  if (isVerifiedUser() && profileComplete()) {
+    form.hidden = false;
+    guestCard.hidden = true;
   } else {
-    loggedOut.hidden = false;
-    loggedIn.hidden = true;
+    form.hidden = true;
+    guestCard.hidden = false;
+  }
+}
+
+function syncSettingsAccount() {
+  const loginCard = $("mineLoginCard");
+  const loggedInContent = $("mineLoggedInContent");
+  if (!loginCard || !loggedInContent) return;
+  if (isVerifiedUser()) {
+    loginCard.hidden = true;
+    loggedInContent.hidden = false;
+  } else {
+    loginCard.hidden = false;
+    loggedInContent.hidden = true;
   }
 }
 
@@ -1385,6 +1401,7 @@ function logout() {
   switchLoginMode("code");
   $("authMessage").textContent = "已登出";
   syncSettingsAccount();
+  syncPublishView();
   loadProfile();
   loadMyItems();
 }
@@ -1399,6 +1416,11 @@ function bindEvents() {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach(item => item.classList.toggle("active", item === tab));
       document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${tab.dataset.view}`));
+      if (tab.dataset.view === "publish") {
+        const successCard = $("publishSuccessCard");
+        if (successCard) successCard.hidden = true;
+        syncPublishView();
+      }
       if (tab.dataset.view === "mine") {
         loadProfile();
         loadMyItems();
@@ -1408,8 +1430,16 @@ function bindEvents() {
 
   $("refreshButton").addEventListener("click", () => Promise.all([loadHome(), loadProfile()]));
   $("searchButton").addEventListener("click", loadHome);
+  let searchDebounce;
+  $("keywordInput").addEventListener("input", () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(loadHome, 300);
+  });
   $("keywordInput").addEventListener("keydown", event => {
-    if (event.key === "Enter") loadHome();
+    if (event.key === "Enter") {
+      clearTimeout(searchDebounce);
+      loadHome();
+    }
   });
   $("filterChips").addEventListener("click", event => {
     const chip = event.target.closest(".chip");
@@ -1511,8 +1541,6 @@ function bindEvents() {
     $("publishLocationFields").hidden = event.target.checked;
   });
   $("noExpiryInput").addEventListener("change", toggleNoExpiry);
-  $("expireYearSelect").addEventListener("change", refreshDayOptions);
-  $("expireMonthSelect").addEventListener("change", refreshDayOptions);
   $("publishForm").addEventListener("submit", submitPublish);
   $("sendEmailCodeButton").addEventListener("click", sendEmailCode);
   $("verifyEmailCodeButton").addEventListener("click", verifyEmailCode);
@@ -1524,11 +1552,6 @@ function bindEvents() {
   $("verifyCodeButton").addEventListener("click", verifyCode);
   $("saveProfileButton").addEventListener("click", saveProfile);
   $("loadMineButton").addEventListener("click", loadMyItems);
-  $("openMyItemsButton").addEventListener("click", async () => {
-    $("myItemsPanel").hidden = false;
-    await loadMyItems();
-    $("myItemsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-  });
   $("openAgreementButton").addEventListener("click", () => {
     document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
     loadAgreement();
@@ -1548,19 +1571,22 @@ function bindEvents() {
     }
   });
   document.querySelector(".profile-card").addEventListener("click", () => {
+    if (!isVerifiedUser()) {
+      const loginCard = $("mineLoginCard");
+      if (loginCard) loginCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     // Activate settings sub-tab in mine view
     const settingsSubtab = document.querySelector('.mine-subtab[data-mine-view="settings"]');
     if (settingsSubtab) settingsSubtab.click();
-    if (isVerifiedUser()) {
-      setTimeout(() => {
-        const formCard = $("profileFormCard");
-        if (formCard) {
-          formCard.hidden = false;
-          formCard.scrollIntoView({ behavior: "smooth", block: "start" });
-          setTimeout(() => $("nicknameInput").focus(), 400);
-        }
-      }, 300);
-    }
+    setTimeout(() => {
+      const formCard = $("profileFormCard");
+      if (formCard) {
+        formCard.hidden = false;
+        formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => $("nicknameInput").focus(), 400);
+      }
+    }, 300);
   });
   document.querySelectorAll(".login-tab").forEach(tab => {
     tab.addEventListener("click", () => switchLoginMode(tab.dataset.loginMode));
@@ -1618,6 +1644,77 @@ function bindEvents() {
   $("settingsLogoutButton").addEventListener("click", () => {
     if (confirm("确定要登出吗？")) logout();
   });
+  // Post-publish confirmation buttons
+  const viewMyBtn = $("viewMyPublishBtn");
+  const continueBtn = $("continuePublishBtn");
+  if (viewMyBtn) {
+    viewMyBtn.addEventListener("click", () => {
+      const successCard = $("publishSuccessCard");
+      const form = $("publishForm");
+      if (successCard) successCard.hidden = true;
+      if (form) form.hidden = false;
+      // Reset form for next use
+      $("publishForm").reset();
+      $("quantityInput").value = "1";
+      $("unitInput").value = "件";
+      setExpireDate("2026-12-31");
+      setDateRowDisabled(false);
+      $("noExpiryInput").checked = false;
+      $("useProfileLocationInput").checked = true;
+      $("publishLocationFields").hidden = true;
+      $("disclaimerInput").checked = false;
+      setPublishType(state.selectedPublishType);
+      renderLocationSelects("publish");
+      const mineTab = document.querySelector('.tab[data-view="mine"]');
+      if (mineTab) mineTab.click();
+      setTimeout(() => {
+        const itemsPanel = $("mineItemsPanel");
+        if (itemsPanel) itemsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 200);
+    });
+  }
+  if (continueBtn) {
+    continueBtn.addEventListener("click", () => {
+      const successCard = $("publishSuccessCard");
+      const form = $("publishForm");
+      if (successCard) successCard.hidden = true;
+      if (form) {
+        form.hidden = false;
+        form.reset();
+        $("quantityInput").value = "1";
+        $("unitInput").value = "件";
+        setExpireDate("2026-12-31");
+        setDateRowDisabled(false);
+        $("noExpiryInput").checked = false;
+        $("useProfileLocationInput").checked = true;
+        $("publishLocationFields").hidden = true;
+        $("disclaimerInput").checked = false;
+        setPublishType(state.selectedPublishType);
+        renderLocationSelects("publish");
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }
+
+  // Publish interstitial CTA buttons
+  const goToLoginBtn = $("goToLoginFromPublish");
+  const goToHomeBtn = $("goToHomeFromPublish");
+  if (goToLoginBtn) {
+    goToLoginBtn.addEventListener("click", () => {
+      const mineTab = document.querySelector('.tab[data-view="mine"]');
+      if (mineTab) mineTab.click();
+      setTimeout(() => {
+        const loginCard = $("mineLoginCard");
+        if (loginCard) loginCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 200);
+    });
+  }
+  if (goToHomeBtn) {
+    goToHomeBtn.addEventListener("click", () => {
+      const homeTab = document.querySelector('.tab[data-view="home"]');
+      if (homeTab) homeTab.click();
+    });
+  }
   $("settingsAgreementButton").addEventListener("click", () => {
     document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
     loadAgreement();
@@ -1630,7 +1727,7 @@ function bindEvents() {
       document.querySelector("#agreementDialog h3").textContent = "NanE 隐私保护指引";
       $("agreementDialog").showModal();
     } catch (error) {
-      alert("隐私保护指引加载失败");
+      showToast("隐私保护指引加载失败", "error");
     }
   });
 }
@@ -1665,6 +1762,7 @@ async function init() {
   renderIconGrid();
   setPublishType("consumable");
   await Promise.all([loadHome(), loadProfile()]);
+  syncPublishView();
   await applyUrlParams();
 }
 

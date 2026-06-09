@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/web/styles.css">
 </head>
 <body>
+  <div id="toastContainer" aria-live="polite"></div>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand">
@@ -17,7 +18,7 @@
             <h1>南易</h1>
             <img src="/assets/brand/nane-logo.png" alt="NanE logo">
           </div>
-          <p>CAMPUS MUTUAL AID</p>
+          <p>南大校园 · 免费互助</p>
         </div>
       </div>
       <button class="icon-button" id="refreshButton" title="刷新"></button>
@@ -60,13 +61,27 @@
         <div class="section-head">
           <div>
             <h2>发布互助</h2>
-            <p>提交后进入人工审核，审核通过才会展示。</p>
+            <p>提交后将进行内容确认，通过后公开展示</p>
           </div>
+        </div>
+        <div class="card form-card state-card" id="publishGuestCard">
+          <div class="guest-publish-icon"></div>
+          <h3 style="margin:0 0 8px;font-size:22px">登录后即可发布</h3>
+          <p style="margin:0 0 20px;">将闲置的创可贴、感冒药、体温计等分享给同楼同学</p>
+          <button class="primary wide" id="goToLoginFromPublish" style="max-width:260px;margin:0 auto">去登录</button>
+          <button class="secondary wide" id="goToHomeFromPublish" style="max-width:260px;margin:8px auto 0">先逛逛首页</button>
+        </div>
+        <div class="card form-card state-card" id="publishSuccessCard" hidden>
+          <div class="guest-publish-icon"></div>
+          <h3 id="publishSuccessTitle" style="margin:0 0 8px;font-size:22px">发布成功</h3>
+          <p id="publishSuccessDesc" style="margin:0 0 20px;">物品已提交审核，我们会在 24 小时内处理</p>
+          <button class="primary wide" id="viewMyPublishBtn" style="max-width:260px;margin:0 auto">查看我的发布</button>
+          <button class="secondary wide" id="continuePublishBtn" style="max-width:260px;margin:8px auto 0">继续发布</button>
         </div>
         <form class="card form-card" id="publishForm">
           <div class="rules-card">
-            <strong>发布规范</strong>
-            <span>支持低风险应急耗材与非处方常见药品免费互助；药品仅使用笼统分类。</span>
+            <strong>发布须知</strong>
+            <span>本平台仅支持低风险应急耗材与非处方药品的免费共享。药品按大类选择即可，无需填写具体药名；处方药与管制药品禁止发布。</span>
           </div>
 
           <label>物品类型</label>
@@ -75,7 +90,7 @@
             <button type="button" class="segment" data-item-type="medicine">药品</button>
             <button type="button" class="segment" data-item-type="tool">工具</button>
           </div>
-          <p class="hint" id="typeHint">耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。</p>
+          <p class="hint" id="typeHint">适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。</p>
 
           <label for="titleInput">物品名称 *</label>
           <input id="titleInput" required placeholder="例如：碘伏棉签 10 支">
@@ -146,19 +161,8 @@
               <span>长期有效 / 无保质期</span>
             </label>
           </div>
-          <div class="date-row" id="dateRow">
-            <div class="date-segment">
-              <label for="expireYearSelect" class="date-label">年</label>
-              <select id="expireYearSelect"></select>
-            </div>
-            <div class="date-segment">
-              <label for="expireMonthSelect" class="date-label">月</label>
-              <select id="expireMonthSelect"></select>
-            </div>
-            <div class="date-segment">
-              <label for="expireDaySelect" class="date-label">日</label>
-              <select id="expireDaySelect"></select>
-            </div>
+          <div id="dateRow">
+            <input type="date" id="expireDateInput">
           </div>
 
           <label for="descriptionInput">补充说明</label>
@@ -177,7 +181,7 @@
 
           <label class="checkbox-row">
             <input id="disclaimerInput" type="checkbox">
-            <span>我确认本次发布为免费互助，禁止处方药、管控药、收费交易和已拆分不明物品。</span>
+            <span>我确认本次为免费共享，不含处方药、管制药品及任何形式的收费。</span>
           </label>
 
           <button class="primary wide" type="submit">提交审核</button>
@@ -195,27 +199,111 @@
           </div>
         </div>
 
+        <!-- Logged-out: centered login card -->
+        <div id="mineLoginCard" class="card form-card mine-login-center">
+          <h3>登录 NanE</h3>
+          <p class="hint">首选南京大学学生邮箱登录，仅支持 <strong>@smail.nju.edu.cn</strong> 后缀。</p>
+          <label class="checkbox-row agreement-row">
+            <input id="agreementInput" type="checkbox">
+            <span>我已阅读并同意 <button type="button" class="link-button" id="openAgreementButton">《NanE 南易用户协议》</button></span>
+          </label>
+          <div class="login-block primary-login">
+            <div class="login-tabs">
+              <button class="login-tab active" data-login-mode="code">验证码登录</button>
+              <button class="login-tab" data-login-mode="password">密码登录</button>
+            </div>
+            <div id="codeLoginSection">
+              <div class="auth-row" style="margin-bottom:8px">
+                <div class="email-combo">
+                  <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
+                  <span>@smail.nju.edu.cn</span>
+                </div>
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
+                <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
+                <button class="primary small" id="verifyEmailCodeButton">登录</button>
+              </div>
+            </div>
+            <div id="passwordLoginSection" hidden>
+              <div class="auth-row">
+                <div class="email-combo">
+                  <input id="passwordEmailInput" autocomplete="username" placeholder="邮箱前缀">
+                  <span>@smail.nju.edu.cn</span>
+                </div>
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="passwordInput" type="password" autocomplete="current-password" placeholder="输入密码">
+                <button class="primary small" id="passwordLoginButton">登录</button>
+              </div>
+              <p class="hint forgot-row">
+                <button type="button" class="link-button" id="forgotPasswordButton">忘记密码？</button>
+              </p>
+            </div>
+            <div id="forgotPasswordSection" hidden>
+              <h4>重置密码</h4>
+              <p class="hint">输入邮箱前缀，验证码将发送到你的南大学生邮箱。</p>
+              <div class="auth-row">
+                <div class="email-combo">
+                  <input id="resetEmailInput" placeholder="邮箱前缀">
+                  <span>@smail.nju.edu.cn</span>
+                </div>
+                <button class="primary small" id="sendResetCodeButton">发送验证码</button>
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="resetCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位验证码">
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="输入新密码（至少8位，含字母和数字）">
+                <button class="primary small" id="resetPasswordButton">重置密码</button>
+              </div>
+              <p class="hint forgot-row">
+                <button type="button" class="link-button" id="backFromForgotButton">← 返回登录</button>
+              </p>
+            </div>
+            <div id="setPasswordPrompt" hidden>
+              <h4>设置登录密码</h4>
+              <p class="hint">设置密码后，下次可直接使用密码登录，无需等待验证码。</p>
+              <div class="auth-row">
+                <input id="setPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
+                <button class="primary small" id="setPasswordButton">设置密码</button>
+              </div>
+              <p class="hint forgot-row">
+                <button type="button" class="link-button" id="skipSetPasswordButton">暂不设置</button>
+              </p>
+            </div>
+          </div>
+          <details class="login-block secondary-login">
+            <summary>使用南哪小帮手验证码登录</summary>
+            <p class="hint">输入邮箱或学号后，南哪小帮手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
+            <div class="field-grid">
+              <input id="authEmail" placeholder="邮箱（可选）">
+              <input id="authStudentId" placeholder="学号（可选）">
+            </div>
+            <div class="auth-row">
+              <input id="authCode" placeholder="南哪小帮手验证码">
+              <button class="primary small" id="sendCodeButton">发送</button>
+              <button class="primary small" id="verifyCodeButton">验证</button>
+            </div>
+          </details>
+          <div class="form-message" id="authMessage"></div>
+        </div>
+
+        <!-- Logged-in: sub-nav + panels -->
+        <div id="mineLoggedInContent" hidden>
         <div class="mine-subnav">
           <button class="mine-subtab active" data-mine-view="items">我的发布</button>
           <button class="mine-subtab" data-mine-view="settings">账号设置</button>
         </div>
 
         <div id="mineItemsPanel">
-        <div id="pendingClaimsBanner" class="card claim-banner" hidden>
-          <div class="claim-banner-head">
-            <h3>待确认领取提醒</h3>
-            <span id="pendingClaimsCount"></span>
+          <div id="pendingClaimsBanner" class="card claim-banner" hidden>
+            <div class="claim-banner-head">
+              <h3>待确认领取提醒</h3>
+              <span id="pendingClaimsCount"></span>
+            </div>
+            <div id="pendingClaimsList"></div>
           </div>
-          <div id="pendingClaimsList"></div>
-        </div>
-        <div class="card form-card my-items-entry">
-          <div>
-            <h3>我的发布</h3>
-            <p class="hint">查看审核中、上架中、已驳回和已下架的互助记录。</p>
-          </div>
-          <button class="primary small" id="openMyItemsButton">进入</button>
-        </div>
-        <div id="myItemsPanel" hidden>
           <div class="section-head">
             <div>
               <h2>我的发布</h2>
@@ -225,182 +313,92 @@
           </div>
           <div class="item-list" id="myItemList"></div>
         </div>
-        </div>
 
         <div id="mineSettingsPanel" hidden>
-        <div class="section-head">
-          <div><h2>账号</h2></div>
+          <div class="section-head">
+            <div><h2>账号</h2></div>
+          </div>
+          <div class="card form-card">
+            <div id="settingsLoggedIn">
+              <button class="primary wide" id="settingsEditProfileButton">修改资料</button>
+              <button class="primary wide" id="settingsChangePasswordButton" style="margin-top:10px">修改密码</button>
+              <button class="secondary wide" id="settingsLogoutButton" style="margin-top:10px">登出</button>
+              <div id="changePasswordForm" hidden style="margin-top:16px">
+                <h4>修改密码</h4>
+                <input id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="当前密码" style="margin-bottom:8px">
+                <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）" style="margin-bottom:8px">
+                <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="再次输入新密码" style="margin-bottom:8px">
+                <button class="primary wide" id="changePasswordButton">确认修改密码</button>
+                <button class="secondary wide" id="cancelChangePasswordButton" style="margin-top:8px">取消</button>
+                <div class="form-message" id="changePasswordMessage"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card form-card" id="profileFormCard" hidden>
+            <h3>账号资料</h3>
+            <p class="hint">发布和查看联系方式前，需要设置昵称、校区和楼栋。宿舍号可选，仅用于本人发布和后台审核。</p>
+            <label for="nicknameInput">昵称 *</label>
+            <input id="nicknameInput" maxlength="16" placeholder="例如：热心小蓝鲸">
+            <div class="field-grid">
+              <div>
+                <label for="profileCampusSelect">校区 *</label>
+                <select id="profileCampusSelect"></select>
+              </div>
+              <div>
+                <label for="profileBuildingSelect">楼栋 *</label>
+                <select id="profileBuildingSelect"></select>
+              </div>
+            </div>
+            <label for="profileRoomSelect">宿舍号（选填）</label>
+            <select id="profileRoomSelect">
+              <option value="">不填写宿舍号</option>
+            </select>
+            <div class="profile-room-spacer"></div>
+            <button class="primary wide" id="saveProfileButton">保存账号资料</button>
+            <div class="form-message" id="profileMessage"></div>
+          </div>
+
+          <div class="section-head">
+            <div><h2>通知</h2></div>
+          </div>
+          <div class="card form-card">
+            <div class="settings-row">
+              <div>
+                <strong>领取提醒邮件</strong>
+                <p class="hint">有人提醒你确认领取时，发送邮件通知</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="claimEmailToggle" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-head">
+            <div><h2>外观</h2></div>
+          </div>
+          <div class="card form-card">
+            <div class="settings-row">
+              <div>
+                <strong>深色模式</strong>
+                <p class="hint">切换深色/浅色配色方案</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
         </div>
-        <div class="card form-card" id="settingsAccountCard">
-          <div id="settingsLoggedOut">
-            <h3>登录 NanE</h3>
-            <p class="hint">首选南京大学学生邮箱登录，仅支持 <strong>@smail.nju.edu.cn</strong> 后缀。</p>
-            <label class="checkbox-row agreement-row">
-              <input id="agreementInput" type="checkbox">
-              <span>我已阅读并同意 <button type="button" class="link-button" id="openAgreementButton">《NanE 南易用户协议》</button></span>
-            </label>
-            <div class="login-block primary-login">
-              <div class="login-tabs">
-                <button class="login-tab active" data-login-mode="code">验证码登录</button>
-                <button class="login-tab" data-login-mode="password">密码登录</button>
-              </div>
-              <div id="codeLoginSection">
-                <div class="auth-row" style="margin-bottom:8px">
-                  <div class="email-combo">
-                    <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
-                    <span>@smail.nju.edu.cn</span>
-                  </div>
-                </div>
-                <div class="auth-row email-code-row">
-                  <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
-                  <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
-                  <button class="primary small" id="verifyEmailCodeButton">登录</button>
-                </div>
-              </div>
-              <div id="passwordLoginSection" hidden>
-                <div class="auth-row">
-                  <div class="email-combo">
-                    <input id="passwordEmailInput" autocomplete="username" placeholder="邮箱前缀">
-                    <span>@smail.nju.edu.cn</span>
-                  </div>
-                </div>
-                <div class="auth-row email-code-row">
-                  <input id="passwordInput" type="password" autocomplete="current-password" placeholder="输入密码">
-                  <button class="primary small" id="passwordLoginButton">登录</button>
-                </div>
-                <p class="hint forgot-row">
-                  <button type="button" class="link-button" id="forgotPasswordButton">忘记密码？</button>
-                </p>
-              </div>
-              <div id="forgotPasswordSection" hidden>
-                <h4>重置密码</h4>
-                <p class="hint">输入邮箱前缀，验证码将发送到你的南大学生邮箱。</p>
-                <div class="auth-row">
-                  <div class="email-combo">
-                    <input id="resetEmailInput" placeholder="邮箱前缀">
-                    <span>@smail.nju.edu.cn</span>
-                  </div>
-                  <button class="primary small" id="sendResetCodeButton">发送验证码</button>
-                </div>
-                <div class="auth-row email-code-row">
-                  <input id="resetCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位验证码">
-                </div>
-                <div class="auth-row email-code-row">
-                  <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="输入新密码（至少8位，含字母和数字）">
-                  <button class="primary small" id="resetPasswordButton">重置密码</button>
-                </div>
-                <p class="hint forgot-row">
-                  <button type="button" class="link-button" id="backFromForgotButton">← 返回登录</button>
-                </p>
-              </div>
-              <div id="setPasswordPrompt" hidden>
-                <h4>设置登录密码</h4>
-                <p class="hint">设置密码后，下次可直接使用密码登录，无需等待验证码。</p>
-                <div class="auth-row">
-                  <input id="setPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
-                  <button class="primary small" id="setPasswordButton">设置密码</button>
-                </div>
-                <p class="hint forgot-row">
-                  <button type="button" class="link-button" id="skipSetPasswordButton">暂不设置</button>
-                </p>
-              </div>
-            </div>
-            <details class="login-block secondary-login">
-              <summary>使用南哪小帮手验证码登录</summary>
-              <p class="hint">输入邮箱或学号后，南哪小帮手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
-              <div class="field-grid">
-                <input id="authEmail" placeholder="邮箱（可选）">
-                <input id="authStudentId" placeholder="学号（可选）">
-              </div>
-              <div class="auth-row">
-                <input id="authCode" placeholder="南哪小帮手验证码">
-                <button class="primary small" id="sendCodeButton">发送</button>
-                <button class="primary small" id="verifyCodeButton">验证</button>
-              </div>
-            </details>
-            <div class="form-message" id="authMessage"></div>
-          </div>
-          <div id="settingsLoggedIn" hidden>
-            <button class="primary wide" id="settingsEditProfileButton">修改资料</button>
-            <button class="primary wide" id="settingsChangePasswordButton" style="margin-top:10px">修改密码</button>
-            <button class="secondary wide" id="settingsLogoutButton" style="margin-top:10px">登出</button>
-            <div id="changePasswordForm" hidden style="margin-top:16px">
-              <h4>修改密码</h4>
-              <input id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="当前密码" style="margin-bottom:8px">
-              <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）" style="margin-bottom:8px">
-              <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="再次输入新密码" style="margin-bottom:8px">
-              <button class="primary wide" id="changePasswordButton">确认修改密码</button>
-              <button class="secondary wide" id="cancelChangePasswordButton" style="margin-top:8px">取消</button>
-              <div class="form-message" id="changePasswordMessage"></div>
-            </div>
-          </div>
         </div>
 
-        <div class="card form-card" id="profileFormCard" hidden>
-          <h3>账号资料</h3>
-          <p class="hint">发布和查看联系方式前，需要设置昵称、校区和楼栋。宿舍号可选，仅用于本人发布和后台审核。</p>
-          <label for="nicknameInput">昵称 *</label>
-          <input id="nicknameInput" maxlength="16" placeholder="例如：热心小蓝鲸">
-          <div class="field-grid">
-            <div>
-              <label for="profileCampusSelect">校区 *</label>
-              <select id="profileCampusSelect"></select>
-            </div>
-            <div>
-              <label for="profileBuildingSelect">楼栋 *</label>
-              <select id="profileBuildingSelect"></select>
-            </div>
-          </div>
-          <label for="profileRoomSelect">宿舍号（选填）</label>
-          <select id="profileRoomSelect">
-            <option value="">不填写宿舍号</option>
-          </select>
-          <div class="profile-room-spacer"></div>
-          <button class="primary wide" id="saveProfileButton">保存账号资料</button>
-          <div class="form-message" id="profileMessage"></div>
-        </div>
-
-        <div class="section-head">
-          <div><h2>通知</h2></div>
-        </div>
-        <div class="card form-card">
-          <div class="settings-row">
-            <div>
-              <strong>领取提醒邮件</strong>
-              <p class="hint">有人提醒你确认领取时，发送邮件通知</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="claimEmailToggle" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div class="section-head">
-          <div><h2>外观</h2></div>
-        </div>
-        <div class="card form-card">
-          <div class="settings-row">
-            <div>
-              <strong>深色模式</strong>
-              <p class="hint">切换深色/浅色配色方案</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="darkModeToggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div class="section-head">
-          <div><h2>关于 NanE</h2></div>
-        </div>
-        <div class="card form-card">
+        <div class="mine-about-footer">
+          <h2>关于 NanE</h2>
           <button type="button" class="link-button" id="settingsAgreementButton">用户协议</button>
-          <br>
-          <button type="button" class="link-button" id="settingsPrivacyButton" style="margin-top:8px">隐私保护指引</button>
-          <p class="hint" style="margin-top:12px">版本 0.3.0</p>
-        </div>
+          <span class="about-sep">·</span>
+          <button type="button" class="link-button" id="settingsPrivacyButton">隐私保护指引</button>
+          <p class="hint">南大校园互助平台</p>
         </div>
       </section>
     </main>
