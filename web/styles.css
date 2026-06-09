@@ -371,6 +371,12 @@ textarea:focus {
   background: var(--card);
   color: var(--muted);
   font-weight: var(--fw-heavy);
+  font-size: 13px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.chip:hover {
+  border-color: var(--muted);
 }
 
 .chip.active,
@@ -378,6 +384,11 @@ textarea:focus {
   border-color: var(--text);
   background: var(--text);
   color: var(--on-accent);
+}
+
+.chip-type {
+  font-weight: var(--fw-black);
+  font-size: 14px;
 }
 
 /* ===== Notice ===== */
@@ -590,9 +601,23 @@ textarea:focus {
   font-weight: var(--fw-heavy);
 }
 
-.badge.purple {
+.badge.purple,
+.badge-medicine {
   border-color: var(--purple);
   color: var(--purple);
+  background: var(--purple-soft);
+}
+
+.badge-consumable {
+  border-color: #4a7c59;
+  color: #4a7c59;
+  background: rgba(74, 124, 89, 0.08);
+}
+
+.badge-tool {
+  border-color: #5b7a9a;
+  color: #5b7a9a;
+  background: rgba(91, 122, 154, 0.08);
 }
 
 .badge.warning {
@@ -945,6 +970,7 @@ textarea:focus {
   align-items: center;
   gap: 22px;
   padding: 28px;
+  margin-bottom: var(--space-xl);
   background: var(--purple);
   color: var(--on-accent);
   cursor: pointer;
@@ -1107,8 +1133,7 @@ dialog::backdrop {
 
 /* ===== Mine Login Center ===== */
 .mine-login-center {
-  max-width: 520px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .mine-login-center h3 {
@@ -1127,7 +1152,7 @@ dialog::backdrop {
 
 /* ===== Mine About Footer ===== */
 .mine-about-footer {
-  margin-top: var(--space-2xl);
+  margin-top: var(--space-xl);
   padding-top: var(--space-xl);
   border-top: 1px solid var(--line);
   text-align: center;
@@ -1308,6 +1333,21 @@ dialog::backdrop {
 [data-theme="dark"] .badge {
   background: var(--card);
   color: var(--text);
+}
+
+[data-theme="dark"] .badge-consumable {
+  color: #7dba92;
+  background: rgba(125, 186, 146, 0.12);
+}
+
+[data-theme="dark"] .badge-medicine {
+  color: #d48bd4;
+  background: rgba(110, 0, 101, 0.15);
+}
+
+[data-theme="dark"] .badge-tool {
+  color: #92b4d4;
+  background: rgba(146, 180, 212, 0.12);
 }
 
 [data-theme="dark"] .secondary {

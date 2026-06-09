@@ -301,8 +301,9 @@ function expiryText(item) {
 }
 
 function renderItem(item, options = {}) {
+  const typeClass = `badge badge-${item.itemType || "consumable"}`;
   const badges = [
-    `<span class="badge purple">${escapeHtml(item.itemTypeText || "耗材")}</span>`,
+    `<span class="${typeClass}">${escapeHtml(item.itemTypeText || "耗材")}</span>`,
     `<span class="badge">${escapeHtml(item.category || "应急耗材")}</span>`
   ];
   if (options.showStatus && item.status && item.status !== "online") {
@@ -406,8 +407,12 @@ async function loadHome() {
       });
     }
 
-    $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻`;
-    $("homeState").textContent = items.length ? "" : "暂无上架物品";
+    $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻${items.length ? ` · ${items.length} 件` : ""}`;
+    if (!items.length) {
+      $("homeState").textContent = keyword ? `未找到与「${keyword}」相关的物品` : "暂无上架物品";
+    } else {
+      $("homeState").textContent = "";
+    }
     $("itemList").innerHTML = items.map(item => renderItem(item)).join("");
   } catch (error) {
     $("viewerLabel").textContent = "API 未连接";

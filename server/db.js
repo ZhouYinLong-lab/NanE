@@ -108,65 +108,163 @@ async function initializeDatabase() {
     ["admin_demo", "admin", hashPassword(ADMIN_PASSWORD)]
   );
 
-  const { rows } = await query("SELECT COUNT(*)::int AS count FROM items");
-  if (rows[0].count > 0) {
-    return;
-  }
-
+  // Seeds upserted on every startup — ON CONFLICT DO UPDATE ensures idempotency
   const seeds = [
+    // --- Consumables (online) ---
     {
-      id: "item_iodine",
-      title: "碘伏棉签 10 支",
-      itemType: "consumable",
-      itemIcon: "pumpMedical",
-      category: "消毒护理",
-      description: "开学囤多了，独立包装未拆封，适合处理小伤口。",
-      quantity: 10,
-      unit: "支",
-      campus: "仙林校区",
-      building: "南苑 A 栋",
-      room: "",
-      expireDate: "2026-12-31",
-      status: "online",
-      ownerName: "周同学",
-      wechat: "nane_demo",
-      qq: "123456789"
+      id: "seed_c01", title: "碘伏棉签 10 支", itemType: "consumable", itemIcon: "pumpMedical",
+      category: "消毒护理", description: "开学囤多了，独立包装未拆封，适合处理小伤口。",
+      quantity: 10, unit: "支", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2026-12-31", status: "online", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
     },
     {
-      id: "item_patch",
-      title: "创可贴 8 片",
-      itemType: "consumable",
-      itemIcon: "bandage",
-      category: "外伤处理",
-      description: "普通透气款，剩余 8 片，同楼栋可自取。",
-      quantity: 8,
-      unit: "片",
-      campus: "仙林校区",
-      building: "南苑 A 栋",
-      room: "",
-      expireDate: "2027-01-20",
-      status: "online",
-      ownerName: "周同学",
-      wechat: "nane_demo",
-      qq: "123456789"
+      id: "seed_c02", title: "创可贴 8 片", itemType: "consumable", itemIcon: "bandage",
+      category: "外伤处理", description: "普通透气款，剩余 8 片，同楼栋可自取。",
+      quantity: 8, unit: "片", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2027-01-20", status: "online", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
     },
     {
-      id: "item_cooling",
-      title: "退烧贴 3 片",
-      itemType: "consumable",
-      itemIcon: "temperatureHalf",
-      category: "退烧降温",
-      description: "未拆封，夜间应急优先。",
-      quantity: 3,
-      unit: "片",
-      campus: "仙林校区",
-      building: "南苑 B 栋",
-      room: "",
-      expireDate: "2026-08-15",
-      status: "online",
-      ownerName: "林同学",
-      wechat: "lin_help",
-      qq: "987654321"
+      id: "seed_c03", title: "退烧贴 3 片", itemType: "consumable", itemIcon: "temperatureHalf",
+      category: "退烧降温", description: "未拆封，夜间应急优先。",
+      quantity: 3, unit: "片", campus: "仙林校区", building: "南苑 B 栋", room: "301",
+      expireDate: "2026-08-15", status: "online", ownerName: "林同学", wechat: "lin_help", qq: "987654321"
+    },
+    {
+      id: "seed_c04", title: "N95 口罩 20 只", itemType: "consumable", itemIcon: "maskFace",
+      category: "防护用品", description: "独立包装 N95，未开封，同楼栋自取。",
+      quantity: 20, unit: "只", campus: "仙林校区", building: "南苑 C 栋", room: "",
+      expireDate: "2028-06-01", status: "online", ownerName: "王同学", wechat: "wang_n95", qq: ""
+    },
+    {
+      id: "seed_c05", title: "酒精湿巾 1 盒", itemType: "consumable", itemIcon: "soap",
+      category: "消毒护理", description: "全新未拆，80 抽/盒，可用于日常消毒。",
+      quantity: 1, unit: "盒", campus: "苏州校区", building: "独墅湖 1 号楼", room: "512",
+      expireDate: "2026-11-01", status: "online", ownerName: "赵同学", wechat: "zhao_sz", qq: ""
+    },
+    {
+      id: "seed_c06", title: "纱布绷带 5 卷", itemType: "consumable", itemIcon: "notesMedical",
+      category: "外伤处理", description: "医用无菌纱布绷带，独立包装 ×5，适合应急包扎。",
+      quantity: 5, unit: "卷", campus: "浦口校区", building: "浦苑 3 号楼", room: "",
+      expireDate: "2027-07-01", status: "online", ownerName: "张同学", wechat: "", qq: "5555666677"
+    },
+    // --- Consumables (no expiry / long-term) ---
+    {
+      id: "seed_c07", title: "急救包 1 套", itemType: "consumable", itemIcon: "kitMedical",
+      category: "应急耗材", description: "含创可贴、纱布、碘伏棉签、剪刀，全新未用。",
+      quantity: 1, unit: "套", campus: "仙林校区", building: "南苑 A 栋", room: "208",
+      expireDate: null, noExpiry: true, status: "online", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    {
+      id: "seed_c08", title: "体温计 1 支", itemType: "consumable", itemIcon: "temperatureHalf",
+      category: "其他耗材", description: "电子体温计，用不上转赠，功能正常。",
+      quantity: 1, unit: "支", campus: "仙林校区", building: "南苑 D 栋", room: "",
+      expireDate: null, noExpiry: true, status: "online", ownerName: "陈同学", wechat: "chen_temp", qq: ""
+    },
+    // --- Medicines (online) ---
+    {
+      id: "seed_m01", title: "感冒灵颗粒 1 盒", itemType: "medicine", itemIcon: "capsules",
+      category: "感冒药", description: "未拆封，有效期充足，同楼栋优先。",
+      quantity: 1, unit: "盒", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2027-03-15", status: "online", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    {
+      id: "seed_m02", title: "布洛芬 1 盒", itemType: "medicine", itemIcon: "pills",
+      category: "退烧药", description: "布洛芬缓释胶囊，全新未拆，数量有限请按需领取。",
+      quantity: 1, unit: "盒", campus: "仙林校区", building: "南苑 B 栋", room: "117",
+      expireDate: "2027-06-01", status: "online", ownerName: "李同学", wechat: "li_buluo", qq: ""
+    },
+    {
+      id: "seed_m03", title: "氯雷他定片 1 盒", itemType: "medicine", itemIcon: "tablets",
+      category: "过敏药", description: "季节性过敏备用，未拆封。",
+      quantity: 1, unit: "盒", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2027-01-10", status: "online", ownerName: "孙同学", wechat: "sun_allergy", qq: "1111222233"
+    },
+    {
+      id: "seed_m04", title: "蒙脱石散 3 袋", itemType: "medicine", itemIcon: "prescriptionBottleMedical",
+      category: "肠胃药", description: "蒙脱石散 3g/袋 ×3，应急止泻，未拆封。",
+      quantity: 3, unit: "袋", campus: "苏州校区", building: "独墅湖 2 号楼", room: "",
+      expireDate: "2026-09-30", status: "online", ownerName: "赵同学", wechat: "zhao_sz", qq: ""
+    },
+    {
+      id: "seed_m05", title: "西瓜霜含片 1 盒", itemType: "medicine", itemIcon: "bottleDroplet",
+      category: "其他非处方药", description: "全新，咽喉不适可备用。",
+      quantity: 1, unit: "盒", campus: "浦口校区", building: "浦苑 1 号楼", room: "305",
+      expireDate: "2027-04-01", status: "online", ownerName: "张同学", wechat: "", qq: "5555666677"
+    },
+    // --- Tools (online) ---
+    {
+      id: "seed_t01", title: "十字螺丝刀 1 把", itemType: "tool", itemIcon: "box",
+      category: "常用工具", description: "普通十字螺丝刀，偶尔借用，需归还。",
+      quantity: 1, unit: "把", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: null, noExpiry: true, status: "online", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    {
+      id: "seed_t02", title: "打气筒 1 个", itemType: "tool", itemIcon: "boxOpen",
+      category: "常用工具", description: "自行车打气筒，美嘴/法嘴通用，借用到楼栋大厅。",
+      quantity: 1, unit: "个", campus: "仙林校区", building: "南苑 C 栋", room: "",
+      expireDate: null, noExpiry: true, status: "online", ownerName: "王同学", wechat: "wang_n95", qq: ""
+    },
+    {
+      id: "seed_t03", title: "小剪刀 1 把", itemType: "tool", itemIcon: "handHoldingMedical",
+      category: "手工工具", description: "不锈钢小剪刀，可用于裁剪纱布等，借用。",
+      quantity: 1, unit: "把", campus: "苏州校区", building: "独墅湖 1 号楼", room: "",
+      expireDate: null, noExpiry: true, status: "online", ownerName: "赵同学", wechat: "zhao_sz", qq: ""
+    },
+    // --- Various statuses ---
+    {
+      id: "seed_r01", title: "阿莫西林 1 盒", itemType: "medicine", itemIcon: "capsules",
+      category: "感冒药", description: "本发布违反规则，将出现在驳回列表作为示范。",
+      quantity: 1, unit: "盒", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2026-10-01", status: "rejected", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    {
+      id: "seed_r02", title: "口罩 50 只（审核中）", itemType: "consumable", itemIcon: "shieldVirus",
+      category: "防护用品", description: "等待管理员审核。",
+      quantity: 50, unit: "只", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2028-01-01", status: "reviewing", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    {
+      id: "seed_r03", title: "过期的退烧药 1 盒", itemType: "medicine", itemIcon: "pills",
+      category: "退烧药", description: "已过有效期，系统自动标记为过期，仅作展示参考。",
+      quantity: 1, unit: "盒", campus: "仙林校区", building: "南苑 B 栋", room: "",
+      expireDate: "2025-01-01", status: "online", ownerName: "林同学", wechat: "lin_help", qq: ""
+    },
+    {
+      id: "seed_r04", title: "已被领取的感冒冲剂", itemType: "medicine", itemIcon: "capsules",
+      category: "感冒药", description: "已被同学领取，查看 claimed 状态表现。",
+      quantity: 1, unit: "盒", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: "2027-01-01", status: "claimed", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    {
+      id: "seed_r05", title: "已下架的扳手", itemType: "tool", itemIcon: "box",
+      category: "维修工具", description: "已主动下架，不再公开展示。",
+      quantity: 1, unit: "把", campus: "仙林校区", building: "南苑 A 栋", room: "",
+      expireDate: null, noExpiry: true, status: "taken_down", ownerName: "周同学", wechat: "nane_demo", qq: "123456789"
+    },
+    // --- Edge cases ---
+    {
+      id: "seed_e01", title: "驱蚊液 1 瓶", itemType: "consumable", itemIcon: "droplet",
+      category: "防护用品", description: "",
+      quantity: 1, unit: "瓶", campus: "仙林校区", building: "南苑 E 栋", room: "",
+      expireDate: "2027-08-01", status: "online", ownerName: "郑同学", wechat: "zheng_mos", qq: ""
+    },
+    {
+      id: "seed_e02", title: "维 C 泡腾片 1 管", itemType: "medicine", itemIcon: "tablets",
+      category: "其他非处方药", description: "补充维生素，仅限自取，早八前可联系。",
+      quantity: 1, unit: "管", campus: "苏州校区", building: "独墅湖 3 号楼", room: "220",
+      expireDate: "2027-12-31", status: "online", ownerName: "吴同学", wechat: "wu_vc", qq: ""
+    },
+    {
+      id: "seed_e03", title: "轮椅借用 1 台", itemType: "tool", itemIcon: "heartPulse",
+      category: "其他工具", description: "脚踝扭伤时购入，现已恢复，可长期借用。需到楼栋大厅自取。",
+      quantity: 1, unit: "台", campus: "浦口校区", building: "浦苑 2 号楼", room: "",
+      expireDate: null, noExpiry: true, status: "online", ownerName: "胡同学", wechat: "hu_wheel", qq: ""
+    },
+    {
+      id: "seed_e04", title: "医用棉签 100 支", itemType: "consumable", itemIcon: "plus",
+      category: "应急耗材", description: "超大包医用棉签，可分装赠送，每人限领 20 支。",
+      quantity: 100, unit: "支", campus: "仙林校区", building: "南苑 A 栋", room: "330",
+      expireDate: "2027-06-15", status: "online", ownerName: "周同学", wechat: "nane_demo", qq: ""
     }
   ];
 
@@ -174,9 +272,15 @@ async function initializeDatabase() {
     await query(
       `INSERT INTO items (
         id, title, item_type, item_icon, category, description, quantity, unit, campus, building, room,
-        expire_date, status, owner_id, owner_name, contact_wechat, contact_qq, created_at
+        expire_date, no_expiry, status, owner_id, owner_name, contact_wechat, contact_qq, created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, now())
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title, item_type = EXCLUDED.item_type, item_icon = EXCLUDED.item_icon,
+        category = EXCLUDED.category, description = EXCLUDED.description, quantity = EXCLUDED.quantity,
+        unit = EXCLUDED.unit, campus = EXCLUDED.campus, building = EXCLUDED.building, room = EXCLUDED.room,
+        expire_date = EXCLUDED.expire_date, no_expiry = EXCLUDED.no_expiry, status = EXCLUDED.status,
+        owner_name = EXCLUDED.owner_name, contact_wechat = EXCLUDED.contact_wechat, contact_qq = EXCLUDED.contact_qq`,
       [
         item.id,
         item.title,
@@ -190,6 +294,7 @@ async function initializeDatabase() {
         item.building,
         item.room,
         item.expireDate,
+        item.noExpiry || false,
         item.status,
         DEMO_USER_ID,
         item.ownerName,
