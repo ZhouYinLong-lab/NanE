@@ -26,6 +26,8 @@ const icons = {
   soap: "\ue06e"
 };
 
+const DEBUG_MODE = false; // Set to true for development
+
 const iconOptions = [
   ["plus", "通用"],
   ["bandage", "创可贴"],
@@ -307,12 +309,59 @@ async function loadHome() {
     const keyword = $("keywordInput").value.trim();
     const params = new URLSearchParams();
     if (keyword) params.set("keyword", keyword);
-    if (state.itemType) params.set("itemType", state.itemType);
-    if (state.itemCategory) params.set("category", state.itemCategory);
+    if (DEBUG_MODE) params.set("debug", "true");
+
+    // Collect active filter chips
+    const activeChips = document.querySelectorAll(".chip.active");
+    const types = new Set();
+    const categories = new Set();
+    let hasAll = false;
+    activeChips.forEach(c => {
+      if (c.dataset.type === "" && c.dataset.category === "") {
+        hasAll = true;
+      } else {
+        if (c.dataset.type) types.add(c.dataset.type);
+        if (c.dataset.category) categories.add(c.dataset.category);
+      }
+    });
+
+    // Determine API params
+    let clientFilter = null;
+    if (!hasAll) {
+      if (types.size === 1) {
+        params.set("itemType", [...types][0]);
+        if (categories.size === 1) {
+          params.set("category", [...categories][0]);
+        } else if (categories.size > 1) {
+          clientFilter = { categories: [...categories] };
+        }
+      } else if (types.size > 1) {
+        clientFilter = { types: [...types], categories: [...categories] };
+      }
+    }
+
     const data = await api(`/items${params.toString() ? `?${params}` : ""}`);
+    let items = data.items;
+
+    // Apply client-side filter for multi-select
+    if (clientFilter) {
+      items = items.filter(item => {
+        if (clientFilter.types?.length && clientFilter.categories?.length) {
+          return clientFilter.types.includes(item.itemType) || clientFilter.categories.includes(item.category);
+        }
+        if (clientFilter.types?.length) {
+          return clientFilter.types.includes(item.itemType);
+        }
+        if (clientFilter.categories?.length) {
+          return clientFilter.categories.includes(item.category);
+        }
+        return true;
+      });
+    }
+
     $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻`;
-    $("homeState").textContent = data.items.length ? "" : "暂无上架物品";
-    $("itemList").innerHTML = data.items.map(item => renderItem(item)).join("");
+    $("homeState").textContent = items.length ? "" : "暂无上架物品";
+    $("itemList").innerHTML = items.map(item => renderItem(item)).join("");
   } catch (error) {
     $("viewerLabel").textContent = "API 未连接";
     $("homeState").textContent = error.message || "API 未连接，请稍后重试";
@@ -1151,6 +1200,42 @@ async function setNewPassword() {
   }
 }
 
+async function changePassword() {
+  const message = $("changePasswordMessage");
+  const currentPassword = $("currentPasswordInput").value;
+  const newPassword = $("newPasswordInput").value;
+  const confirmPassword = $("confirmPasswordInput").value;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    message.textContent = "请填写所有密码字段";
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    message.textContent = "两次输入的新密码不一致";
+    return;
+  }
+  const pwError = validatePasswordStrength(newPassword);
+  if (pwError) {
+    message.textContent = pwError;
+    return;
+  }
+  try {
+    message.textContent = "正在修改密码...";
+    await api("/auth/password/change", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+    });
+    message.textContent = "密码修改成功";
+    $("changePasswordForm").hidden = true;
+    $("settingsChangePasswordButton").hidden = false;
+    $("currentPasswordInput").value = "";
+    $("newPasswordInput").value = "";
+    $("confirmPasswordInput").value = "";
+  } catch (error) {
+    message.textContent = error.message || "密码修改失败";
+  }
+}
+
 async function sendEmailCode() {
   const message = $("authMessage");
   const email = emailFromPrefix();
@@ -1237,6 +1322,7 @@ async function saveProfile() {
     });
     saveSession(state.token, data.user);
     message.textContent = data.message || "账号资料已更新";
+    $("profileFormCard").hidden = true;
     await Promise.all([loadProfile(), loadHome()]);
   } catch (error) {
     message.textContent = error.message || "保存失败";
@@ -1317,10 +1403,6 @@ function bindEvents() {
         loadProfile();
         loadMyItems();
       }
-      if (tab.dataset.view === "settings") {
-        loadProfile();
-        loadSettings();
-      }
     });
   });
 
@@ -1332,9 +1414,24 @@ function bindEvents() {
   $("filterChips").addEventListener("click", event => {
     const chip = event.target.closest(".chip");
     if (!chip) return;
-    state.itemType = chip.dataset.type || "";
-    state.itemCategory = chip.dataset.category || "";
-    document.querySelectorAll(".chip").forEach(item => item.classList.toggle("active", item === chip));
+    const isAll = chip.dataset.type === "" && chip.dataset.category === "";
+    // Toggle this chip
+    chip.classList.toggle("active");
+    if (isAll && chip.classList.contains("active")) {
+      // "全部" activated: deactivate all others
+      document.querySelectorAll(".chip").forEach(c => {
+        if (c !== chip) c.classList.remove("active");
+      });
+    } else if (!isAll) {
+      // Specific chip toggled: deactivate "全部"
+      const allChip = document.querySelector('.chip[data-type=""][data-category=""]');
+      if (allChip) allChip.classList.remove("active");
+    }
+    // If nothing active, activate "全部"
+    if (!document.querySelector(".chip.active")) {
+      const allChip = document.querySelector('.chip[data-type=""][data-category=""]');
+      if (allChip) allChip.classList.add("active");
+    }
     loadHome();
   });
   $("itemList").addEventListener("click", event => {
@@ -1451,9 +1548,10 @@ function bindEvents() {
     }
   });
   document.querySelector(".profile-card").addEventListener("click", () => {
+    // Activate settings sub-tab in mine view
+    const settingsSubtab = document.querySelector('.mine-subtab[data-mine-view="settings"]');
+    if (settingsSubtab) settingsSubtab.click();
     if (isVerifiedUser()) {
-      const settingsTab = document.querySelector('.tab[data-view="settings"]');
-      if (settingsTab) settingsTab.click();
       setTimeout(() => {
         const formCard = $("profileFormCard");
         if (formCard) {
@@ -1462,9 +1560,6 @@ function bindEvents() {
           setTimeout(() => $("nicknameInput").focus(), 400);
         }
       }, 300);
-    } else {
-      const settingsTab = document.querySelector('.tab[data-view="settings"]');
-      if (settingsTab) settingsTab.click();
     }
   });
   document.querySelectorAll(".login-tab").forEach(tab => {
@@ -1493,13 +1588,33 @@ function bindEvents() {
     setTimeout(() => $("nicknameInput").focus(), 400);
   });
   $("settingsChangePasswordButton").addEventListener("click", () => {
-    $("profileFormCard").hidden = true;
-    switchLoginMode("setPassword");
-    $("settingsLoggedOut").hidden = false;
-    $("settingsLoggedIn").hidden = true;
-    $("setPasswordPrompt").scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => $("setPasswordInput").focus(), 400);
+    $("changePasswordForm").hidden = false;
+    $("settingsChangePasswordButton").hidden = true;
   });
+  $("cancelChangePasswordButton").addEventListener("click", () => {
+    $("changePasswordForm").hidden = true;
+    $("settingsChangePasswordButton").hidden = false;
+    $("changePasswordMessage").textContent = "";
+  });
+  $("changePasswordButton").addEventListener("click", changePassword);
+
+  // Mine sub-tab toggle
+  document.querySelectorAll(".mine-subtab").forEach(subtab => {
+    subtab.addEventListener("click", () => {
+      document.querySelectorAll(".mine-subtab").forEach(s => s.classList.toggle("active", s === subtab));
+      const view = subtab.dataset.mineView;
+      if (view === "items") {
+        $("mineItemsPanel").hidden = false;
+        $("mineSettingsPanel").hidden = true;
+      } else if (view === "settings") {
+        $("mineItemsPanel").hidden = true;
+        $("mineSettingsPanel").hidden = false;
+        loadProfile();
+        loadSettings();
+      }
+    });
+  });
+
   $("settingsLogoutButton").addEventListener("click", () => {
     if (confirm("确定要登出吗？")) logout();
   });

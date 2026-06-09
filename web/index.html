@@ -27,7 +27,6 @@
       <button class="tab active" data-view="home">发现</button>
       <button class="tab" data-view="publish">发布</button>
       <button class="tab" data-view="mine">我的</button>
-      <button class="tab" data-view="settings">设置</button>
     </nav>
 
     <main>
@@ -196,6 +195,12 @@
           </div>
         </div>
 
+        <div class="mine-subnav">
+          <button class="mine-subtab active" data-mine-view="items">我的发布</button>
+          <button class="mine-subtab" data-mine-view="settings">账号设置</button>
+        </div>
+
+        <div id="mineItemsPanel">
         <div id="pendingClaimsBanner" class="card claim-banner" hidden>
           <div class="claim-banner-head">
             <h3>待确认领取提醒</h3>
@@ -220,9 +225,9 @@
           </div>
           <div class="item-list" id="myItemList"></div>
         </div>
-      </section>
+        </div>
 
-      <section class="view" id="view-settings">
+        <div id="mineSettingsPanel" hidden>
         <div class="section-head">
           <div><h2>账号</h2></div>
         </div>
@@ -240,15 +245,15 @@
                 <button class="login-tab" data-login-mode="password">密码登录</button>
               </div>
               <div id="codeLoginSection">
-                <div class="auth-row">
+                <div class="auth-row" style="margin-bottom:8px">
                   <div class="email-combo">
                     <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
                     <span>@smail.nju.edu.cn</span>
                   </div>
-                  <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
                 </div>
                 <div class="auth-row email-code-row">
                   <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
+                  <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
                   <button class="primary small" id="verifyEmailCodeButton">登录</button>
                 </div>
               </div>
@@ -319,6 +324,15 @@
             <button class="primary wide" id="settingsEditProfileButton">修改资料</button>
             <button class="primary wide" id="settingsChangePasswordButton" style="margin-top:10px">修改密码</button>
             <button class="secondary wide" id="settingsLogoutButton" style="margin-top:10px">登出</button>
+            <div id="changePasswordForm" hidden style="margin-top:16px">
+              <h4>修改密码</h4>
+              <input id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="当前密码" style="margin-bottom:8px">
+              <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）" style="margin-bottom:8px">
+              <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="再次输入新密码" style="margin-bottom:8px">
+              <button class="primary wide" id="changePasswordButton">确认修改密码</button>
+              <button class="secondary wide" id="cancelChangePasswordButton" style="margin-top:8px">取消</button>
+              <div class="form-message" id="changePasswordMessage"></div>
+            </div>
           </div>
         </div>
 
@@ -386,6 +400,7 @@
           <br>
           <button type="button" class="link-button" id="settingsPrivacyButton" style="margin-top:8px">隐私保护指引</button>
           <p class="hint" style="margin-top:12px">版本 0.3.0</p>
+        </div>
         </div>
       </section>
     </main>

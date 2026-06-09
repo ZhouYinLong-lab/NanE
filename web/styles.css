@@ -302,7 +302,7 @@ textarea:focus {
 .chips {
   display: flex;
   gap: var(--space-md);
-  overflow-x: auto;
+  flex-wrap: wrap;
   padding: 18px 0 var(--space-xs);
 }
 
@@ -1009,6 +1009,31 @@ dialog::backdrop {
   margin: 0 0 var(--space-xs);
 }
 
+/* ===== Mine Sub-nav ===== */
+.mine-subnav {
+  display: flex;
+  gap: var(--space-sm);
+  margin: 18px 0 14px;
+}
+
+.mine-subtab {
+  flex: 1;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--muted);
+  font-weight: var(--fw-heavy);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mine-subtab.active {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: var(--on-accent);
+}
+
 /* ===== Toggle Switch ===== */
 .toggle-switch {
   position: relative;
@@ -1126,6 +1151,16 @@ dialog::backdrop {
 }
 
 [data-theme="dark"] .login-tab.active {
+  background: var(--purple);
+  color: var(--on-accent);
+}
+
+[data-theme="dark"] .mine-subtab {
+  background: var(--card);
+  color: var(--muted);
+}
+
+[data-theme="dark"] .mine-subtab.active {
   background: var(--purple);
   color: var(--on-accent);
 }
