@@ -22,6 +22,8 @@ const NANNA_API_KEY = process.env.NANNA_API_KEY || "";
 const NANNA_SCOPES = ["identity:basic:read", "identity:student_id:read", "identity:campus:read", "identity:major:read"];
 const DAILY_CONTACT_LIMIT = 5;
 const AGREEMENT_VERSION = "v1.0";
+const DEBUG_MODE = String(process.env.DEBUG_MODE || "false").toLowerCase() === "true";
+const TEST_USER_IDS = ["u_demo"];
 const NJU_STUDENT_EMAIL_SUFFIX = "@smail.nju.edu.cn";
 const EMAIL_CODE_TTL_MINUTES = 5;
 const SMTP_HOST = process.env.SMTP_HOST || "";
@@ -895,6 +897,49 @@ async function passwordReset(req, res) {
   json(res, 200, { message: "密码重置成功，请使用新密码登录" });
 }
 
+async function changePassword(req, res) {
+  const user = await requireVerifiedUser(req, res);
+  if (!user) {
+    return;
+  }
+  const input = await readBody(req);
+  const currentPassword = String(input.currentPassword || "");
+  const newPassword = String(input.newPassword || "");
+  const confirmPassword = String(input.confirmPassword || "");
+
+  if (!user.password_hash || !user.password_salt) {
+    json(res, 400, { error: "NO_PASSWORD", message: "请先通过邮箱验证码设置初始密码" });
+    return;
+  }
+  if (!currentPassword) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请输入当前密码" });
+    return;
+  }
+  const expectedHash = hashUserPassword(currentPassword, user.password_salt);
+  const expectedBuffer = Buffer.from(expectedHash, "hex");
+  const actualBuffer = Buffer.from(user.password_hash, "hex");
+  if (expectedBuffer.length !== actualBuffer.length || !crypto.timingSafeEqual(expectedBuffer, actualBuffer)) {
+    json(res, 400, { error: "WRONG_PASSWORD", message: "当前密码错误" });
+    return;
+  }
+  const validationError = validatePasswordStrength(newPassword);
+  if (validationError) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: validationError });
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "两次输入的新密码不一致" });
+    return;
+  }
+  const salt = makePasswordSalt();
+  const passwordHash = hashUserPassword(newPassword, salt);
+  await query(
+    "UPDATE users SET password_hash = $1, password_salt = $2 WHERE id = $3",
+    [passwordHash, salt, user.id]
+  );
+  json(res, 200, { message: "密码修改成功" });
+}
+
 async function emailChallenge(req, res) {
   const input = await readBody(req);
   const email = normalizeEmail(input.email);
@@ -1099,6 +1144,9 @@ function validateItemInput(input) {
   if (!noExpiry && !/^\d{4}-\d{2}-\d{2}$/.test(String(input.expireDate))) {
     return "有效期格式必须是 YYYY-MM-DD";
   }
+  if (!noExpiry && String(input.expireDate) <= new Date().toISOString().slice(0, 10)) {
+    return "有效期不能早于明天，请修改后重新提交";
+  }
   if (input.disclaimerAccepted !== true) {
     return "发布前必须确认免费互助与禁止处方药/管控药声明";
   }
@@ -1111,6 +1159,8 @@ async function listItems(req, res, viewer) {
   const itemType = (url.searchParams.get("itemType") || "").trim();
   const category = (url.searchParams.get("category") || "").trim();
   const status = url.searchParams.get("status") || "online";
+
+  await query("UPDATE items SET status = 'expired' WHERE status = 'online' AND no_expiry = false AND expire_date < CURRENT_DATE");
 
   const clauses = [];
   const params = [];
@@ -1129,6 +1179,9 @@ async function listItems(req, res, viewer) {
   if (keyword) {
     params.push(`%${keyword}%`);
     clauses.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length} OR category ILIKE $${params.length} OR item_type ILIKE $${params.length})`);
+  }
+  if (!DEBUG_MODE) {
+    clauses.push(`owner_id NOT IN ('u_demo')`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
@@ -1437,11 +1490,19 @@ async function requireAdmin(req, res) {
 async function adminItems(req, res) {
   const url = new URL(req.url, "http://localhost");
   const status = url.searchParams.get("status") || "reviewing";
+
+  await query("UPDATE items SET status = 'expired' WHERE status = 'online' AND no_expiry = false AND expire_date < CURRENT_DATE");
+
   const params = [];
-  const where = status === "all" ? "" : "WHERE status = $1";
+  const clauses = [];
   if (status !== "all") {
     params.push(status);
+    clauses.push(`status = $${params.length}`);
   }
+  if (!DEBUG_MODE) {
+    clauses.push(`owner_id NOT IN ('u_demo')`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   const { rows } = await query(`SELECT * FROM items ${where} ORDER BY created_at DESC`, params);
   const viewer = await demoViewer();
   json(res, 200, { items: rows.map(row => itemFromRow(row, viewer, { includeContact: true, includeRoom: true })) });
@@ -1475,13 +1536,14 @@ async function reviewItem(req, res, itemId, action) {
 }
 
 async function adminStats(req, res) {
+  const testFilter = !DEBUG_MODE ? "WHERE owner_id NOT IN ('u_demo')" : "";
   const { rows } = await query(
     `SELECT
        COUNT(*) FILTER (WHERE status = 'reviewing')::int AS reviewing,
        COUNT(*) FILTER (WHERE status = 'online')::int AS online,
        COUNT(*) FILTER (WHERE status IN ('expired', 'taken_down', 'claimed'))::int AS offline,
        (SELECT COUNT(*)::int FROM contact_views WHERE view_date = CURRENT_DATE) AS contact_views_today
-     FROM items`
+     FROM items ${testFilter}`
   );
   json(res, 200, rows[0]);
 }
@@ -1621,6 +1683,18 @@ function adminPage() {
 </html>`;
 }
 
+async function expiredCount(req, res) {
+  const user = await requireVerifiedUser(req, res);
+  if (!user) {
+    return;
+  }
+  const { rows } = await query(
+    "SELECT COUNT(*)::int AS count FROM items WHERE owner_id = $1 AND status = 'expired'",
+    [user.id]
+  );
+  json(res, 200, { count: rows[0].count });
+}
+
 async function handle(req, res) {
   if (req.method === "OPTIONS") {
     json(res, 204, {});
@@ -1705,6 +1779,11 @@ async function handle(req, res) {
     return;
   }
 
+  if (req.method === "POST" && pathname === "/api/auth/password/change") {
+    await changePassword(req, res);
+    return;
+  }
+
   if (req.method === "POST" && pathname === "/api/auth/nanna/challenge") {
     await nannaChallenge(req, res);
     return;
@@ -1756,6 +1835,11 @@ async function handle(req, res) {
       return;
     }
     json(res, 200, { claimEmailEnabled: viewer.claim_email_enabled !== false });
+    return;
+  }
+
+  if (req.method === "GET" && pathname === "/api/me/expired-count") {
+    await expiredCount(req, res);
     return;
   }
 

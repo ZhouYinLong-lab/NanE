@@ -26,3 +26,5 @@ function loadEnvFile() {
 }
 
 loadEnvFile();
+
+process.env.DEBUG_MODE = process.env.DEBUG_MODE || "false";
