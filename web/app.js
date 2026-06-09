@@ -200,15 +200,15 @@ function requireVerified(message, pendingAction) {
   if (isVerifiedUser() && profileComplete()) {
     return true;
   }
-  const text = message || (isVerifiedUser() ? “请先补全昵称、校区和楼栋” : “请先在”我的”页登录并同意用户协议”);
+  const text = message || (isVerifiedUser() ? '请先补全昵称、校区和楼栋' : '请先在「我的」页登录并同意用户协议');
   if (pendingAction) {
     state.pendingAction = pendingAction;
   }
-  const activeMineTab = document.querySelector('.tab[data-view=”mine”]');
+  const activeMineTab = document.querySelector('.tab[data-view="mine"]');
   if (activeMineTab) {
     activeMineTab.click();
   }
-  $(“authMessage”).textContent = text;
+  $("authMessage").textContent = text;
   return false;
 }
 
@@ -217,8 +217,8 @@ function executePendingAction() {
   const action = state.pendingAction;
   state.pendingAction = null;
   if (isVerifiedUser() && profileComplete()) {
-    showToast(“登录成功，继续刚才的操作”, “success”);
-    setTimeout(() => { if (typeof action === “function”) action(); }, 600);
+    showToast("登录成功，继续刚才的操作", "success");
+    setTimeout(() => { if (typeof action === "function") action(); }, 600);
     return true;
   }
   return false;
@@ -923,12 +923,12 @@ async function submitPublish(event) {
   event.preventDefault();
   const message = $("publishMessage");
   if (!isVerifiedUser()) {
-    message.textContent = "请先在“我的”页登录并同意用户协议，再发布互助。";
+    message.textContent = "请先在「我的」页登录并同意用户协议，再发布互助。";
     requireVerified(message.textContent);
     return;
   }
   if (!profileComplete()) {
-    message.textContent = "请先在“我的”页补全昵称、校区和楼栋";
+    message.textContent = "请先在「我的」页补全昵称、校区和楼栋";
     requireVerified(message.textContent);
     return;
   }
