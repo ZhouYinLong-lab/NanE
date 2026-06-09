@@ -47,6 +47,7 @@ async function initializeDatabase() {
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMPTZ");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_salt TEXT");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS claim_email_enabled BOOLEAN NOT NULL DEFAULT true");
   await query(
     `CREATE TABLE IF NOT EXISTS email_challenges (
       id TEXT PRIMARY KEY,
@@ -73,16 +74,8 @@ async function initializeDatabase() {
   await query("ALTER TABLE claim_requests ALTER COLUMN status SET DEFAULT 'pending'");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC)");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC)");
-  await query(
-    `DO $$
-     BEGIN
-       IF NOT EXISTS (
-         SELECT 1 FROM pg_constraint WHERE conname = 'items_item_type_check'
-       ) THEN
-         ALTER TABLE items ADD CONSTRAINT items_item_type_check CHECK (item_type IN ('consumable', 'medicine'));
-       END IF;
-     END $$`
-  );
+  await query("ALTER TABLE items DROP CONSTRAINT IF EXISTS items_item_type_check");
+  await query("ALTER TABLE items ADD CONSTRAINT items_item_type_check CHECK (item_type IN ('consumable', 'medicine', 'tool'))");
 
   await query(
     `INSERT INTO users (id, name, campus, building, wechat, qq, openid)

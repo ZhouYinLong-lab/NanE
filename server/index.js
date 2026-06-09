@@ -43,6 +43,12 @@ const ITEM_TYPES = {
     defaultCategory: "感冒药",
     defaultIcon: "capsules",
     categories: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"]
+  },
+  tool: {
+    text: "工具",
+    defaultCategory: "常用工具",
+    defaultIcon: "box",
+    categories: ["常用工具", "维修工具", "手工工具", "清洁工具", "其他工具"]
   }
 };
 const ALLOWED_ITEM_ICONS = new Set([
@@ -1160,7 +1166,7 @@ async function createItem(req, res, viewer) {
   const typeConfig = ITEM_TYPES[input.itemType] || ITEM_TYPES.consumable;
   const category = String(input.category || typeConfig.defaultCategory).trim();
   const itemIcon = normalizeItemIcon(input.itemIcon, input.itemType);
-  const noExpiry = input.noExpiry === true && input.itemType === "consumable";
+  const noExpiry = input.noExpiry === true && (input.itemType === "consumable" || input.itemType === "tool");
   const { rows } = await query(
     `INSERT INTO items (
       id, title, item_type, item_icon, category, description, quantity, unit, campus, building, room,
@@ -1252,7 +1258,7 @@ async function requestClaim(req, res, viewer, itemId) {
   }
 
   const { rows } = await query(
-    `SELECT i.*, u.email AS owner_email
+    `SELECT i.*, u.email AS owner_email, COALESCE(u.claim_email_enabled, true) AS owner_claim_email_enabled
      FROM items i
      LEFT JOIN users u ON u.id = i.owner_id
      WHERE i.id = $1`,
@@ -1295,7 +1301,8 @@ async function requestClaim(req, res, viewer, itemId) {
     [makeId("claim"), itemId, viewer.id, viewer.name, quantity]
   );
   const claimRequest = claimFromRow(created.rows[0]);
-  const emailSent = await sendClaimNotificationMail(item.owner_email, item, claimRequest);
+  const shouldSendEmail = item.owner_claim_email_enabled !== false;
+  const emailSent = shouldSendEmail ? await sendClaimNotificationMail(item.owner_email, item, claimRequest) : false;
   json(res, 201, {
     claimRequest,
     emailSent,
@@ -1600,6 +1607,15 @@ async function handle(req, res) {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/legal/privacy") {
+    const privacyPath = path.join(__dirname, "..", "docs", "privacy-guideline-draft.md");
+    const markdown = fs.existsSync(privacyPath)
+      ? fs.readFileSync(privacyPath, "utf8")
+      : "隐私保护指引暂不可用。";
+    json(res, 200, { markdown });
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/locations") {
     json(res, 200, { locations });
     return;
@@ -1691,6 +1707,30 @@ async function handle(req, res) {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/api/me/notifications") {
+    const viewer = await userFromRequest(req);
+    if (!viewer) {
+      json(res, 200, { claimEmailEnabled: true });
+      return;
+    }
+    json(res, 200, { claimEmailEnabled: viewer.claim_email_enabled !== false });
+    return;
+  }
+
+  if (req.method === "PUT" && pathname === "/api/me/notifications") {
+    const viewer = await userFromRequest(req);
+    if (!viewer || !viewer.is_verified) {
+      json(res, 401, { error: "AUTH_REQUIRED", message: "请先登录" });
+      return;
+    }
+    const input = await readBody(req);
+    if (typeof input.claimEmailEnabled === "boolean") {
+      await query("UPDATE users SET claim_email_enabled = $1 WHERE id = $2", [input.claimEmailEnabled, viewer.id]);
+    }
+    json(res, 200, { claimEmailEnabled: input.claimEmailEnabled !== false });
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/api/me/items") {
     const viewer = await requireVerifiedUser(req, res);
     if (!viewer) {
@@ -1732,6 +1772,119 @@ async function handle(req, res) {
       }
     }
     json(res, 200, { items });
+    return;
+  }
+
+  const myItemTakeDownMatch = pathname.match(/^\/api\/me\/items\/([^/]+)\/take-down$/);
+  if (req.method === "POST" && myItemTakeDownMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) return;
+    const { rows } = await query("SELECT * FROM items WHERE id = $1", [myItemTakeDownMatch[1]]);
+    if (!rows[0]) {
+      json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
+      return;
+    }
+    if (rows[0].owner_id !== viewer.id) {
+      json(res, 403, { error: "FORBIDDEN", message: "只能下架自己的物品" });
+      return;
+    }
+    if (!["online", "reviewing"].includes(rows[0].status)) {
+      json(res, 409, { error: "INVALID_STATUS", message: "只能下架上架中或审核中的物品" });
+      return;
+    }
+    const updated = await query(
+      "UPDATE items SET status = 'taken_down', reviewed_at = now() WHERE id = $1 RETURNING *",
+      [myItemTakeDownMatch[1]]
+    );
+    json(res, 200, { item: itemFromRow(updated.rows[0], viewer, { includeRoom: true, includeContact: true }), message: "物品已下架" });
+    return;
+  }
+
+  const myItemDetailMatch = pathname.match(/^\/api\/me\/items\/([^/]+)$/);
+  if (req.method === "GET" && myItemDetailMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) return;
+    const { rows } = await query("SELECT * FROM items WHERE id = $1", [myItemDetailMatch[1]]);
+    if (!rows[0]) {
+      json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
+      return;
+    }
+    if (rows[0].owner_id !== viewer.id) {
+      json(res, 403, { error: "FORBIDDEN", message: "只能查看自己的物品详情" });
+      return;
+    }
+    const item = itemFromRow(rows[0], viewer, { includeRoom: true, includeContact: true });
+    const pendingClaims = await query(
+      `SELECT *
+       FROM claim_requests
+       WHERE item_id = $1 AND status = 'pending'
+       ORDER BY created_at DESC`,
+      [rows[0].id]
+    );
+    item.claimRequests = pendingClaims.rows.map(claimFromRow);
+    item.pendingClaimCount = item.claimRequests.length;
+    json(res, 200, { item });
+    return;
+  }
+
+  if (req.method === "PUT" && myItemDetailMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) return;
+    const { rows } = await query("SELECT * FROM items WHERE id = $1", [myItemDetailMatch[1]]);
+    if (!rows[0]) {
+      json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
+      return;
+    }
+    const existing = rows[0];
+    if (existing.owner_id !== viewer.id) {
+      json(res, 403, { error: "FORBIDDEN", message: "只能编辑自己的物品" });
+      return;
+    }
+    const input = await readBody(req);
+    const title = String(input.title || existing.title).trim();
+    const quantity = Number.isInteger(Number(input.quantity)) ? Number(input.quantity) : existing.quantity;
+    const unit = String(input.unit || existing.unit).trim();
+    const description = String(input.description ?? existing.description).trim();
+    const expireDate = input.expireDate !== undefined ? String(input.expireDate).trim() : (existing.expire_date ? dateOnly(existing.expire_date) : "");
+    const noExpiry = input.noExpiry !== undefined ? Boolean(input.noExpiry) : existing.no_expiry;
+    const contactWechat = String(input.contactWechat ?? existing.contact_wechat).trim();
+    const contactQq = String(input.contactQq ?? existing.contact_qq).trim();
+    if (!title) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "标题不能为空" });
+      return;
+    }
+    if (quantity <= 0) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "数量必须是正整数" });
+      return;
+    }
+    if (!contactWechat && !contactQq) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "微信或 QQ 至少填写一项" });
+      return;
+    }
+    if (existing.item_type === "medicine" && noExpiry) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "药品必须填写有效期，不能设置为长期有效" });
+      return;
+    }
+    if (!noExpiry && !/^\d{4}-\d{2}-\d{2}$/.test(expireDate)) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "有效期格式必须是 YYYY-MM-DD" });
+      return;
+    }
+    const wasOnline = existing.status === "online";
+    const nextStatus = wasOnline ? "reviewing" : existing.status;
+    const updated = await query(
+      `UPDATE items
+       SET title = $1, quantity = $2, unit = $3, description = $4,
+           expire_date = $5, no_expiry = $6, contact_wechat = $7, contact_qq = $8,
+           status = $9, reviewed_at = CASE WHEN $9 = 'reviewing' THEN NULL ELSE reviewed_at END,
+           reject_reason = CASE WHEN $9 = 'reviewing' THEN NULL ELSE reject_reason END
+       WHERE id = $10
+       RETURNING *`,
+      [title, quantity, unit, description, noExpiry ? null : expireDate, noExpiry, contactWechat, contactQq, nextStatus, existing.id]
+    );
+    json(res, 200, {
+      item: itemFromRow(updated.rows[0], viewer, { includeRoom: true, includeContact: true }),
+      message: wasOnline ? "物品已更新并重新提交审核" : "物品已更新"
+    });
     return;
   }
 

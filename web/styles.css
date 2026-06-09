@@ -503,6 +503,51 @@ textarea:focus {
   border-top: none;
 }
 
+.owner-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.claims-modal {
+  width: min(560px, calc(100% - 24px));
+}
+
+.claim-modal-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+}
+
+.claim-modal-row + .claim-modal-row {
+  border-top: 1px solid var(--line);
+}
+
+.claim-modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.claim-modal-info strong {
+  font-size: 16px;
+}
+
+.claim-modal-info span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.disabled-claim {
+  background: #a09b91 !important;
+  cursor: default;
+  box-shadow: none;
+}
+
 .claim-banner-info {
   display: flex;
   flex-direction: column;
@@ -981,4 +1026,127 @@ dialog::backdrop {
     max-width: 980px;
     margin: 0 auto;
   }
+}
+
+/* Settings page */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-row strong {
+  font-size: 16px;
+}
+
+.settings-row .hint {
+  margin-top: 4px !important;
+}
+
+.my-items-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.my-items-entry h3 {
+  margin: 0 0 4px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #d9d0c3;
+  border-radius: 28px;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--purple);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --card: #2a2a2a;
+  --card-strong: #333333;
+  --line: #3a3a3a;
+  --text: #e8e8e8;
+  --muted: #a0a0a0;
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .profile-card {
+  background: var(--purple);
+  color: #fffaf2;
+}
+
+[data-theme="dark"] .profile-card p {
+  color: rgba(255, 250, 242, 0.78);
+}
+
+[data-theme="dark"] .chip,
+[data-theme="dark"] .segment {
+  background: var(--card);
+  color: var(--muted);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--card-strong);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .login-block {
+  background: var(--card-strong);
+}
+
+[data-theme="dark"] dialog {
+  background: var(--card);
+  color: var(--text);
+}
+
+[data-theme="dark"] .toggle-slider {
+  background: #555;
+}
+
+[data-theme="dark"] .badge {
+  background: var(--card);
+  color: var(--text);
 }

@@ -54,6 +54,8 @@ const state = {
   user: JSON.parse(localStorage.getItem(USER_KEY) || "null"),
   itemType: "",
   itemCategory: "",
+  editingItemId: "",
+  claimsModalShown: false,
   selectedPublishType: "consumable",
   selectedIcon: "plus",
   iconOtherOpen: false,
@@ -191,8 +193,8 @@ function setSelectionByLocation(kind, campusName, buildingName, roomName = "") {
 function syncProfileForm() {
   const card = $("profileFormCard");
   if (!card) return;
-  card.hidden = !isVerifiedUser();
   if (!isVerifiedUser()) {
+    card.hidden = true;
     return;
   }
   $("nicknameInput").value = state.user?.name || "";
@@ -201,6 +203,7 @@ function syncProfileForm() {
   if (state.user && !state.user.hasPassword) {
     switchLoginMode("setPassword");
   }
+  syncSettingsAccount();
 }
 
 function iconGlyph(key, itemType) {
@@ -436,6 +439,43 @@ function renderClaimsBanner(items) {
   `).join("");
 }
 
+function showClaimsModal(items) {
+  const allClaims = [];
+  for (const item of items) {
+    if (item.claimRequests && item.claimRequests.length) {
+      for (const claim of item.claimRequests) {
+        allClaims.push({ claim, item });
+      }
+    }
+  }
+  if (!allClaims.length) {
+    return;
+  }
+  $("claimsModalBody").innerHTML = allClaims.map(({ claim, item }) => `
+    <div class="claim-modal-row">
+      <div class="claim-modal-info">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(claim.requesterName || "同学")} 提醒已领取 ${escapeHtml(claim.quantity || 1)}${escapeHtml(item.unit || "件")}</span>
+      </div>
+      <span class="claim-actions">
+        <button type="button" class="primary small" data-claim-action="confirm" data-claim-id="${escapeHtml(claim.id)}">确认领取</button>
+        <button type="button" class="secondary small" data-claim-action="reject" data-claim-id="${escapeHtml(claim.id)}">忽略</button>
+      </span>
+    </div>
+  `).join("");
+  $("claimsModal").showModal();
+}
+
+function refreshClaimsModal() {
+  const modal = $("claimsModal");
+  if (!modal || !modal.open) return;
+  const remaining = $("claimsModalBody").querySelectorAll(".claim-modal-row").length;
+  if (remaining <= 1) {
+    modal.close();
+    return;
+  }
+}
+
 async function loadMyItems() {
   const container = $("myItemList");
   if (!isVerifiedUser()) {
@@ -456,6 +496,11 @@ async function loadMyItems() {
     container.innerHTML = sorted.length
       ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true })).join("")
       : `<div class="state-card">暂无发布记录</div>`;
+    const hasPending = sorted.some(item => (item.pendingClaimCount || 0) > 0);
+    if (hasPending && !state.claimsModalShown) {
+      state.claimsModalShown = true;
+      showClaimsModal(sorted);
+    }
   } catch (error) {
     container.innerHTML = `<div class="state-card">${escapeHtml(error.message || "加载失败")}</div>`;
     $("pendingClaimsBanner").hidden = true;
@@ -480,6 +525,121 @@ async function openDetail(id) {
     $("detailDialog").showModal();
   } catch (error) {
     alert(error.message || "详情加载失败");
+  }
+}
+
+async function openMyItemDetail(id) {
+  try {
+    const data = await api(`/me/items/${encodeURIComponent(id)}`);
+    state.selectedDetail = data.item;
+    state.editingItemId = id;
+    $("detailTitle").textContent = data.item.title;
+    const statusLabel = data.item.status !== "online" ? ` <span class="badge">${escapeHtml(statusText(data.item.status))}</span>` : "";
+    $("detailBody").innerHTML = `
+      <div class="item-icon">${iconGlyph(data.item.itemIcon, data.item.itemType)}</div>
+      <p class="detail-meta">
+        ${escapeHtml(data.item.itemTypeText)} · ${escapeHtml(data.item.category)} · 剩余 ${escapeHtml(data.item.quantity)}${escapeHtml(data.item.unit)}<br>
+        ${escapeHtml(data.item.campus)} · ${escapeHtml(data.item.building)}${data.item.room ? ` · ${escapeHtml(data.item.room)}` : ""}<br>
+        有效期：${escapeHtml(expiryText(data.item))}<br>
+        状态：${escapeHtml(statusText(data.item.status))}${statusLabel}
+      </p>
+      ${data.item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(data.item.rejectReason)}</p>` : ""}
+      <p class="item-desc">${escapeHtml(data.item.description || "发布者暂未填写补充说明。")}</p>
+      <div class="contact-box">
+        微信：${escapeHtml(data.item.contact?.wechat || "未填写")}<br>
+        QQ：${escapeHtml(data.item.contact?.qq || "未填写")}
+      </div>
+      ${data.item.claimRequests?.length ? `
+        <div class="claim-panel">
+          <div class="claim-title">待确认领取提醒 ${escapeHtml(data.item.claimRequests.length)} 条</div>
+          ${data.item.claimRequests.map(claim => `
+            <div class="claim-row">
+              <span>${escapeHtml(claim.requesterName || "同学")} 提醒已领取 ${escapeHtml(claim.quantity || 1)}${escapeHtml(data.item.unit || "件")}</span>
+              <span class="claim-actions">
+                <button type="button" class="primary small" data-claim-action="confirm" data-claim-id="${escapeHtml(claim.id)}">确认领取</button>
+                <button type="button" class="secondary small" data-claim-action="reject" data-claim-id="${escapeHtml(claim.id)}">忽略</button>
+              </span>
+            </div>
+          `).join("")}
+        </div>
+      ` : ""}
+      <div class="owner-actions">
+        <button class="primary small" id="editItemButton">编辑</button>
+        ${data.item.status === "online" || data.item.status === "reviewing" ? `<button class="secondary small" id="takeDownButton">下架</button>` : ""}
+      </div>
+      <div id="ownerActionResult"></div>
+    `;
+    $("detailDialog").showModal();
+  } catch (error) {
+    alert(error.message || "详情加载失败");
+  }
+}
+
+function startEditItem() {
+  const item = state.selectedDetail;
+  if (!item) return;
+  $("detailDialog").close();
+  const tab = document.querySelector('.tab[data-view="publish"]');
+  if (tab) tab.click();
+  state.selectedPublishType = item.itemType || "consumable";
+  state.selectedIcon = item.itemIcon || "plus";
+  state.iconOtherOpen = false;
+  document.querySelectorAll(".segment").forEach(button => {
+    button.classList.toggle("active", button.dataset.itemType === state.selectedPublishType);
+  });
+  $("titleInput").value = item.title || "";
+  $("quantityInput").value = item.quantity || 1;
+  $("unitInput").value = item.unit || "件";
+  $("descriptionInput").value = item.description || "";
+  $("wechatInput").value = item.contact?.wechat || "";
+  $("qqInput").value = item.contact?.qq || "";
+  $("medicineCategoryWrap").hidden = item.itemType !== "medicine";
+  $("toolCategoryWrap").hidden = item.itemType !== "tool";
+  if (item.itemType === "medicine") {
+    const catSelect = $("categorySelect");
+    if (catSelect) catSelect.value = item.category || "感冒药";
+  } else if (item.itemType === "tool") {
+    const toolCat = $("toolCategorySelect");
+    if (toolCat) toolCat.value = item.category || "常用工具";
+  }
+  if (item.itemType === "tool") {
+    $("typeHint").textContent = "适用于锤子、镊子、砂纸、热熔胶枪等偶发需求但不常备的小工具。请约定归还方式或说明是否赠送。";
+  } else if (item.itemType === "medicine") {
+    $("typeHint").textContent = "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。";
+  } else {
+    $("typeHint").textContent = "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
+  }
+  if (item.noExpiry) {
+    $("noExpiryInput").checked = true;
+    $("expireInput").disabled = true;
+    $("expireInput").required = false;
+  } else {
+    $("noExpiryInput").checked = false;
+    $("expireInput").disabled = false;
+    $("expireInput").required = true;
+    $("expireInput").value = item.expireDate || "";
+  }
+  $("noExpiryWrap").hidden = item.itemType === "medicine";
+  if (item.itemType === "tool") $("noExpiryWrap").hidden = false;
+  $("useProfileLocationInput").checked = false;
+  $("publishLocationFields").hidden = false;
+  setSelectionByLocation("publish", item.campus || "仙林校区", item.building || "南苑 A 栋", item.room || "");
+  renderIconGrid();
+  $("publishMessage").textContent = "正在编辑物品，提交后将重新进入审核";
+  document.querySelector(".segment[data-item-type='" + state.selectedPublishType + "']")?.classList.add("active");
+}
+
+async function takeDownMyItem() {
+  const item = state.selectedDetail;
+  if (!item) return;
+  if (!confirm("确定要下架「" + item.title + "」吗？下架后首页将不再展示。")) return;
+  try {
+    const data = await api(`/me/items/${encodeURIComponent(item.id)}/take-down`, { method: "POST" });
+    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "物品已下架")}</div>`;
+    state.selectedDetail = data.item;
+    await Promise.all([loadHome(), loadMyItems()]);
+  } catch (error) {
+    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "下架失败")}</div>`;
   }
 }
 
@@ -513,13 +673,21 @@ async function requestClaim() {
     $("detailDialog").close();
     return;
   }
+  const claimBtn = $("claimButton");
+  if (!claimBtn) return;
+  claimBtn.disabled = true;
+  claimBtn.textContent = "正在发送提醒...";
   try {
     const data = await api(`/items/${encodeURIComponent(state.selectedDetail.id)}/claim`, {
       method: "POST",
       body: JSON.stringify({ quantity: 1 })
     });
+    claimBtn.textContent = "您已提醒过发布者确认领取，请等待对方处理";
+    claimBtn.classList.add("disabled-claim");
     $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "已发送领取提醒")}</div>`;
   } catch (error) {
+    claimBtn.disabled = false;
+    claimBtn.textContent = "我已联系并领取，提醒发布者确认";
     $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "发送领取提醒失败")}</div>`;
   }
 }
@@ -532,7 +700,6 @@ async function reviewClaimFromButton(button) {
   button.textContent = action === "confirm" ? "确认中..." : "处理中...";
   try {
     const data = await api(`/claims/${encodeURIComponent(claimId)}/${action}`, { method: "POST" });
-    alert(data.message || "已处理");
     await Promise.all([loadHome(), loadProfile(), loadMyItems()]);
   } catch (error) {
     alert(error.message || "处理失败");
@@ -545,6 +712,8 @@ async function reviewClaimFromButton(button) {
 function renderIconGrid() {
   const commonKeys = state.selectedPublishType === "medicine"
     ? ["capsules", "pills", "tablets", "prescriptionBottleMedical"]
+    : state.selectedPublishType === "tool"
+    ? ["box", "boxOpen", "handHoldingMedical", "heartPulse"]
     : ["plus", "bandage", "pumpMedical", "temperatureHalf"];
   const common = iconOptions.filter(([key]) => commonKeys.includes(key));
   const hidden = iconOptions.filter(([key]) => !commonKeys.includes(key));
@@ -573,14 +742,26 @@ function renderIconGrid() {
 
 function setPublishType(itemType) {
   state.selectedPublishType = itemType;
-  state.selectedIcon = itemType === "medicine" ? "capsules" : "plus";
+  state.selectedIcon = itemType === "medicine" ? "capsules" : (itemType === "tool" ? "box" : "plus");
   state.iconOtherOpen = false;
   $("medicineCategoryWrap").hidden = itemType !== "medicine";
-  $("typeHint").textContent = itemType === "medicine"
-    ? "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。"
-    : "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
-  $("titleInput").placeholder = itemType === "medicine" ? "例如：未拆封感冒药一盒" : "例如：碘伏棉签 10 支";
-  $("noExpiryWrap").hidden = itemType === "medicine";
+  $("toolCategoryWrap").hidden = itemType !== "tool";
+  if (itemType === "tool") {
+    $("typeHint").textContent = "适用于锤子、镊子、砂纸、热熔胶枪等偶发需求但不常备的小工具。请约定归还方式或说明是否赠送。";
+    $("titleInput").placeholder = "例如：热熔胶枪借用";
+    $("noExpiryWrap").hidden = false;
+  } else if (itemType === "medicine") {
+    $("typeHint").textContent = "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。";
+    $("titleInput").placeholder = "例如：未拆封感冒药一盒";
+    $("noExpiryWrap").hidden = true;
+    $("noExpiryInput").checked = false;
+    $("expireInput").disabled = false;
+    $("expireInput").required = true;
+  } else {
+    $("typeHint").textContent = "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
+    $("titleInput").placeholder = "例如：碘伏棉签 10 支";
+    $("noExpiryWrap").hidden = false;
+  }
   if (itemType === "medicine") {
     $("noExpiryInput").checked = false;
     $("expireInput").disabled = false;
@@ -623,26 +804,45 @@ async function submitPublish(event) {
     title: $("titleInput").value.trim(),
     itemType: state.selectedPublishType,
     itemIcon: state.selectedIcon,
-    category: state.selectedPublishType === "medicine" ? $("categorySelect").value : "应急耗材",
+    category: state.selectedPublishType === "medicine" ? $("categorySelect").value : (state.selectedPublishType === "tool" ? $("toolCategorySelect").value : "应急耗材"),
     quantity: Number($("quantityInput").value),
     unit: $("unitInput").value.trim(),
     campus,
     building,
     room,
     expireDate: $("noExpiryInput").checked ? "" : $("expireInput").value,
-    noExpiry: state.selectedPublishType === "consumable" && $("noExpiryInput").checked,
+    noExpiry: (state.selectedPublishType === "consumable" || state.selectedPublishType === "tool") && $("noExpiryInput").checked,
     description: $("descriptionInput").value.trim(),
     contactWechat,
     contactQq,
     disclaimerAccepted: true
   };
+  const isEdit = Boolean(state.editingItemId);
+  let result;
   try {
-    message.textContent = "正在提交...";
-    const data = await api("/items", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    message.textContent = data.message || "已提交审核";
+    message.textContent = isEdit ? "正在保存..." : "正在提交...";
+    if (isEdit) {
+      result = await api(`/me/items/${encodeURIComponent(state.editingItemId)}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title: payload.title,
+          quantity: payload.quantity,
+          unit: payload.unit,
+          description: payload.description,
+          expireDate: payload.expireDate,
+          noExpiry: payload.noExpiry,
+          contactWechat: payload.contactWechat,
+          contactQq: payload.contactQq
+        })
+      });
+      state.editingItemId = "";
+    } else {
+      result = await api("/items", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    }
+    message.textContent = result.message || (isEdit ? "已保存" : "已提交审核");
     event.target.reset();
     $("quantityInput").value = "1";
     $("unitInput").value = "件";
@@ -650,9 +850,10 @@ async function submitPublish(event) {
     $("expireInput").disabled = false;
     $("expireInput").required = true;
     $("noExpiryInput").checked = false;
-    setPublishType(state.selectedPublishType);
     $("useProfileLocationInput").checked = true;
     $("publishLocationFields").hidden = true;
+    $("disclaimerInput").checked = false;
+    setPublishType(state.selectedPublishType);
     renderLocationSelects("publish");
     loadMyItems();
   } catch (error) {
@@ -968,6 +1169,71 @@ async function saveProfile() {
   }
 }
 
+function applyDarkMode(enabled) {
+  document.documentElement.setAttribute("data-theme", enabled ? "dark" : "light");
+  localStorage.setItem("nane_dark_mode", enabled ? "1" : "0");
+}
+
+function initDarkMode() {
+  const saved = localStorage.getItem("nane_dark_mode");
+  const enabled = saved === "1";
+  if ($("darkModeToggle")) $("darkModeToggle").checked = enabled;
+  applyDarkMode(enabled);
+}
+
+async function toggleDarkMode() {
+  applyDarkMode($("darkModeToggle").checked);
+}
+
+async function toggleClaimEmail() {
+  const enabled = $("claimEmailToggle").checked;
+  try {
+    await api("/me/notifications", {
+      method: "PUT",
+      body: JSON.stringify({ claimEmailEnabled: enabled })
+    });
+  } catch (error) {
+    $("claimEmailToggle").checked = !enabled;
+  }
+}
+
+async function loadNotificationPrefs() {
+  if (!isVerifiedUser()) return;
+  try {
+    const data = await api("/me/notifications");
+    if ($("claimEmailToggle")) $("claimEmailToggle").checked = data.claimEmailEnabled !== false;
+  } catch (error) {
+    // defaults remain
+  }
+}
+
+function syncSettingsAccount() {
+  const loggedOut = $("settingsLoggedOut");
+  const loggedIn = $("settingsLoggedIn");
+  if (!loggedOut || !loggedIn) return;
+  if (isVerifiedUser()) {
+    loggedOut.hidden = true;
+    loggedIn.hidden = false;
+  } else {
+    loggedOut.hidden = false;
+    loggedIn.hidden = true;
+  }
+}
+
+function logout() {
+  clearSession();
+  switchLoginMode("code");
+  $("authMessage").textContent = "已登出";
+  syncSettingsAccount();
+  loadProfile();
+  loadMyItems();
+}
+
+async function loadSettings() {
+  syncSettingsAccount();
+  await loadNotificationPrefs();
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", () => {
@@ -976,6 +1242,10 @@ function bindEvents() {
       if (tab.dataset.view === "mine") {
         loadProfile();
         loadMyItems();
+      }
+      if (tab.dataset.view === "settings") {
+        loadProfile();
+        loadSettings();
       }
     });
   });
@@ -1005,12 +1275,19 @@ function bindEvents() {
       return;
     }
     const card = event.target.closest(".item-card");
-    if (card) openDetail(card.dataset.id);
+    if (card) openMyItemDetail(card.dataset.id);
   });
   $("closeDetailButton").addEventListener("click", () => $("detailDialog").close());
   $("detailDialog").addEventListener("click", event => {
     if (event.target.id === "contactButton") viewContact();
     if (event.target.id === "claimButton") requestClaim();
+    if (event.target.id === "editItemButton") startEditItem();
+    if (event.target.id === "takeDownButton") takeDownMyItem();
+    const claimBtn = event.target.closest("[data-claim-action]");
+    if (claimBtn) {
+      event.stopPropagation();
+      reviewClaimFromButton(claimBtn);
+    }
   });
   document.querySelectorAll(".segment").forEach(button => {
     button.addEventListener("click", () => setPublishType(button.dataset.itemType));
@@ -1062,20 +1339,44 @@ function bindEvents() {
   $("verifyCodeButton").addEventListener("click", verifyCode);
   $("saveProfileButton").addEventListener("click", saveProfile);
   $("loadMineButton").addEventListener("click", loadMyItems);
-  $("openAgreementButton").addEventListener("click", () => $("agreementDialog").showModal());
+  $("openMyItemsButton").addEventListener("click", async () => {
+    $("myItemsPanel").hidden = false;
+    await loadMyItems();
+    $("myItemsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  $("openAgreementButton").addEventListener("click", () => {
+    document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
+    loadAgreement();
+    $("agreementDialog").showModal();
+  });
   $("closeAgreementButton").addEventListener("click", () => $("agreementDialog").close());
+  $("closeClaimsModalButton").addEventListener("click", () => $("claimsModal").close());
+  $("claimsModal").addEventListener("click", event => {
+    const claimBtn = event.target.closest("[data-claim-action]");
+    if (claimBtn) {
+      event.stopPropagation();
+      const row = claimBtn.closest(".claim-modal-row");
+      reviewClaimFromButton(claimBtn).then(() => {
+        row?.remove();
+        refreshClaimsModal();
+      });
+    }
+  });
   document.querySelector(".profile-card").addEventListener("click", () => {
     if (isVerifiedUser()) {
-      const formCard = $("profileFormCard");
-      if (formCard && !formCard.hidden) {
-        formCard.scrollIntoView({ behavior: "smooth", block: "start" });
-        setTimeout(() => $("nicknameInput").focus(), 400);
-      }
+      const settingsTab = document.querySelector('.tab[data-view="settings"]');
+      if (settingsTab) settingsTab.click();
+      setTimeout(() => {
+        const formCard = $("profileFormCard");
+        if (formCard) {
+          formCard.hidden = false;
+          formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+          setTimeout(() => $("nicknameInput").focus(), 400);
+        }
+      }, 300);
     } else {
-      const loginCard = document.querySelector("#view-mine .form-card");
-      if (loginCard) {
-        loginCard.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      const settingsTab = document.querySelector('.tab[data-view="settings"]');
+      if (settingsTab) settingsTab.click();
     }
   });
   document.querySelectorAll(".login-tab").forEach(tab => {
@@ -1095,6 +1396,39 @@ function bindEvents() {
   $("skipSetPasswordButton").addEventListener("click", () => {
     $("setPasswordPrompt").hidden = true;
     switchLoginMode("code");
+  });
+  $("darkModeToggle").addEventListener("change", toggleDarkMode);
+  $("claimEmailToggle").addEventListener("change", toggleClaimEmail);
+  $("settingsEditProfileButton").addEventListener("click", () => {
+    $("profileFormCard").hidden = false;
+    $("profileFormCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => $("nicknameInput").focus(), 400);
+  });
+  $("settingsChangePasswordButton").addEventListener("click", () => {
+    $("profileFormCard").hidden = true;
+    switchLoginMode("setPassword");
+    $("settingsLoggedOut").hidden = false;
+    $("settingsLoggedIn").hidden = true;
+    $("setPasswordPrompt").scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => $("setPasswordInput").focus(), 400);
+  });
+  $("settingsLogoutButton").addEventListener("click", () => {
+    if (confirm("确定要登出吗？")) logout();
+  });
+  $("settingsAgreementButton").addEventListener("click", () => {
+    document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
+    loadAgreement();
+    $("agreementDialog").showModal();
+  });
+  $("settingsPrivacyButton").addEventListener("click", async () => {
+    try {
+      const data = await api("/legal/privacy");
+      $("agreementBody").innerHTML = markdownToHtml(data.markdown || "隐私保护指引暂不可用。");
+      document.querySelector("#agreementDialog h3").textContent = "NanE 隐私保护指引";
+      $("agreementDialog").showModal();
+    } catch (error) {
+      alert("隐私保护指引加载失败");
+    }
   });
 }
 
@@ -1121,6 +1455,7 @@ async function applyUrlParams() {
 }
 
 async function init() {
+  initDarkMode();
   bindEvents();
   await Promise.all([loadAgreement(), loadLocations()]);
   renderIconGrid();
