@@ -30,6 +30,7 @@ const SMTP_SECURE = String(process.env.SMTP_SECURE || "true").toLowerCase() !== 
 const SMTP_USER = process.env.SMTP_USER || "";
 const SMTP_PASS = process.env.SMTP_PASS || "";
 const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
+const PUBLIC_WEB_URL = String(process.env.PUBLIC_WEB_URL || "https://nane.zylatent.com").replace(/\/+$/, "");
 const ITEM_TYPES = {
   consumable: {
     text: "耗材",
@@ -499,6 +500,35 @@ async function sendMail({ to, subject, text }) {
   }
 }
 
+async function sendClaimNotificationMail(ownerEmail, item, claim) {
+  if (!ownerEmail) {
+    return false;
+  }
+  try {
+    await sendMail({
+      to: ownerEmail,
+      subject: "NanE 南易领取确认提醒",
+      text: [
+        `${claim.requesterName || "有同学"} 提醒你：TA 已联系并领取了你发布的物品。`,
+        "",
+        `物品：${item.title}`,
+        `领取数量：${claim.quantity || 1}${item.unit || "件"}`,
+        `位置：${item.campus} · ${item.building}`,
+        "",
+        "请登录 NanE，在“我的发布”中确认领取或忽略该提醒。",
+        PUBLIC_WEB_URL,
+        "",
+        "确认后系统会自动扣减剩余数量；如果数量扣到 0，物品会自动下架。",
+        "如果你们尚未完成领取，可以先忽略这封邮件。"
+      ].join("\n")
+    });
+    return true;
+  } catch (error) {
+    console.error("Claim notification email failed:", error.message);
+    return false;
+  }
+}
+
 async function callNanna(pathname, payload) {
   const response = await fetch(`${NANNA_API_BASE}${pathname}`, {
     method: "POST",
@@ -963,7 +993,13 @@ async function requestClaim(req, res, viewer, itemId) {
     return;
   }
 
-  const { rows } = await query("SELECT * FROM items WHERE id = $1", [itemId]);
+  const { rows } = await query(
+    `SELECT i.*, u.email AS owner_email
+     FROM items i
+     LEFT JOIN users u ON u.id = i.owner_id
+     WHERE i.id = $1`,
+    [itemId]
+  );
   const item = rows[0];
   if (!item) {
     json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
@@ -1000,9 +1036,14 @@ async function requestClaim(req, res, viewer, itemId) {
      RETURNING *`,
     [makeId("claim"), itemId, viewer.id, viewer.name, quantity]
   );
+  const claimRequest = claimFromRow(created.rows[0]);
+  const emailSent = await sendClaimNotificationMail(item.owner_email, item, claimRequest);
   json(res, 201, {
-    claimRequest: claimFromRow(created.rows[0]),
-    message: "已提醒发布者确认领取，确认后会自动更新库存"
+    claimRequest,
+    emailSent,
+    message: emailSent
+      ? "已通过邮件提醒发布者确认领取，确认后会自动更新库存"
+      : "已记录领取提醒；发布者可在“我的发布”中确认领取"
   });
 }
 

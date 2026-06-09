@@ -63,36 +63,6 @@
   font-weight: 900;
 }
 
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12rpx;
-  margin-bottom: 20rpx;
-}
-
-.stat-card {
-  padding: 18rpx 8rpx;
-  border-radius: 22rpx;
-  border: 1rpx solid #e4ded3;
-  background: #fffaf2;
-  text-align: center;
-  box-shadow: 0 8rpx 22rpx rgba(96, 68, 36, 0.06);
-}
-
-.stat-num {
-  color: #6E0065;
-  font-size: 28rpx;
-  font-weight: 900;
-  line-height: 1.2;
-}
-
-.stat-label {
-  margin-top: 5rpx;
-  color: #6f6a61;
-  font-size: 19rpx;
-  font-weight: 800;
-}
-
 .auth-card {
   margin-bottom: 22rpx;
   padding: 22rpx;

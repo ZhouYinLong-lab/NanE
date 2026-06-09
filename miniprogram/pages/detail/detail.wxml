@@ -53,6 +53,7 @@
         <view wx:if="{{contact.wechat}}" class="contact-row">微信：{{contact.wechat}}</view>
         <view wx:if="{{contact.qq}}" class="contact-row">QQ：{{contact.qq}}</view>
         <view class="remaining">今日剩余查看次数：{{remaining}}</view>
+        <view class="limit-note">为防止联系方式滥用和隐私泄露，每位用户每日查看次数有限。</view>
       </view>
     </view>
   </view>

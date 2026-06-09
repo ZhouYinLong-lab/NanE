@@ -298,7 +298,8 @@ async function loadHome() {
     $("homeState").textContent = data.items.length ? "" : "暂无上架物品";
     $("itemList").innerHTML = data.items.map(item => renderItem(item)).join("");
   } catch (error) {
-    $("homeState").textContent = error.message || "无法连接 NanE API";
+    $("viewerLabel").textContent = "API 未连接";
+    $("homeState").textContent = error.message || "API 未连接，请稍后重试";
   }
 }
 
@@ -311,20 +312,17 @@ async function loadProfile() {
       $("profileName").textContent = data.user.name || "南易用户";
       $("profileCampus").textContent = `${data.user.campus || "未设置校区"} · ${data.user.building || "未设置楼栋"}${data.user.room ? ` · ${data.user.room}` : ""}`;
       $("verifyBadge").textContent = data.user.profileComplete ? "校园身份与楼栋已设置" : "请补全楼栋资料";
-      $("dailyLimit").textContent = data.contactLimit?.daily ?? 5;
-      $("remainingLimit").textContent = data.contactLimit?.remaining ?? 0;
     } else {
       clearSession();
       $("profileName").textContent = "游客模式";
       $("profileCampus").textContent = "可浏览物品，登录后可发布和查看联系方式";
       $("verifyBadge").textContent = "未登录";
-      $("dailyLimit").textContent = 5;
-      $("remainingLimit").textContent = 0;
     }
     syncProfileForm();
-    $("apiStatus").textContent = "已连接";
   } catch (error) {
-    $("apiStatus").textContent = "未连接";
+    $("profileName").textContent = "暂时无法读取账号";
+    $("profileCampus").textContent = "服务连接异常，请稍后重试";
+    $("verifyBadge").textContent = "未连接";
   }
 }
 
@@ -450,7 +448,8 @@ async function viewContact() {
       <div class="contact-box">
         微信：${escapeHtml(data.contact?.wechat || "未填写")}<br>
         QQ：${escapeHtml(data.contact?.qq || "未填写")}<br>
-        今日剩余查看次数：${escapeHtml(data.remaining)}
+        今日剩余查看次数：${escapeHtml(data.remaining)}<br>
+        <span class="contact-note">为防止联系方式滥用和隐私泄露，每位用户每日查看次数有限。</span>
       </div>
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
       <div id="claimResult"></div>

@@ -641,29 +641,6 @@ textarea:focus {
   filter: brightness(0) invert(1);
 }
 
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin: 18px 0;
-}
-
-.stat {
-  padding: 18px;
-  text-align: center;
-}
-
-.stat strong {
-  display: block;
-  color: var(--purple);
-  font-size: 24px;
-}
-
-.stat span {
-  color: var(--muted);
-  font-weight: 850;
-}
-
 dialog {
   width: min(620px, calc(100% - 24px));
   border: 1px solid var(--line);
@@ -704,6 +681,14 @@ dialog::backdrop {
   color: var(--purple);
   font-weight: 900;
   line-height: 1.7;
+}
+
+.contact-note {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .agreement-dialog {
@@ -799,8 +784,7 @@ dialog::backdrop {
     white-space: normal;
   }
 
-  .field-grid,
-  .stats-row {
+  .field-grid {
     grid-template-columns: 1fr;
   }
 

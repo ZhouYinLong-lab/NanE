@@ -142,3 +142,11 @@
   color: #6f6a61;
   font-size: 22rpx;
 }
+
+.limit-note {
+  margin: 10rpx auto 0;
+  max-width: 520rpx;
+  color: #8a7661;
+  font-size: 21rpx;
+  line-height: 1.5;
+}

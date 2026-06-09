@@ -5,12 +5,6 @@ Page({
   data: {
     icons,
     user: {},
-    contactLimit: {
-      daily: 5,
-      used: 0,
-      remaining: 5
-    },
-    apiStatus: "检查中",
     authForm: {
       email: "",
       studentId: "",
@@ -29,12 +23,10 @@ Page({
     try {
       const data = await api.getMe();
       this.setData({
-        user: data.user,
-        contactLimit: data.contactLimit,
-        apiStatus: "已连接"
+        user: data.user
       });
     } catch (error) {
-      this.setData({ apiStatus: "未连接" });
+      wx.showToast({ title: "账号信息加载失败", icon: "none" });
     }
   },
 

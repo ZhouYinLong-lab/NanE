@@ -3,10 +3,10 @@
 ## 1. 项目概述 / Project Overview
 
 - 项目名称：NanE（南易）
-- 项目目标：面向南京大学校园场景的免费互助信息平台，当前优先上线微信小程序，后续扩展 Web 站点和桌面 EXE，三端共用服务器 API、PostgreSQL 和审核后台。
+- 项目目标：面向南京大学校园场景的免费互助信息平台。当前因微信小程序备案暂缓，优先稳定网页版；后续恢复微信小程序并扩展桌面 EXE，三端共用服务器 API、PostgreSQL 和审核后台。
 - 核心定位：校园互助信息撮合；免费共享；禁止处方药、管控药和收费转让；发布内容需人工审核。
 - 目标用户：南京大学学生；管理员为项目团队/审核人员。
-- 当前进度：小程序基础功能、网页端初版、PostgreSQL 后端、轻量 Web 管理后台、位置选择与自动识别、耗材/非处方药品模型、物品图标、同宿舍群推荐排序均已实现；Azure VM 生产服务器已创建，Nginx + HTTPS 已配置，公网 API 健康检查通过。
+- 当前进度：网页端、PostgreSQL 后端、轻量 Web 管理后台、邮箱验证码登录、用户协议、账号资料、位置选择、耗材/非处方药品模型、物品图标、同宿舍群推荐排序、领取确认、数量扣减、归零自动下架和领取邮箱提醒均已实现；小程序基础功能保留；Azure VM、Nginx + HTTPS 和公网 API 已打通。
 
 ## 2. 技术栈 / Tech Stack
 
@@ -18,7 +18,7 @@
 - 未来 EXE：建议使用 Tauri 封装 Web 客户端；Electron 可作为备选。
 - 服务端口：NanE 专用端口 `37878`。
 - 本地/旧部署入口：Nginx Proxy Manager / frp 可反向代理到 `http://192.168.6.152:37878`。
-- 当前 Azure 部署入口：`api.zylatent.com`、`nane.zylatent.com` 解析到 Azure VM 公网 IP `72.155.72.104`，通过 Nginx + Let's Encrypt HTTPS 反向代理到 `http://127.0.0.1:37878`。
+- 当前 Azure 部署入口：`api.zylatent.com`、`nane.zylatent.com` 通过 Nginx + Let's Encrypt HTTPS 反向代理到 `http://127.0.0.1:37878`。
 - 远程仓库：[ZhouYinLong-lab/NanE](https://github.com/ZhouYinLong-lab/NanE)
 
 ## 3. 系统架构 / System Architecture
@@ -60,7 +60,7 @@
 - 数据隐私：
   - 普通首页/详情只展示到楼栋，不公开宿舍号。
   - 宿舍号仅发布者本人和管理员可见。
-  - 游客仅可查看物品公开信息；查看微信 / QQ、发布互助、我的发布需要小助手认证用户。
+  - 游客仅可查看物品公开信息；查看微信 / QQ、发布互助、我的发布需要已认证用户。
 
 ## 4. 核心功能 / Core Features
 
@@ -80,6 +80,11 @@
 - 联系方式限流：
   - 每人每日最多查看 5 次。
   - 记录保存在 `contact_views`。
+- 领取确认：
+  - 领取者查看联系方式后可提醒发布者确认。
+  - 记录保存在 `claim_requests`。
+  - 发布者确认后扣减数量，数量归零时状态变为 `claimed` 并从首页隐藏。
+  - 如果发布者账号绑定邮箱，系统发送领取确认提醒邮件；SMTP 失败不阻断站内提醒。
 - 推荐排序：
   - 首页列表按同楼栋、同宿舍群、同校区、其他校区排序。
   - 仙林、苏州、浦口宿舍群规则已在 `server/proximity.js` 中维护。
@@ -92,6 +97,11 @@
   - 当前 UI 使用纯米色背景 + 南大纯紫 `#6E0065` 强调色，并本地内置 Font Awesome 字体作为图标资源。
 
 ## 5. 最近更新 / Recent Changes
+
+- 网页端登录改为南京大学学生邮箱验证码优先，南哪小帮手为备用身份验证链路。
+- 新增 `email_challenges`、用户协议确认、账号资料补全、发布/联系方式权限兜底。
+- 新增 `claim_requests`、`claimed` 状态、领取确认、邮箱提醒、数量扣减和自动下架闭环。
+- 新增 `docs/test-guide.md`、`docs/deployment-guide.md`、`docs/roadmap.md`，用于验收、部署和路线管理。
 
 - `b4cce15 Add item icons and simplify consumable category`
   - 耗材发布不再要求选择细分类，后端默认 `应急耗材`。
@@ -124,26 +134,29 @@
   - 本地电脑未运行 PostgreSQL 时 `npm start` 会因 `ECONNREFUSED` 失败。
   - Azure VM 上已准备 NanE 专用 PostgreSQL 数据库和用户；敏感密码不写入仓库文档。
 - 登录与身份：
-  - 当前 `/api/auth/wx-login` 仍保留 Demo 登录，方便演示兜底。
-  - 已新增小助手 challenge-code 身份验证入口：`/api/auth/nanna/challenge`、`/api/auth/nanna/verify`。
-  - NanE 后端使用 `NANNA_API_KEY` 调用小助手接口，再签发 NanE 自己的 JWT；小程序端不保存第三方密钥。
-  - 首页列表和详情允许游客访问；发布、联系方式查看、我的发布必须是 `is_verified=true` 的小助手认证用户。
+  - 当前网页端首选南京大学学生邮箱验证码登录，仅支持 `@smail.nju.edu.cn`。
+  - `/api/auth/wx-login` 保留 Demo 兜底，不作为正式登录入口。
+  - 已新增南哪小帮手 challenge-code 身份验证入口：`/api/auth/nanna/challenge`、`/api/auth/nanna/verify`。
+  - NanE 后端使用 `NANNA_API_KEY` 调用南哪小帮手接口，再签发 NanE 自己的 JWT；前端不保存第三方密钥。
+  - 首页列表和详情允许游客访问；发布、联系方式查看、我的发布必须是 `is_verified=true` 且账号资料完整的用户。
 
 ## 7. 后续计划 / Next Steps
 
-1. 小程序生产配置：
+1. 网页端验收：
+   - 按 `docs/test-guide.md` 完成基础、游客、登录、账号资料、发布、审核、联系方式、领取确认和隐私验收。
+2. 小程序生产配置：
    - `miniprogram/config.js` 的 `prod.apiBase` 已设为 `https://api.zylatent.com/api`。
-   - `env` 已从 `dev` 切换为 `prod`。
-2. 微信小程序后台：
+   - 小程序备案完成后再恢复上线回归。
+3. 微信小程序后台：
    - 服务类目选“信息查询”。
    - 配置 request 合法域名为 `https://api.zylatent.com`。
    - 提交隐私保护指引。
-3. 真实身份能力：
+4. 真实身份能力：
    - 在服务器环境中配置 `NANNA_API_BASE`、`NANNA_APP_UID`、`NANNA_API_KEY`。
    - 用小程序“我的”页的身份验证卡片回归 challenge 和 verify 链路。
    - 建议 scope：`identity:basic:read`、`identity:student_id:read`、`identity:campus:read`，可选 `identity:major:read`。
    - 用户表后续可扩展 `auth_provider`、`student_id_masked`、`is_verified` 等字段。
-4. 多端路线：
+5. 多端路线：
    - 小程序备案/审核较慢时，先使用 Web 站点完成演示和测试。
    - Web 站点复用 API 和数据库，承接桌面浏览与介绍页。
    - EXE 用 Tauri 或 Electron 封装 Web 客户端，避免重复实现业务逻辑。
@@ -151,6 +164,9 @@
 ## 8. 关键文件 / Reference Files
 
 - `README.md`：运行、API、部署说明。
+- `docs/test-guide.md`：验收测试指南。
+- `docs/deployment-guide.md`：部署与运维指南。
+- `docs/roadmap.md`：路线图。
 - `docs/development-log.md`：开发日志。
 - `docs/miniprogram-release-checklist.md`：微信小程序上线清单。
 - `docs/privacy-guideline-draft.md`：隐私保护指引草稿。

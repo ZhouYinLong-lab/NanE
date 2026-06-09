@@ -53,7 +53,7 @@ Page({
     } catch (error) {
       this.setData({
         loading: false,
-        errorMessage: error.message || "无法连接 NanE API，请确认后端服务或合法域名配置"
+        errorMessage: error.message || "API 未连接，请稍后重试"
       });
     }
   },

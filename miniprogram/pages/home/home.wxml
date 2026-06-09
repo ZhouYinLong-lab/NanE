@@ -40,7 +40,7 @@
     <view class="section-more">查看全部</view>
   </view>
 
-  <view wx:if="{{loading}}" class="state-card panel">正在连接 NanE API...</view>
+  <view wx:if="{{loading}}" class="state-card panel">正在加载附近物品...</view>
   <view wx:elif="{{errorMessage}}" class="state-card panel">
     <view>{{errorMessage}}</view>
     <button class="retry" bindtap="loadItems">重试</button>

@@ -32,12 +32,14 @@ NanE 希望解决的是一个很轻但很真实的问题：
 - Azure VM 部署
 - Nginx + HTTPS
 - PM2 进程管理
+- 南京大学学生邮箱验证码登录
 - 南哪小帮手 challenge-code 身份验证接口骨架
+- 领取确认与邮箱提醒
 
 当前权限模型：
 
 - 游客：可浏览首页列表和详情公开信息。
-- 南哪小帮手认证用户：可发布互助、查看微信 / QQ、查看自己的发布记录。
+- 已认证用户：可发布互助、查看微信 / QQ、查看自己的发布记录；当前首选南京大学学生邮箱登录，南哪小帮手作为备用身份链路。
 - 管理员：可审核、驳回、下架、查看统计。
 
 ## 产品形态
@@ -74,9 +76,10 @@ NanE 希望解决的是一个很轻但很真实的问题：
 - 按耗材 / 非处方药品筛选。
 - 物品详情展示公开信息。
 - 游客不可查看联系方式。
-- 南哪小帮手认证后可查看微信 / QQ。
-- 南哪小帮手认证后可发布互助。
-- 南哪小帮手认证后可查看“我的发布”。
+- 邮箱或南哪小帮手认证后可查看微信 / QQ。
+- 邮箱或南哪小帮手认证后可发布互助。
+- 邮箱或南哪小帮手认证后可查看“我的发布”。
+- 领取后可提醒发布者确认；发布者确认后系统扣减数量，归零自动下架。
 - 使用本地 PNG logo 作为网页 favicon。
 
 本地访问：
@@ -173,6 +176,7 @@ https://nane.zylatent.com/admin
 - 南哪小帮手认证用户点击查看后才会调用 `/api/items/:id/contact`。
 - 每个用户每日最多查看 5 次联系方式。
 - 查看记录写入 `contact_views` 表。
+- 领取者发起领取确认提醒后，如果发布者账号绑定邮箱，系统会发送邮件提醒发布者回到“我的发布”确认。
 
 ### 隐私边界
 
@@ -257,6 +261,19 @@ NanE
 
 ## 账号系统
 
+### 邮箱登录流程
+
+网页端当前首选南京大学学生邮箱登录：
+
+1. 用户勾选并同意用户协议。
+2. 用户输入邮箱前缀，系统固定拼接 `@smail.nju.edu.cn`。
+3. 后端生成 6 位验证码并写入 `email_challenges`，只保存哈希。
+4. 后端通过 SMTP 发送验证码邮件。
+5. 用户输入验证码。
+6. 验证通过后 NanE 创建或更新用户，签发自己的 JWT。
+
+邮箱验证码默认 5 分钟有效，且 60 秒内不能重复发送。
+
 ### 南哪小帮手登录流程
 
 NanE 不把南哪小帮手 API Key 暴露给前端。登录流程为：
@@ -282,7 +299,7 @@ identity:major:read
 
 ### 权限规则
 
-| 操作 | 游客 | 南哪小帮手认证用户 | 管理员 |
+| 操作 | 游客 | 已认证用户 | 管理员 |
 |------|------|----------------|--------|
 | 浏览首页 | 可以 | 可以 | 可以 |
 | 查看公开详情 | 可以 | 可以 | 可以 |
@@ -298,6 +315,8 @@ identity:major:read
 - `users`：用户、openid、认证状态、校区楼栋、联系方式。
 - `items`：互助物品、类型、分类、图标、数量、位置、状态、联系方式。
 - `contact_views`：联系方式查看记录和每日限流依据。
+- `claim_requests`：领取提醒、确认、忽略和扣减依据。
+- `email_challenges`：邮箱验证码哈希、有效期和使用状态。
 - `review_logs`：审核动作记录。
 - `admins`：管理员账号。
 
@@ -308,6 +327,7 @@ identity:major:read
 - `rejected`：已驳回
 - `taken_down`：已下架
 - `expired`：已过期
+- `claimed`：已领取，通常由领取确认后数量归零触发
 
 ## API 概览
 
@@ -317,9 +337,12 @@ identity:major:read
 |------|------|------|
 | `GET` | `/api/health` | 健康检查 |
 | `POST` | `/api/auth/wx-login` | Demo 微信登录兜底 |
+| `POST` | `/api/auth/email/challenge` | 发送南京大学学生邮箱验证码 |
+| `POST` | `/api/auth/email/verify` | 验证邮箱验证码并签发 NanE JWT |
 | `POST` | `/api/auth/nanna/challenge` | 发起南哪小帮手验证码 |
 | `POST` | `/api/auth/nanna/verify` | 验证南哪小帮手验证码并签发 NanE JWT |
 | `GET` | `/api/me` | 当前用户与联系方式额度 |
+| `POST` | `/api/me/profile` | 更新昵称、校区、楼栋、宿舍号 |
 | `GET` | `/api/me/items` | 我的发布，需要认证 |
 
 ### 物品
@@ -364,6 +387,13 @@ ADMIN_PASSWORD=replace-with-a-strong-admin-password
 NANNA_API_BASE=https://assistant.example.com
 NANNA_APP_UID=replace-with-nanna-app-uid
 NANNA_API_KEY=replace-with-nanna-api-key
+SMTP_HOST=smtp.qq.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-qq-email@qq.com
+SMTP_PASS=replace-with-smtp-authorization-code
+SMTP_FROM=NanE 南易 <your-qq-email@qq.com>
+PUBLIC_WEB_URL=https://nane.zylatent.com
 ```
 
 安装依赖并启动：
@@ -484,7 +514,10 @@ server {
 ## 配套文档
 
 - `PROJECT_CONTEXT.md`：项目上下文和快速恢复说明。
+- `docs/test-guide.md`：验收测试指南。
 - `docs/development-log.md`：开发日志。
+- `docs/deployment-guide.md`：部署与运维指南。
+- `docs/roadmap.md`：路线图。
 - `docs/miniprogram-release-checklist.md`：微信小程序上线配置清单。
 - `docs/privacy-guideline-draft.md`：隐私保护指引草稿。
 - `docs/demo-script.md`：演示脚本。

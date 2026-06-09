@@ -8,21 +8,6 @@
     </view>
   </view>
 
-  <view class="stats-row">
-    <view class="stat-card">
-      <view class="stat-num">{{contactLimit.daily}}</view>
-      <view class="stat-label">每日额度</view>
-    </view>
-    <view class="stat-card">
-      <view class="stat-num">{{contactLimit.remaining}}</view>
-      <view class="stat-label">今日剩余</view>
-    </view>
-    <view class="stat-card">
-      <view class="stat-num">{{apiStatus}}</view>
-      <view class="stat-label">API 状态</view>
-    </view>
-  </view>
-
   <view class="auth-card">
     <view class="auth-title">南哪小帮手身份验证</view>
     <view class="auth-desc">输入邮箱或学号后，南哪小帮手会发送验证码；验证成功后 NanE 会使用真实校园身份登录。</view>
@@ -57,12 +42,12 @@
     <view class="menu-item">
       <view class="menu-icon"><text class="fa">{{icons.clock}}</text></view>
       <view class="menu-text">查看历史</view>
-      <view class="menu-badge">今日余 {{contactLimit.remaining}} 次</view>
+      <view class="menu-badge">查看记录</view>
     </view>
     <view class="menu-item">
       <view class="menu-icon"><text class="fa">{{icons.shieldHeart}}</text></view>
       <view class="menu-text">隐私策略</view>
-      <view class="menu-badge">每日限 {{contactLimit.daily}} 次</view>
+      <view class="menu-badge">联系方式保护</view>
     </view>
   </view>
 
