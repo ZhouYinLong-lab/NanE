@@ -76,6 +76,22 @@ async function initializeDatabase() {
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC)");
   await query("ALTER TABLE items DROP CONSTRAINT IF EXISTS items_item_type_check");
   await query("ALTER TABLE items ADD CONSTRAINT items_item_type_check CHECK (item_type IN ('consumable', 'medicine', 'tool'))");
+  await query(
+    `DELETE FROM contact_views
+     WHERE id IN (
+       SELECT id
+       FROM (
+         SELECT id,
+                row_number() OVER (
+                  PARTITION BY viewer_id, item_id, view_date
+                  ORDER BY viewed_at DESC, id DESC
+                ) AS rn
+         FROM contact_views
+       ) ranked
+       WHERE rn > 1
+     )`
+  );
+  await query("CREATE UNIQUE INDEX IF NOT EXISTS idx_contact_views_unique ON contact_views(viewer_id, item_id, view_date)");
 
   await query(
     `INSERT INTO users (id, name, campus, building, wechat, qq, openid)

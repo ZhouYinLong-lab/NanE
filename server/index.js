@@ -1213,8 +1213,29 @@ async function viewContact(req, res, viewer, itemId) {
     return;
   }
 
+  const already = await query(
+    "SELECT id FROM contact_views WHERE viewer_id = $1 AND item_id = $2 AND view_date = CURRENT_DATE LIMIT 1",
+    [viewer.id, item.id]
+  );
+  if (already.rows[0]) {
+    const used = await query(
+      "SELECT COUNT(DISTINCT item_id)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE",
+      [viewer.id]
+    );
+    json(res, 200, {
+      contact: {
+        wechat: item.contact_wechat,
+        qq: item.contact_qq
+      },
+      remaining: Math.max(DAILY_CONTACT_LIMIT - used.rows[0].count, 0),
+      alreadyViewed: true,
+      countedThisTime: false
+    });
+    return;
+  }
+
   const used = await query(
-    "SELECT COUNT(*)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE",
+    "SELECT COUNT(DISTINCT item_id)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE",
     [viewer.id]
   );
   if (used.rows[0].count >= DAILY_CONTACT_LIMIT) {
@@ -1222,17 +1243,38 @@ async function viewContact(req, res, viewer, itemId) {
     return;
   }
 
-  await query(
-    "INSERT INTO contact_views (id, viewer_id, item_id) VALUES ($1, $2, $3)",
+  const inserted = await query(
+    `INSERT INTO contact_views (id, viewer_id, item_id)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (viewer_id, item_id, view_date) DO NOTHING
+     RETURNING id`,
     [makeId("view"), viewer.id, item.id]
   );
+  if (!inserted.rows[0]) {
+    const currentUsed = await query(
+      "SELECT COUNT(DISTINCT item_id)::int AS count FROM contact_views WHERE viewer_id = $1 AND view_date = CURRENT_DATE",
+      [viewer.id]
+    );
+    json(res, 200, {
+      contact: {
+        wechat: item.contact_wechat,
+        qq: item.contact_qq
+      },
+      remaining: Math.max(DAILY_CONTACT_LIMIT - currentUsed.rows[0].count, 0),
+      alreadyViewed: true,
+      countedThisTime: false
+    });
+    return;
+  }
 
   json(res, 200, {
     contact: {
       wechat: item.contact_wechat,
       qq: item.contact_qq
     },
-    remaining: Math.max(DAILY_CONTACT_LIMIT - used.rows[0].count - 1, 0)
+    remaining: Math.max(DAILY_CONTACT_LIMIT - used.rows[0].count - 1, 0),
+    alreadyViewed: false,
+    countedThisTime: true
   });
 }
 

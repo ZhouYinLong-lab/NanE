@@ -141,13 +141,26 @@
           </div>
 
           <div class="label-row">
-            <label for="expireInput">有效期 *</label>
+            <label>有效期 *</label>
             <label class="inline-check" id="noExpiryWrap">
               <input id="noExpiryInput" type="checkbox">
               <span>长期有效 / 无保质期</span>
             </label>
           </div>
-          <input id="expireInput" required type="date" value="2026-12-31">
+          <div class="date-row" id="dateRow">
+            <div class="date-segment">
+              <label for="expireYearSelect" class="date-label">年</label>
+              <select id="expireYearSelect"></select>
+            </div>
+            <div class="date-segment">
+              <label for="expireMonthSelect" class="date-label">月</label>
+              <select id="expireMonthSelect"></select>
+            </div>
+            <div class="date-segment">
+              <label for="expireDaySelect" class="date-label">日</label>
+              <select id="expireDaySelect"></select>
+            </div>
+          </div>
 
           <label for="descriptionInput">补充说明</label>
           <textarea id="descriptionInput" rows="4" placeholder="包装状态、领取时间、注意事项"></textarea>

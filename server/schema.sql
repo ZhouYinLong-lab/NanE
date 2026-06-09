@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS admins (
 
 CREATE INDEX IF NOT EXISTS idx_items_status_created ON items(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contact_views_daily ON contact_views(viewer_id, view_date);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_contact_views_unique ON contact_views(viewer_id, item_id, view_date);
 CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_email_challenges_email_created ON email_challenges(email, created_at DESC);

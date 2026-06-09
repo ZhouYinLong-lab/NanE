@@ -56,6 +56,7 @@ const state = {
   itemCategory: "",
   editingItemId: "",
   claimsModalShown: false,
+  contactViewedForItem: "",
   selectedPublishType: "consumable",
   selectedIcon: "plus",
   iconOtherOpen: false,
@@ -400,10 +401,63 @@ async function loadLocations() {
   renderLocationSelects("profile");
 }
 
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function initDateControls() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const yearSelect = $("expireYearSelect");
+  yearSelect.innerHTML = "";
+  for (let y = currentYear; y <= currentYear + 5; y++) {
+    yearSelect.innerHTML += `<option value="${y}" ${y === currentYear ? "selected" : ""}>${y}</option>`;
+  }
+  const monthSelect = $("expireMonthSelect");
+  monthSelect.innerHTML = "";
+  for (let m = 1; m <= 12; m++) {
+    monthSelect.innerHTML += `<option value="${m}" ${m === 12 ? "selected" : ""}>${m}</option>`;
+  }
+  refreshDayOptions();
+}
+
+function refreshDayOptions() {
+  const year = Number($("expireYearSelect").value) || new Date().getFullYear();
+  const month = Number($("expireMonthSelect").value) || 12;
+  const maxDay = daysInMonth(year, month);
+  const daySelect = $("expireDaySelect");
+  const currentDay = Number(daySelect.value) || maxDay;
+  daySelect.innerHTML = "";
+  for (let d = 1; d <= maxDay; d++) {
+    daySelect.innerHTML += `<option value="${d}" ${d === Math.min(currentDay, maxDay) ? "selected" : ""}>${d}</option>`;
+  }
+}
+
+function getExpireDate() {
+  const year = $("expireYearSelect").value;
+  const month = String($("expireMonthSelect").value).padStart(2, "0");
+  const day = String($("expireDaySelect").value).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function setExpireDate(dateStr) {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  if ($("expireYearSelect")) $("expireYearSelect").value = year;
+  if ($("expireMonthSelect")) $("expireMonthSelect").value = month;
+  refreshDayOptions();
+  if ($("expireDaySelect")) $("expireDaySelect").value = day;
+}
+
+function setDateRowDisabled(disabled) {
+  $("expireYearSelect").disabled = disabled;
+  $("expireMonthSelect").disabled = disabled;
+  $("expireDaySelect").disabled = disabled;
+}
+
 function toggleNoExpiry() {
   const checked = $("noExpiryInput").checked;
-  $("expireInput").disabled = checked;
-  $("expireInput").required = !checked;
+  setDateRowDisabled(checked);
 }
 
 function renderClaimsBanner(items) {
@@ -509,6 +563,7 @@ async function loadMyItems() {
 
 async function openDetail(id) {
   try {
+    state.contactViewedForItem = "";
     const data = await api(`/items/${encodeURIComponent(id)}`);
     state.selectedDetail = data.item;
     $("detailTitle").textContent = data.item.title;
@@ -611,13 +666,11 @@ function startEditItem() {
   }
   if (item.noExpiry) {
     $("noExpiryInput").checked = true;
-    $("expireInput").disabled = true;
-    $("expireInput").required = false;
+    setDateRowDisabled(true);
   } else {
     $("noExpiryInput").checked = false;
-    $("expireInput").disabled = false;
-    $("expireInput").required = true;
-    $("expireInput").value = item.expireDate || "";
+    setDateRowDisabled(false);
+    setExpireDate(item.expireDate || "");
   }
   $("noExpiryWrap").hidden = item.itemType === "medicine";
   if (item.itemType === "tool") $("noExpiryWrap").hidden = false;
@@ -649,14 +702,19 @@ async function viewContact() {
     $("detailDialog").close();
     return;
   }
+  if (state.contactViewedForItem === state.selectedDetail.id) return;
   try {
     const data = await api(`/items/${encodeURIComponent(state.selectedDetail.id)}/contact`, { method: "POST" });
+    state.contactViewedForItem = state.selectedDetail.id;
+    const noteText = data.alreadyViewed
+      ? "你今天已查看过该物品联系方式，本次不重复消耗额度。"
+      : "为防止联系方式滥用和隐私泄露，每位用户每日查看次数有限。";
     $("contactResult").innerHTML = `
       <div class="contact-box">
         微信：${escapeHtml(data.contact?.wechat || "未填写")}<br>
         QQ：${escapeHtml(data.contact?.qq || "未填写")}<br>
         今日剩余查看次数：${escapeHtml(data.remaining)}<br>
-        <span class="contact-note">为防止联系方式滥用和隐私泄露，每位用户每日查看次数有限。</span>
+        <span class="contact-note">${noteText}</span>
       </div>
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
       <div id="claimResult"></div>
@@ -750,22 +808,18 @@ function setPublishType(itemType) {
     $("typeHint").textContent = "适用于锤子、镊子、砂纸、热熔胶枪等偶发需求但不常备的小工具。请约定归还方式或说明是否赠送。";
     $("titleInput").placeholder = "例如：热熔胶枪借用";
     $("noExpiryWrap").hidden = false;
+    setDateRowDisabled(false);
   } else if (itemType === "medicine") {
     $("typeHint").textContent = "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。";
     $("titleInput").placeholder = "例如：未拆封感冒药一盒";
     $("noExpiryWrap").hidden = true;
     $("noExpiryInput").checked = false;
-    $("expireInput").disabled = false;
-    $("expireInput").required = true;
+    setDateRowDisabled(false);
   } else {
     $("typeHint").textContent = "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
     $("titleInput").placeholder = "例如：碘伏棉签 10 支";
     $("noExpiryWrap").hidden = false;
-  }
-  if (itemType === "medicine") {
-    $("noExpiryInput").checked = false;
-    $("expireInput").disabled = false;
-    $("expireInput").required = true;
+    setDateRowDisabled(false);
   }
   document.querySelectorAll(".segment").forEach(button => {
     button.classList.toggle("active", button.dataset.itemType === itemType);
@@ -810,7 +864,7 @@ async function submitPublish(event) {
     campus,
     building,
     room,
-    expireDate: $("noExpiryInput").checked ? "" : $("expireInput").value,
+    expireDate: $("noExpiryInput").checked ? "" : getExpireDate(),
     noExpiry: (state.selectedPublishType === "consumable" || state.selectedPublishType === "tool") && $("noExpiryInput").checked,
     description: $("descriptionInput").value.trim(),
     contactWechat,
@@ -846,9 +900,8 @@ async function submitPublish(event) {
     event.target.reset();
     $("quantityInput").value = "1";
     $("unitInput").value = "件";
-    $("expireInput").value = "2026-12-31";
-    $("expireInput").disabled = false;
-    $("expireInput").required = true;
+    setExpireDate("2026-12-31");
+    setDateRowDisabled(false);
     $("noExpiryInput").checked = false;
     $("useProfileLocationInput").checked = true;
     $("publishLocationFields").hidden = true;
@@ -1328,6 +1381,8 @@ function bindEvents() {
     $("publishLocationFields").hidden = event.target.checked;
   });
   $("noExpiryInput").addEventListener("change", toggleNoExpiry);
+  $("expireYearSelect").addEventListener("change", refreshDayOptions);
+  $("expireMonthSelect").addEventListener("change", refreshDayOptions);
   $("publishForm").addEventListener("submit", submitPublish);
   $("sendEmailCodeButton").addEventListener("click", sendEmailCode);
   $("verifyEmailCodeButton").addEventListener("click", verifyEmailCode);
@@ -1456,6 +1511,7 @@ async function applyUrlParams() {
 
 async function init() {
   initDarkMode();
+  initDateControls();
   bindEvents();
   await Promise.all([loadAgreement(), loadLocations()]);
   renderIconGrid();

@@ -403,3 +403,25 @@
 - 工具标题 placeholder："例如：热熔胶枪借用"。
 - 工具默认图标 `box`，常用图标含 box/boxOpen/handHoldingMedical/heartPulse。
 - 编辑模式支持切回工具类型并预填分类和有效期。
+
+### 日期输入三段式控件与联系方式去重 (2026-06-09 第三轮)
+
+#### 有效期三段式日期控件 (TASK-NANE-DATE-009)
+
+- 发布表单有效期从 `input[type=date]` 替换为年/月/日三个独立 `<select>` 控件。
+- 年份范围为当前年份到 +5 年；月份 1-12；日根据年月动态计算当月天数。
+- 选择年份或月份后，日选项自动更新（2 月不出现 30/31 日，闰年 2 月出现 29 日）。
+- 编辑已有物品时，`setExpireDate(YYYY-MM-DD)` 正确回填三段控件。
+- 提交时通过 `getExpireDate()` 组装为 `YYYY-MM-DD` 格式。
+- 勾选"长期有效"后年月日控件全部禁用。
+- 新增 CSS `.date-row` / `.date-segment` / `.date-label` 响应式布局。
+
+#### 联系方式重复查看去重 (TASK-NANE-CONTACT-010)
+
+- `viewContact()` 改为幂等：先查询 `contact_views` 是否已有同日同人同物品记录。
+- 已查看过：返回联系方式但不插入新记录，`alreadyViewed: true`, `countedThisTime: false`。
+- 未查看过：检查今日独立物品数是否达上限（`COUNT(DISTINCT item_id)`），未达上限才插入并计数。
+- 已查看过的物品即使额度用完也允许再次查看。
+- 新增 `idx_contact_views_unique` 唯一索引（viewer_id + item_id + view_date），启动时自动去重旧数据。
+- 前端同一详情会话内 `state.contactViewedForItem` 防止重复调用 API。
+- 已查看过时显示"你今天已查看过该物品联系方式，本次不重复消耗额度"。
