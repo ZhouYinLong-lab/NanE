@@ -90,6 +90,24 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ===== Skip Link ===== */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 1000;
+  padding: 10px 20px;
+  background: var(--purple);
+  color: var(--on-accent);
+  border-radius: var(--radius-pill);
+  font-weight: var(--fw-heavy);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
 /* ===== Reset ===== */
 * {
   box-sizing: border-box;
@@ -491,6 +509,16 @@ textarea:focus {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.item-card:hover {
+  opacity: 0.78;
+}
+
+.item-card:active {
+  opacity: 0.6;
 }
 
 .item-icon {
@@ -520,22 +548,29 @@ textarea:focus {
 
 .item-title-row h3 {
   margin: 0;
-  font-size: 25px;
+  font-size: 22px;
   line-height: 1.25;
   font-weight: var(--fw-black);
+  color: var(--text);
 }
 
 .item-location {
   color: var(--muted);
   white-space: nowrap;
+  font-size: 13px;
   font-weight: var(--fw-bold);
 }
 
 .item-desc {
-  margin: var(--space-sm) 0 var(--space-md);
+  margin: var(--space-xs) 0 var(--space-md);
   color: var(--muted);
-  line-height: 1.65;
+  line-height: 1.6;
+  font-size: 14px;
   font-weight: var(--fw-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ===== Badges ===== */

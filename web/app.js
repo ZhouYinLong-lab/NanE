@@ -70,7 +70,8 @@ const state = {
   publishBuildingIndex: 0,
   profileCampusIndex: 0,
   profileBuildingIndex: 0,
-  agreementVersion: AGREEMENT_VERSION_FALLBACK
+  agreementVersion: AGREEMENT_VERSION_FALLBACK,
+  pendingAction: null
 };
 
 function $(id) {
@@ -88,6 +89,23 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     if (toast.parentNode) toast.remove();
   }, 4500);
+}
+
+function errmsg(error, fallback) {
+  if (!error) return fallback || "操作失败";
+  const raw = error.message || String(error);
+  const map = {
+    "Failed to fetch": "网络连接失败，请检查校园网是否正常",
+    "NetworkError": "网络连接失败，请检查校园网是否正常",
+    "Unexpected token": "服务器返回异常，请稍后重试",
+    "abort": "请求已取消",
+    "timeout": "请求超时，请检查网络后重试",
+    "Unexpected end of JSON": "服务器响应异常，请刷新页面重试",
+  };
+  for (const [key, msg] of Object.entries(map)) {
+    if (raw.includes(key)) return msg;
+  }
+  return raw || fallback || "操作失败";
 }
 
 function escapeHtml(value) {
@@ -178,16 +196,31 @@ function profileComplete() {
   return Boolean(state.user?.profileComplete);
 }
 
-function requireVerified(message) {
+function requireVerified(message, pendingAction) {
   if (isVerifiedUser() && profileComplete()) {
     return true;
   }
-  const text = message || (isVerifiedUser() ? "请先补全昵称、校区和楼栋" : "请先在“我的”页登录并同意用户协议");
-  const activeMineTab = document.querySelector('.tab[data-view="mine"]');
+  const text = message || (isVerifiedUser() ? “请先补全昵称、校区和楼栋” : “请先在”我的”页登录并同意用户协议”);
+  if (pendingAction) {
+    state.pendingAction = pendingAction;
+  }
+  const activeMineTab = document.querySelector('.tab[data-view=”mine”]');
   if (activeMineTab) {
     activeMineTab.click();
   }
-  $("authMessage").textContent = text;
+  $(“authMessage”).textContent = text;
+  return false;
+}
+
+function executePendingAction() {
+  if (!state.pendingAction) return false;
+  const action = state.pendingAction;
+  state.pendingAction = null;
+  if (isVerifiedUser() && profileComplete()) {
+    showToast(“登录成功，继续刚才的操作”, “success”);
+    setTimeout(() => { if (typeof action === “function”) action(); }, 600);
+    return true;
+  }
   return false;
 }
 
@@ -378,7 +411,7 @@ async function loadHome() {
     $("itemList").innerHTML = items.map(item => renderItem(item)).join("");
   } catch (error) {
     $("viewerLabel").textContent = "API 未连接";
-    $("homeState").textContent = error.message || "API 未连接，请稍后重试";
+    $("homeState").textContent = errmsg(error, "API 未连接，请稍后重试");
   }
 }
 
@@ -597,7 +630,7 @@ async function loadMyItems() {
       showClaimsModal(sorted);
     }
   } catch (error) {
-    container.innerHTML = `<div class="state-card">${escapeHtml(error.message || "加载失败")}</div>`;
+    container.innerHTML = `<div class="state-card">${escapeHtml(errmsg(error, "加载失败"))}</div>`;
     $("pendingClaimsBanner").hidden = true;
   }
 }
@@ -620,7 +653,7 @@ async function openDetail(id) {
     `;
     $("detailDialog").showModal();
   } catch (error) {
-    showToast(error.message || "详情加载失败", "error");
+    showToast(errmsg(error, "详情加载失败"), "error");
   }
 }
 
@@ -667,7 +700,7 @@ async function openMyItemDetail(id) {
     `;
     $("detailDialog").showModal();
   } catch (error) {
-    showToast(error.message || "详情加载失败", "error");
+    showToast(errmsg(error, "详情加载失败"), "error");
   }
 }
 
@@ -733,7 +766,7 @@ async function takeDownMyItem() {
     await Promise.all([loadHome(), loadMyItems()]);
     setTimeout(() => $("detailDialog").close(), 1200);
   } catch (error) {
-    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "删除失败")}</div>`;
+    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "删除失败"))}</div>`;
   }
 }
 
@@ -745,7 +778,7 @@ async function handleListDelete(itemId, button) {
     await api(`/me/items/${encodeURIComponent(itemId)}/delete`, { method: "POST" });
     await Promise.all([loadHome(), loadMyItems()]);
   } catch (error) {
-    showToast(error.message || "删除失败", "error");
+    showToast(errmsg(error, "删除失败"), "error");
     button.disabled = false;
     button.textContent = "删除";
   }
@@ -753,7 +786,9 @@ async function handleListDelete(itemId, button) {
 
 async function viewContact() {
   if (!state.selectedDetail) return;
-  if (!requireVerified("请先登录并同意用户协议，再查看微信或 QQ 联系方式。")) {
+  if (!requireVerified("请先登录并同意用户协议，再查看微信或 QQ 联系方式。", () => {
+    openDetail(state.selectedDetail?.id).then(() => setTimeout(viewContact, 400));
+  })) {
     $("detailDialog").close();
     return;
   }
@@ -776,13 +811,15 @@ async function viewContact() {
     `;
     loadProfile();
   } catch (error) {
-    $("contactResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "查看失败")}</div>`;
+    $("contactResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "查看失败"))}</div>`;
   }
 }
 
 async function requestClaim() {
   if (!state.selectedDetail) return;
-  if (!requireVerified("请先登录并补全账号资料，再提醒发布者确认领取。")) {
+  if (!requireVerified("请先登录并补全账号资料，再提醒发布者确认领取。", () => {
+    openDetail(state.selectedDetail?.id).then(() => setTimeout(requestClaim, 400));
+  })) {
     $("detailDialog").close();
     return;
   }
@@ -801,7 +838,7 @@ async function requestClaim() {
   } catch (error) {
     claimBtn.disabled = false;
     claimBtn.textContent = "我已联系并领取，提醒发布者确认";
-    $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "发送领取提醒失败")}</div>`;
+    $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "发送领取提醒失败"))}</div>`;
   }
 }
 
@@ -815,7 +852,7 @@ async function reviewClaimFromButton(button) {
     const data = await api(`/claims/${encodeURIComponent(claimId)}/${action}`, { method: "POST" });
     await Promise.all([loadHome(), loadProfile(), loadMyItems()]);
   } catch (error) {
-    showToast(error.message || "处理失败", "error");
+    showToast(errmsg(error, "处理失败"), "error");
   } finally {
     button.disabled = false;
     button.textContent = action === "confirm" ? "确认领取" : "忽略";
@@ -979,7 +1016,7 @@ async function submitPublish(event) {
     }
     loadMyItems();
   } catch (error) {
-    message.textContent = error.message || "提交失败";
+    message.textContent = errmsg(error, "提交失败");
   }
 }
 
@@ -1005,7 +1042,7 @@ async function sendCode() {
     state.challengeId = data.challengeId || "";
     message.textContent = data.message || `验证码已发送至 ${data.maskedTarget || "南哪小帮手"}`;
   } catch (error) {
-    message.textContent = error.message || "发送失败";
+    message.textContent = errmsg(error, "发送失败");
   }
 }
 
@@ -1033,8 +1070,9 @@ async function verifyCode() {
     message.textContent = "校园身份验证成功";
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
     syncPublishView();
+    executePendingAction();
   } catch (error) {
-    message.textContent = error.message || "验证失败";
+    message.textContent = errmsg(error, "验证失败");
   }
 }
 
@@ -1122,8 +1160,9 @@ async function passwordLogin() {
     switchLoginMode("code");
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
     syncPublishView();
+    executePendingAction();
   } catch (error) {
-    message.textContent = error.message || "密码登录失败";
+    message.textContent = errmsg(error, "密码登录失败");
   }
 }
 
@@ -1143,7 +1182,7 @@ async function sendResetCode() {
     state.emailChallengeId = data.challengeId || "";
     message.textContent = data.message || "验证码已发送，请查收邮箱";
   } catch (error) {
-    message.textContent = error.message || "验证码发送失败";
+    message.textContent = errmsg(error, "验证码发送失败");
   }
 }
 
@@ -1175,7 +1214,7 @@ async function resetPassword() {
     switchLoginMode("password");
     $("passwordInput").value = "";
   } catch (error) {
-    message.textContent = error.message || "密码重置失败";
+    message.textContent = errmsg(error, "密码重置失败");
   }
 }
 
@@ -1197,7 +1236,7 @@ async function setNewPassword() {
     $("setPasswordPrompt").hidden = true;
     await loadProfile();
   } catch (error) {
-    message.textContent = error.message || "密码设置失败";
+    message.textContent = errmsg(error, "密码设置失败");
   }
 }
 
@@ -1233,7 +1272,7 @@ async function changePassword() {
     $("newPasswordInput").value = "";
     $("confirmPasswordInput").value = "";
   } catch (error) {
-    message.textContent = error.message || "密码修改失败";
+    message.textContent = errmsg(error, "密码修改失败");
   }
 }
 
@@ -1258,7 +1297,7 @@ async function sendEmailCode() {
     state.emailChallengeId = data.challengeId || "";
     message.textContent = data.message || "验证码已发送，请查收邮箱";
   } catch (error) {
-    message.textContent = error.message || "验证码发送失败";
+    message.textContent = errmsg(error, "验证码发送失败");
   }
 }
 
@@ -1295,8 +1334,9 @@ async function verifyEmailCode() {
     }
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
     syncPublishView();
+    executePendingAction();
   } catch (error) {
-    message.textContent = error.message || "验证码验证失败";
+    message.textContent = errmsg(error, "验证码验证失败");
   }
 }
 
@@ -1327,8 +1367,9 @@ async function saveProfile() {
     $("profileFormCard").hidden = true;
     await Promise.all([loadProfile(), loadHome()]);
     syncPublishView();
+    executePendingAction();
   } catch (error) {
-    message.textContent = error.message || "保存失败";
+    message.textContent = errmsg(error, "保存失败");
   }
 }
 

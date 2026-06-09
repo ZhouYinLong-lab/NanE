@@ -10,7 +10,7 @@
 |------|------|----------|----------|------|
 | [1](#迭代1) | 2026-06-10 | 文案科学化、去AI味 | index.html, app.js, styles.css | ✅ |
 | [2](#迭代2) | 2026-06-10 | 发布流程、日期选择器、骨架屏 | index.html, app.js, styles.css | ✅ |
-| 3 | - | 未开始 | - | ⏳ |
+| [3](#迭代3) | 2026-06-10 | 错误处理、登录意图保留、卡片层级、无障碍 | index.html, app.js, styles.css | ✅ |
 | 4 | - | 未开始 | - | ⏳ |
 | 5 | - | 未开始 | - | ⏳ |
 
@@ -62,6 +62,25 @@
 - `web/index.html`: +40/-30 行 (guest卡片、成功卡片、日期输入)
 - `web/app.js`: +120/-70 行 (syncPublishView、CTA按钮、骨架屏、日期简化)
 - `web/styles.css`: +50/-25 行 (骨架屏动画、toast、guest图标、日期简化)
+
+---
+
+---
+
+## 迭代3
+
+**目标**: 错误体验优化 + 登录意图保留 + 卡片视觉 + 无障碍
+
+### 功能变更
+1. **错误消息标准化**: 新增 `errmsg()` 辅助函数，将 `Failed to fetch` 等英文/技术错误映射为中文友好提示
+2. **登录意图保留**: `requireVerified()` 支持传入回调，登录/完善资料成功后自动回到中断的操作
+3. **物品卡片层级**: 标题22px深色 + 地点13px灰色 + 描述14px截断2行 + hover交互反馈
+4. **无障碍**: 跳过导航链接、ARIA landmark (banner/region)、`aria-live` 区域
+
+### 代码变更量
+- `web/app.js`: +40/-20 行 (errmsg、pendingAction、executePendingAction)
+- `web/index.html`: +6/-4 行 (skip-link、role属性)
+- `web/styles.css`: +35/-3 行 (skip-link、卡片hover、描述截断)
 
 ---
 
