@@ -30,6 +30,7 @@ async function initializeDatabase() {
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'consumable'");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_icon TEXT NOT NULL DEFAULT 'plus'");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS no_expiry BOOLEAN NOT NULL DEFAULT false");
+  await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS owner_hidden BOOLEAN NOT NULL DEFAULT false");
   await query("ALTER TABLE items ALTER COLUMN expire_date DROP NOT NULL");
   await query("ALTER TABLE items DROP CONSTRAINT IF EXISTS items_quantity_check");
   await query("ALTER TABLE items ADD CONSTRAINT items_quantity_check CHECK (quantity >= 0)");

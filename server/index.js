@@ -1787,7 +1787,7 @@ async function handle(req, res) {
          WHERE status = 'pending'
          GROUP BY item_id
        ) c ON c.item_id = i.id
-       WHERE i.owner_id = $1
+       WHERE i.owner_id = $1 AND COALESCE(i.owner_hidden, false) = false
        ORDER BY i.created_at DESC`,
       [viewer.id]
     );
@@ -1839,6 +1839,34 @@ async function handle(req, res) {
       [myItemTakeDownMatch[1]]
     );
     json(res, 200, { item: itemFromRow(updated.rows[0], viewer, { includeRoom: true, includeContact: true }), message: "物品已下架" });
+    return;
+  }
+
+  const myItemDeleteMatch = pathname.match(/^\/api\/me\/items\/([^/]+)\/delete$/);
+  if (req.method === "POST" && myItemDeleteMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) return;
+    const { rows } = await query("SELECT * FROM items WHERE id = $1", [myItemDeleteMatch[1]]);
+    if (!rows[0]) {
+      json(res, 404, { error: "ITEM_NOT_FOUND", message: "物品不存在" });
+      return;
+    }
+    if (rows[0].owner_id !== viewer.id) {
+      json(res, 403, { error: "FORBIDDEN", message: "只能删除自己的物品" });
+      return;
+    }
+    if (rows[0].status === "online" || rows[0].status === "reviewing") {
+      await query(
+        "UPDATE items SET status = 'taken_down', owner_hidden = true, reviewed_at = now() WHERE id = $1",
+        [myItemDeleteMatch[1]]
+      );
+    } else {
+      await query(
+        "UPDATE items SET owner_hidden = true WHERE id = $1",
+        [myItemDeleteMatch[1]]
+      );
+    }
+    json(res, 200, { message: "发布记录已删除。" });
     return;
   }
 

@@ -279,9 +279,7 @@ function renderItem(item, options = {}) {
   const ownerActions = options.showOwnerActions
     ? `<div class="owner-actions">
         <button type="button" class="primary small" data-owner-action="edit" data-item-id="${escapeHtml(item.id)}">编辑</button>
-        ${item.status === "online" || item.status === "reviewing"
-          ? `<button type="button" class="danger small" data-owner-action="take-down" data-item-id="${escapeHtml(item.id)}">下架</button>`
-          : ""}
+        <button type="button" class="danger small" data-owner-action="delete" data-item-id="${escapeHtml(item.id)}">删除</button>
       </div>`
     : "";
   return `
@@ -629,7 +627,7 @@ async function openMyItemDetail(id) {
       ` : ""}
       <div class="owner-actions">
         <button class="primary small" id="editItemButton">编辑</button>
-        ${data.item.status === "online" || data.item.status === "reviewing" ? `<button class="secondary small" id="takeDownButton">下架</button>` : ""}
+        <button class="danger small" id="takeDownButton">删除</button>
       </div>
       <div id="ownerActionResult"></div>
     `;
@@ -694,28 +692,28 @@ function startEditItem() {
 async function takeDownMyItem() {
   const item = state.selectedDetail;
   if (!item) return;
-  if (!confirm("确定要下架「" + item.title + "」吗？下架后首页将不再展示。")) return;
+  if (!confirm("确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。")) return;
   try {
-    const data = await api(`/me/items/${encodeURIComponent(item.id)}/take-down`, { method: "POST" });
-    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "物品已下架")}</div>`;
-    state.selectedDetail = data.item;
+    const data = await api(`/me/items/${encodeURIComponent(item.id)}/delete`, { method: "POST" });
+    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "发布记录已删除。")}</div>`;
     await Promise.all([loadHome(), loadMyItems()]);
+    setTimeout(() => $("detailDialog").close(), 1200);
   } catch (error) {
-    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "下架失败")}</div>`;
+    $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "删除失败")}</div>`;
   }
 }
 
-async function handleListTakeDown(itemId, button) {
-  if (!confirm("确定要下架该物品吗？下架后首页将不再展示。")) return;
+async function handleListDelete(itemId, button) {
+  if (!confirm("确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。")) return;
   button.disabled = true;
-  button.textContent = "下架中...";
+  button.textContent = "删除中...";
   try {
-    const data = await api(`/me/items/${encodeURIComponent(itemId)}/take-down`, { method: "POST" });
+    await api(`/me/items/${encodeURIComponent(itemId)}/delete`, { method: "POST" });
     await Promise.all([loadHome(), loadMyItems()]);
   } catch (error) {
-    alert(error.message || "下架失败");
+    alert(error.message || "删除失败");
     button.disabled = false;
-    button.textContent = "下架";
+    button.textContent = "删除";
   }
 }
 
@@ -1357,8 +1355,8 @@ function bindEvents() {
       if (ownerButton.dataset.ownerAction === "edit") {
         await openMyItemDetail(itemId);
         startEditItem();
-      } else if (ownerButton.dataset.ownerAction === "take-down") {
-        handleListTakeDown(itemId, ownerButton);
+      } else if (ownerButton.dataset.ownerAction === "delete") {
+        handleListDelete(itemId, ownerButton);
       }
       return;
     }

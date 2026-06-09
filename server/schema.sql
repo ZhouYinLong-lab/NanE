@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS items (
   no_expiry BOOLEAN NOT NULL DEFAULT false,
   status TEXT NOT NULL CHECK (status IN ('reviewing', 'online', 'rejected', 'expired', 'taken_down', 'claimed')),
   reject_reason TEXT,
+  owner_hidden BOOLEAN NOT NULL DEFAULT false,
   owner_id TEXT NOT NULL REFERENCES users(id),
   owner_name TEXT NOT NULL,
   contact_wechat TEXT NOT NULL,

@@ -435,3 +435,15 @@
 - "我的发布"列表每条记录直接显示"编辑"按钮；状态为 `online`/`reviewing` 时显示红色"下架"按钮（`#b3261e`）。
 - 新增 `.danger` 按钮样式和 `handleListTakeDown()` 函数；点击列表下架不触发详情弹窗。
 - 移动端 `.item-card .owner-actions` 响应式适配。
+
+### 删除按钮修正 (TASK-NANE-UI-012-CR1)
+
+- 新增 `owner_hidden BOOLEAN NOT NULL DEFAULT false` 字段（`items` 表）。
+- 新增 `POST /api/me/items/:id/delete` 接口：
+  - `online`/`reviewing` 物品改为 `taken_down` 并标记 `owner_hidden = true`。
+  - 其他状态直接标记 `owner_hidden = true`。
+  - 不物理删除数据库记录，管理员后台仍可追溯。
+- `/api/me/items` 默认过滤 `owner_hidden = true` 的记录。
+- "我的发布"列表中所有状态的物品都显示红色"删除"按钮（不再只对 `online`/`reviewing` 显示）。
+- 列表"删除"按钮调用新 `/delete` 接口；详情弹窗的危险操作改用 `.danger` 红色样式。
+- 确认弹窗文案："确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。"
