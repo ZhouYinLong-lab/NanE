@@ -53,6 +53,7 @@ const state = {
   token: localStorage.getItem(TOKEN_KEY) || "",
   user: JSON.parse(localStorage.getItem(USER_KEY) || "null"),
   itemType: "",
+  itemCategory: "",
   selectedPublishType: "consumable",
   selectedIcon: "plus",
   iconOtherOpen: false,
@@ -197,6 +198,9 @@ function syncProfileForm() {
   $("nicknameInput").value = state.user?.name || "";
   setSelectionByLocation("profile", state.user?.campus || "仙林校区", state.user?.building || "南苑 A 栋", state.user?.room || "");
   $("profileMessage").textContent = profileComplete() ? "" : "请补全账号资料后再发布或查看联系方式";
+  if (state.user && !state.user.hasPassword) {
+    switchLoginMode("setPassword");
+  }
 }
 
 function iconGlyph(key, itemType) {
@@ -293,6 +297,7 @@ async function loadHome() {
     const params = new URLSearchParams();
     if (keyword) params.set("keyword", keyword);
     if (state.itemType) params.set("itemType", state.itemType);
+    if (state.itemCategory) params.set("category", state.itemCategory);
     const data = await api(`/items${params.toString() ? `?${params}` : ""}`);
     $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻`;
     $("homeState").textContent = data.items.length ? "" : "暂无上架物品";
@@ -398,20 +403,62 @@ function toggleNoExpiry() {
   $("expireInput").required = !checked;
 }
 
+function renderClaimsBanner(items) {
+  const banner = $("pendingClaimsBanner");
+  const list = $("pendingClaimsList");
+  const countEl = $("pendingClaimsCount");
+  if (!banner || !list || !countEl) return;
+  const allClaims = [];
+  for (const item of items) {
+    if (item.claimRequests && item.claimRequests.length) {
+      for (const claim of item.claimRequests) {
+        allClaims.push({ claim, item });
+      }
+    }
+  }
+  if (!allClaims.length) {
+    banner.hidden = true;
+    return;
+  }
+  banner.hidden = false;
+  countEl.textContent = `${allClaims.length} 条待确认`;
+  list.innerHTML = allClaims.map(({ claim, item }) => `
+    <div class="claim-banner-row">
+      <div class="claim-banner-info">
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(claim.requesterName || "同学")} 提醒已领取 ${escapeHtml(claim.quantity || 1)}${escapeHtml(item.unit || "件")}</span>
+      </div>
+      <span class="claim-actions">
+        <button type="button" class="primary small" data-claim-action="confirm" data-claim-id="${escapeHtml(claim.id)}">确认领取</button>
+        <button type="button" class="secondary small" data-claim-action="reject" data-claim-id="${escapeHtml(claim.id)}">忽略</button>
+      </span>
+    </div>
+  `).join("");
+}
+
 async function loadMyItems() {
   const container = $("myItemList");
   if (!isVerifiedUser()) {
     container.innerHTML = `<div class="state-card">请先登录并同意用户协议，再查看自己的发布。</div>`;
+    $("pendingClaimsBanner").hidden = true;
     return;
   }
   container.innerHTML = `<div class="state-card">正在加载...</div>`;
   try {
     const data = await api("/me/items");
-    container.innerHTML = data.items.length
-      ? data.items.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true })).join("")
+    const sorted = [...data.items];
+    sorted.sort((a, b) => {
+      const aPending = (a.pendingClaimCount || 0) > 0 ? 1 : 0;
+      const bPending = (b.pendingClaimCount || 0) > 0 ? 1 : 0;
+      return bPending - aPending;
+    });
+    renderClaimsBanner(sorted);
+    container.innerHTML = sorted.length
+      ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true })).join("")
       : `<div class="state-card">暂无发布记录</div>`;
   } catch (error) {
     container.innerHTML = `<div class="state-card">${escapeHtml(error.message || "加载失败")}</div>`;
+    $("pendingClaimsBanner").hidden = true;
   }
 }
 
@@ -530,7 +577,7 @@ function setPublishType(itemType) {
   state.iconOtherOpen = false;
   $("medicineCategoryWrap").hidden = itemType !== "medicine";
   $("typeHint").textContent = itemType === "medicine"
-    ? "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、拆封不明药品和收费转让。"
+    ? "药品只允许非处方常见药品笼统分类；禁止处方药、管控药、已拆分不明药品和收费转让。"
     : "耗材无需选择细分类，适用于创可贴、碘伏棉签、防护用品等低风险应急物品。";
   $("titleInput").placeholder = itemType === "medicine" ? "例如：未拆封感冒药一盒" : "例如：碘伏棉签 10 支";
   $("noExpiryWrap").hidden = itemType === "medicine";
@@ -667,6 +714,168 @@ async function verifyCode() {
   }
 }
 
+function validatePasswordStrength(password) {
+  if (!password || password.length < 8) {
+    return "密码至少需要 8 位";
+  }
+  if (password.length > 64) {
+    return "密码最多 64 位";
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    return "密码必须包含至少一个字母";
+  }
+  if (!/[0-9]/.test(password)) {
+    return "密码必须包含至少一个数字";
+  }
+  return "";
+}
+
+function emailFromPasswordPrefix() {
+  const prefix = $("passwordEmailInput").value.trim().toLowerCase().replace(/@.*$/, "");
+  return prefix ? `${prefix}@smail.nju.edu.cn` : "";
+}
+
+function emailFromResetPrefix() {
+  const prefix = $("resetEmailInput").value.trim().toLowerCase().replace(/@.*$/, "");
+  return prefix ? `${prefix}@smail.nju.edu.cn` : "";
+}
+
+function switchLoginMode(mode) {
+  const codeSection = $("codeLoginSection");
+  const passwordSection = $("passwordLoginSection");
+  const forgotSection = $("forgotPasswordSection");
+  const setPasswordPrompt = $("setPasswordPrompt");
+  const tabs = document.querySelectorAll(".login-tab");
+
+  codeSection.hidden = true;
+  passwordSection.hidden = true;
+  forgotSection.hidden = true;
+  if (setPasswordPrompt) setPasswordPrompt.hidden = true;
+  tabs.forEach(tab => tab.classList.remove("active"));
+
+  if (mode === "code") {
+    codeSection.hidden = false;
+    const codeTab = document.querySelector('.login-tab[data-login-mode="code"]');
+    if (codeTab) codeTab.classList.add("active");
+  } else if (mode === "password") {
+    passwordSection.hidden = false;
+    const pwTab = document.querySelector('.login-tab[data-login-mode="password"]');
+    if (pwTab) pwTab.classList.add("active");
+  } else if (mode === "forgot") {
+    forgotSection.hidden = false;
+  } else if (mode === "setPassword") {
+    if (setPasswordPrompt) setPasswordPrompt.hidden = false;
+  }
+  $("authMessage").textContent = "";
+}
+
+async function passwordLogin() {
+  const message = $("authMessage");
+  const email = emailFromPasswordPrefix();
+  const password = $("passwordInput").value;
+  const agreement = currentAgreementPayload();
+  if (!agreement.agreementAccepted) {
+    message.textContent = "请先阅读并同意用户协议";
+    return;
+  }
+  if (!email) {
+    message.textContent = "请填写南京大学学生邮箱前缀";
+    return;
+  }
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    message.textContent = pwError;
+    return;
+  }
+  try {
+    message.textContent = "正在登录...";
+    const data = await api("/auth/password/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password, ...agreement })
+    });
+    saveSession(data.token, data.user);
+    message.textContent = "密码登录成功";
+    switchLoginMode("code");
+    await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
+  } catch (error) {
+    message.textContent = error.message || "密码登录失败";
+  }
+}
+
+async function sendResetCode() {
+  const message = $("authMessage");
+  const email = emailFromResetPrefix();
+  if (!email) {
+    message.textContent = "请填写南京大学学生邮箱前缀";
+    return;
+  }
+  try {
+    message.textContent = "正在发送重置验证码...";
+    const data = await api("/auth/password/reset-challenge", {
+      method: "POST",
+      body: JSON.stringify({ email })
+    });
+    state.emailChallengeId = data.challengeId || "";
+    message.textContent = data.message || "验证码已发送，请查收邮箱";
+  } catch (error) {
+    message.textContent = error.message || "验证码发送失败";
+  }
+}
+
+async function resetPassword() {
+  const message = $("authMessage");
+  const email = emailFromResetPrefix();
+  const code = $("resetCodeInput").value.trim();
+  const password = $("resetPasswordInput").value;
+  if (!email) {
+    message.textContent = "请填写南京大学学生邮箱前缀";
+    return;
+  }
+  if (!/^\d{6}$/.test(code)) {
+    message.textContent = "请填写 6 位验证码";
+    return;
+  }
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    message.textContent = pwError;
+    return;
+  }
+  try {
+    message.textContent = "正在重置密码...";
+    const data = await api("/auth/password/reset", {
+      method: "POST",
+      body: JSON.stringify({ email, code, password, challengeId: state.emailChallengeId })
+    });
+    message.textContent = data.message || "密码重置成功";
+    switchLoginMode("password");
+    $("passwordInput").value = "";
+  } catch (error) {
+    message.textContent = error.message || "密码重置失败";
+  }
+}
+
+async function setNewPassword() {
+  const message = $("authMessage");
+  const password = $("setPasswordInput").value;
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    message.textContent = pwError;
+    return;
+  }
+  try {
+    message.textContent = "正在设置密码...";
+    const data = await api("/auth/password/set", {
+      method: "POST",
+      body: JSON.stringify({ password })
+    });
+    message.textContent = data.message || "密码设置成功";
+    $("setPasswordPrompt").hidden = true;
+    await loadProfile();
+  } catch (error) {
+    message.textContent = error.message || "密码设置失败";
+  }
+}
+
 async function sendEmailCode() {
   const message = $("authMessage");
   const email = emailFromPrefix();
@@ -717,6 +926,12 @@ async function verifyEmailCode() {
     });
     saveSession(data.token, data.user);
     message.textContent = "邮箱登录成功";
+    if (data.user && !data.user.hasPassword) {
+      switchLoginMode("setPassword");
+      message.textContent = "邮箱登录成功，建议设置密码方便下次登录";
+    } else {
+      switchLoginMode("code");
+    }
     await Promise.all([loadProfile(), loadHome(), loadMyItems()]);
   } catch (error) {
     message.textContent = error.message || "验证码验证失败";
@@ -774,6 +989,7 @@ function bindEvents() {
     const chip = event.target.closest(".chip");
     if (!chip) return;
     state.itemType = chip.dataset.type || "";
+    state.itemCategory = chip.dataset.category || "";
     document.querySelectorAll(".chip").forEach(item => item.classList.toggle("active", item === chip));
     loadHome();
   });
@@ -838,12 +1054,70 @@ function bindEvents() {
   $("publishForm").addEventListener("submit", submitPublish);
   $("sendEmailCodeButton").addEventListener("click", sendEmailCode);
   $("verifyEmailCodeButton").addEventListener("click", verifyEmailCode);
+  $("passwordLoginButton").addEventListener("click", passwordLogin);
+  $("passwordInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") passwordLogin();
+  });
   $("sendCodeButton").addEventListener("click", sendCode);
   $("verifyCodeButton").addEventListener("click", verifyCode);
   $("saveProfileButton").addEventListener("click", saveProfile);
   $("loadMineButton").addEventListener("click", loadMyItems);
   $("openAgreementButton").addEventListener("click", () => $("agreementDialog").showModal());
   $("closeAgreementButton").addEventListener("click", () => $("agreementDialog").close());
+  document.querySelector(".profile-card").addEventListener("click", () => {
+    if (isVerifiedUser()) {
+      const formCard = $("profileFormCard");
+      if (formCard && !formCard.hidden) {
+        formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        setTimeout(() => $("nicknameInput").focus(), 400);
+      }
+    } else {
+      const loginCard = document.querySelector("#view-mine .form-card");
+      if (loginCard) {
+        loginCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  });
+  document.querySelectorAll(".login-tab").forEach(tab => {
+    tab.addEventListener("click", () => switchLoginMode(tab.dataset.loginMode));
+  });
+  $("forgotPasswordButton").addEventListener("click", () => switchLoginMode("forgot"));
+  $("backFromForgotButton").addEventListener("click", () => switchLoginMode("password"));
+  $("sendResetCodeButton").addEventListener("click", sendResetCode);
+  $("resetPasswordButton").addEventListener("click", resetPassword);
+  $("resetPasswordInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") resetPassword();
+  });
+  $("setPasswordButton").addEventListener("click", setNewPassword);
+  $("setPasswordInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") setNewPassword();
+  });
+  $("skipSetPasswordButton").addEventListener("click", () => {
+    $("setPasswordPrompt").hidden = true;
+    switchLoginMode("code");
+  });
+}
+
+function parseUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get("view") || "";
+  const focus = params.get("focus") || "";
+  return { view, focus };
+}
+
+async function applyUrlParams() {
+  const { view, focus } = parseUrlParams();
+  if (view === "mine") {
+    const mineTab = document.querySelector('.tab[data-view="mine"]');
+    if (mineTab) mineTab.click();
+    if (focus === "claims") {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const banner = $("pendingClaimsBanner");
+      if (banner && !banner.hidden) {
+        banner.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }
 }
 
 async function init() {
@@ -852,6 +1126,7 @@ async function init() {
   renderIconGrid();
   setPublishType("consumable");
   await Promise.all([loadHome(), loadProfile()]);
+  await applyUrlParams();
 }
 
 init();

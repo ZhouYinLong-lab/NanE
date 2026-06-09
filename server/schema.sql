@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
   is_verified BOOLEAN NOT NULL DEFAULT false,
   agreement_version TEXT,
   agreement_accepted_at TIMESTAMPTZ,
+  password_hash TEXT,
+  password_salt TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

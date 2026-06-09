@@ -45,6 +45,8 @@ async function initializeDatabase() {
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT false");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_version TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMPTZ");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_salt TEXT");
   await query(
     `CREATE TABLE IF NOT EXISTS email_challenges (
       id TEXT PRIMARY KEY,

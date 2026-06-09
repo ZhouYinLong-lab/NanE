@@ -36,9 +36,14 @@
           <button class="primary small" id="searchButton">搜索</button>
         </div>
         <div class="chips" id="filterChips">
-          <button class="chip active" data-type="">全部</button>
-          <button class="chip" data-type="consumable">应急耗材</button>
-          <button class="chip" data-type="medicine">非处方药品</button>
+          <button class="chip active" data-type="" data-category="">全部</button>
+          <button class="chip" data-type="consumable" data-category="">应急耗材</button>
+          <button class="chip" data-type="medicine" data-category="">非处方药品</button>
+          <button class="chip" data-type="medicine" data-category="感冒药">感冒药</button>
+          <button class="chip" data-type="medicine" data-category="退烧药">退烧药</button>
+          <button class="chip" data-type="medicine" data-category="过敏药">过敏药</button>
+          <button class="chip" data-type="medicine" data-category="肠胃药">肠胃药</button>
+          <button class="chip" data-type="medicine" data-category="其他非处方药">其他非处方药</button>
         </div>
         <div class="section-head">
           <div>
@@ -146,7 +151,7 @@
 
           <label class="checkbox-row">
             <input id="disclaimerInput" type="checkbox">
-            <span>我确认本次发布为免费互助，禁止处方药、管控药、收费交易和拆封不明物品。</span>
+            <span>我确认本次发布为免费互助，禁止处方药、管控药、收费交易和已拆分不明物品。</span>
           </label>
 
           <button class="primary wide" type="submit">提交审核</button>
@@ -173,17 +178,69 @@
           </label>
 
           <div class="login-block primary-login">
-            <h4>邮箱登录</h4>
-            <div class="auth-row">
-              <div class="email-combo">
-                <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
-                <span>@smail.nju.edu.cn</span>
-              </div>
-              <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
+            <div class="login-tabs">
+              <button class="login-tab active" data-login-mode="code">验证码登录</button>
+              <button class="login-tab" data-login-mode="password">密码登录</button>
             </div>
-            <div class="auth-row email-code-row">
-              <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
-              <button class="primary small" id="verifyEmailCodeButton">登录</button>
+            <div id="codeLoginSection">
+              <div class="auth-row">
+                <div class="email-combo">
+                  <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
+                  <span>@smail.nju.edu.cn</span>
+                </div>
+                <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
+                <button class="primary small" id="verifyEmailCodeButton">登录</button>
+              </div>
+            </div>
+            <div id="passwordLoginSection" hidden>
+              <div class="auth-row">
+                <div class="email-combo">
+                  <input id="passwordEmailInput" autocomplete="username" placeholder="邮箱前缀">
+                  <span>@smail.nju.edu.cn</span>
+                </div>
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="passwordInput" type="password" autocomplete="current-password" placeholder="输入密码">
+                <button class="primary small" id="passwordLoginButton">登录</button>
+              </div>
+              <p class="hint forgot-row">
+                <button type="button" class="link-button" id="forgotPasswordButton">忘记密码？</button>
+              </p>
+            </div>
+            <div id="forgotPasswordSection" hidden>
+              <h4>重置密码</h4>
+              <p class="hint">输入邮箱前缀，验证码将发送到你的南大学生邮箱。</p>
+              <div class="auth-row">
+                <div class="email-combo">
+                  <input id="resetEmailInput" placeholder="邮箱前缀">
+                  <span>@smail.nju.edu.cn</span>
+                </div>
+                <button class="primary small" id="sendResetCodeButton">发送验证码</button>
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="resetCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位验证码">
+              </div>
+              <div class="auth-row email-code-row">
+                <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="输入新密码（至少8位，含字母和数字）">
+                <button class="primary small" id="resetPasswordButton">重置密码</button>
+              </div>
+              <p class="hint forgot-row">
+                <button type="button" class="link-button" id="backFromForgotButton">← 返回登录</button>
+              </p>
+            </div>
+            <div id="setPasswordPrompt" hidden>
+              <h4>设置登录密码</h4>
+              <p class="hint">设置密码后，下次可直接使用密码登录，无需等待验证码。</p>
+              <div class="auth-row">
+                <input id="setPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
+                <button class="primary small" id="setPasswordButton">设置密码</button>
+              </div>
+              <p class="hint forgot-row">
+                <button type="button" class="link-button" id="skipSetPasswordButton">暂不设置</button>
+              </p>
             </div>
           </div>
 
@@ -222,10 +279,18 @@
           <select id="profileRoomSelect">
             <option value="">不填写宿舍号</option>
           </select>
+          <div class="profile-room-spacer"></div>
           <button class="primary wide" id="saveProfileButton">保存账号资料</button>
           <div class="form-message" id="profileMessage"></div>
         </div>
 
+        <div id="pendingClaimsBanner" class="card claim-banner" hidden>
+          <div class="claim-banner-head">
+            <h3>待确认领取提醒</h3>
+            <span id="pendingClaimsCount"></span>
+          </div>
+          <div id="pendingClaimsList"></div>
+        </div>
         <div class="section-head">
           <div>
             <h2>我的发布</h2>

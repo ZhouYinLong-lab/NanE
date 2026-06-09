@@ -461,6 +461,65 @@ textarea:focus {
   margin-top: 12px;
 }
 
+.claim-banner {
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  background: rgba(110, 0, 101, 0.06);
+  border-color: var(--purple);
+}
+
+.claim-banner-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.claim-banner-head h3 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--purple);
+}
+
+.claim-banner-head span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--purple);
+  color: #fffaf2;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.claim-banner-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.claim-banner-row:first-of-type {
+  border-top: none;
+}
+
+.claim-banner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.claim-banner-info strong {
+  font-size: 15px;
+}
+
+.claim-banner-info span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .form-card {
   padding: 24px;
 }
@@ -593,6 +652,33 @@ textarea:focus {
   font-size: 18px;
 }
 
+.login-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.login-tab {
+  flex: 1;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.login-tab.active {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: #fffaf2;
+}
+
+.forgot-row {
+  margin-top: 10px !important;
+}
+
 .secondary-login summary {
   cursor: pointer;
   color: var(--purple);
@@ -610,6 +696,12 @@ textarea:focus {
   padding: 28px;
   background: var(--purple);
   color: #fffaf2;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.profile-card:hover {
+  box-shadow: 0 0 0 4px rgba(110, 0, 101, 0.25);
 }
 
 .profile-card p {
@@ -623,6 +715,10 @@ textarea:focus {
   border-radius: 999px;
   background: rgba(255, 250, 242, 0.18);
   font-weight: 900;
+}
+
+.profile-room-spacer {
+  margin-bottom: 24px;
 }
 
 .avatar {

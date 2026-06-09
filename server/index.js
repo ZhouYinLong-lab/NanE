@@ -248,11 +248,17 @@ function publicUser(user) {
   if (!user) {
     return null;
   }
+  const {
+    password_hash: passwordHash,
+    password_salt: passwordSalt,
+    ...safeUser
+  } = user;
   return {
-    ...user,
+    ...safeUser,
     hasAgreement: userHasAgreement(user),
     profileComplete: userProfileComplete(user),
-    agreementVersion: user.agreement_version || ""
+    agreementVersion: user.agreement_version || "",
+    hasPassword: Boolean(passwordHash)
   };
 }
 
@@ -430,6 +436,16 @@ function parseAddress(input) {
   };
 }
 
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[char]));
+}
+
 function smtpResponse(socket) {
   return new Promise((resolve, reject) => {
     let buffer = "";
@@ -458,7 +474,7 @@ async function smtpCommand(socket, command) {
   return smtpResponse(socket);
 }
 
-async function sendMail({ to, subject, text }) {
+async function sendMail({ to, subject, text, html }) {
   if (!smtpConfigured()) {
     throw new Error("服务器尚未配置 SMTP 发信参数");
   }
@@ -482,17 +498,38 @@ async function sendMail({ to, subject, text }) {
     await smtpCommand(socket, `MAIL FROM:<${SMTP_USER}>`);
     await smtpCommand(socket, `RCPT TO:<${to}>`);
     await smtpCommand(socket, "DATA");
-    const message = [
+    const boundary = `nane-${crypto.randomBytes(8).toString("hex")}`;
+    const parts = [
       `From: ${from.header}`,
       `To: <${to}>`,
       `Subject: ${encodeHeader(subject)}`,
-      "MIME-Version: 1.0",
-      "Content-Type: text/plain; charset=utf-8",
-      "Content-Transfer-Encoding: 8bit",
-      "",
-      dotStuff(text),
-      "."
-    ].join("\r\n");
+      "MIME-Version: 1.0"
+    ];
+    if (html) {
+      parts.push(
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        "",
+        `--${boundary}`,
+        "Content-Type: text/plain; charset=utf-8",
+        "Content-Transfer-Encoding: 8bit",
+        "",
+        dotStuff(text),
+        `--${boundary}`,
+        "Content-Type: text/html; charset=utf-8",
+        "Content-Transfer-Encoding: 8bit",
+        "",
+        dotStuff(html),
+        `--${boundary}--`
+      );
+    } else {
+      parts.push(
+        "Content-Type: text/plain; charset=utf-8",
+        "Content-Transfer-Encoding: 8bit",
+        "",
+        dotStuff(text)
+      );
+    }
+    const message = `${parts.join("\r\n")}\r\n.`;
     await smtpCommand(socket, message);
     await smtpCommand(socket, "QUIT");
   } finally {
@@ -504,22 +541,50 @@ async function sendClaimNotificationMail(ownerEmail, item, claim) {
   if (!ownerEmail) {
     return false;
   }
+  const requesterName = claim.requesterName || "有同学";
+  const claimQty = claim.quantity || 1;
+  const claimUnit = item.unit || "件";
+  const link = `${PUBLIC_WEB_URL}?view=mine&focus=claims`;
+  const safeRequesterName = escapeHtml(requesterName);
+  const safeItemTitle = escapeHtml(item.title);
+  const safeClaimQty = escapeHtml(claimQty);
+  const safeClaimUnit = escapeHtml(claimUnit);
+  const safeCampus = escapeHtml(item.campus);
+  const safeBuilding = escapeHtml(item.building);
+  const safeLink = escapeHtml(link);
   try {
     await sendMail({
       to: ownerEmail,
       subject: "NanE 南易领取确认提醒",
       text: [
-        `${claim.requesterName || "有同学"} 提醒你：TA 已联系并领取了你发布的物品。`,
+        `${requesterName} 提醒你：TA 已联系并领取了你发布的物品。`,
         "",
         `物品：${item.title}`,
-        `领取数量：${claim.quantity || 1}${item.unit || "件"}`,
+        `领取数量：${claimQty}${claimUnit}`,
         `位置：${item.campus} · ${item.building}`,
         "",
-        "请登录 NanE，在“我的发布”中确认领取或忽略该提醒。",
-        PUBLIC_WEB_URL,
+        "请点击下方链接登录 NanE，在「我的发布」中确认领取或忽略该提醒。",
+        link,
         "",
         "确认后系统会自动扣减剩余数量；如果数量扣到 0，物品会自动下架。",
         "如果你们尚未完成领取，可以先忽略这封邮件。"
+      ].join("\n"),
+      html: [
+        '<!doctype html>',
+        '<html lang="zh-CN">',
+        '<head><meta charset="utf-8"></head>',
+        '<body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1f1f1f;max-width:560px;margin:0 auto;padding:24px">',
+        `  <p style="font-size:16px;line-height:1.6">${safeRequesterName} 提醒你：<strong>TA 已联系并领取了你发布的物品</strong>。</p>`,
+        '  <table style="width:100%;border-collapse:collapse;margin:18px 0;background:#fffaf2;border:1px solid #e4ded3;border-radius:12px">',
+        `    <tr><td style="padding:10px 16px;font-weight:700;color:#6f6a61">物品</td><td style="padding:10px 16px">${safeItemTitle}</td></tr>`,
+        `    <tr><td style="padding:10px 16px;font-weight:700;color:#6f6a61">领取数量</td><td style="padding:10px 16px">${safeClaimQty}${safeClaimUnit}</td></tr>`,
+        `    <tr><td style="padding:10px 16px;font-weight:700;color:#6f6a61">位置</td><td style="padding:10px 16px">${safeCampus} · ${safeBuilding}</td></tr>`,
+        '  </table>',
+        `  <a href="${safeLink}" style="display:inline-block;padding:14px 32px;background:#6E0065;color:#fffaf2;border-radius:999px;font-weight:900;text-decoration:none;font-size:16px;margin:12px 0">去 NanE 确认领取</a>`,
+        '  <p style="color:#6f6a61;font-size:14px;line-height:1.6;margin-top:20px">确认后系统会自动扣减剩余数量；如果数量扣到 0，物品会自动下架。<br>如果你们尚未完成领取，可以先忽略这封邮件。</p>',
+        `  <p style="color:#a09b91;font-size:12px;margin-top:16px">如果按钮无法点击，请复制以下链接到浏览器：<br>${safeLink}</p>`,
+        '</body>',
+        '</html>'
       ].join("\n")
     });
     return true;
@@ -629,6 +694,199 @@ function hashEmailCode(email, code) {
 
 function makeEmailCode() {
   return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashUserPassword(password, salt) {
+  return crypto.pbkdf2Sync(String(password), String(salt), 210000, 32, "sha256").toString("hex");
+}
+
+function makePasswordSalt() {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+function validatePasswordStrength(password) {
+  if (typeof password !== "string") {
+    return "密码格式不正确";
+  }
+  if (password.length < 8) {
+    return "密码至少需要 8 位";
+  }
+  if (password.length > 64) {
+    return "密码最多 64 位";
+  }
+  if (!/[a-zA-Z]/.test(password)) {
+    return "密码必须包含至少一个字母";
+  }
+  if (!/[0-9]/.test(password)) {
+    return "密码必须包含至少一个数字";
+  }
+  return "";
+}
+
+async function setPassword(req, res) {
+  const user = await userFromRequest(req);
+  if (!user || !user.is_verified) {
+    json(res, 401, { error: "AUTH_REQUIRED", message: "请先登录后再设置密码" });
+    return;
+  }
+  const input = await readBody(req);
+  const password = String(input.password || "");
+  const validationError = validatePasswordStrength(password);
+  if (validationError) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: validationError });
+    return;
+  }
+  const salt = makePasswordSalt();
+  const passwordHash = hashUserPassword(password, salt);
+  await query(
+    "UPDATE users SET password_hash = $1, password_salt = $2 WHERE id = $3",
+    [passwordHash, salt, user.id]
+  );
+  json(res, 200, { message: "密码设置成功，下次可以使用邮箱和密码登录" });
+}
+
+async function passwordLogin(req, res) {
+  const input = await readBody(req);
+  const email = normalizeEmail(input.email);
+  const password = String(input.password || "");
+  if (!email || !validateStudentEmail(email)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "邮箱登录仅支持 @smail.nju.edu.cn 后缀" });
+    return;
+  }
+  if (!agreementAccepted(input)) {
+    json(res, 400, { error: "AGREEMENT_REQUIRED", message: "请先阅读并同意 NanE 用户协议" });
+    return;
+  }
+  if (!password) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请输入密码" });
+    return;
+  }
+  const { rows } = await query(
+    "SELECT * FROM users WHERE email = $1 AND is_verified = true",
+    [email]
+  );
+  const user = rows[0];
+  if (!user || !user.password_hash || !user.password_salt) {
+    json(res, 401, { error: "INVALID_LOGIN", message: "账号或密码错误" });
+    return;
+  }
+  const expectedHash = hashUserPassword(password, user.password_salt);
+  const expectedBuffer = Buffer.from(expectedHash, "hex");
+  const actualBuffer = Buffer.from(user.password_hash, "hex");
+  if (expectedBuffer.length !== actualBuffer.length || !crypto.timingSafeEqual(expectedBuffer, actualBuffer)) {
+    json(res, 401, { error: "INVALID_LOGIN", message: "账号或密码错误" });
+    return;
+  }
+  if (!user.agreement_version || user.agreement_version !== AGREEMENT_VERSION) {
+    await query(
+      "UPDATE users SET agreement_version = $1, agreement_accepted_at = now() WHERE id = $2",
+      [AGREEMENT_VERSION, user.id]
+    );
+    user.agreement_version = AGREEMENT_VERSION;
+    user.agreement_accepted_at = new Date().toISOString();
+  }
+  json(res, 200, {
+    token: signToken({ sub: user.id, role: "user", provider: "password" }),
+    user: publicUser(user),
+    loginMode: "password"
+  });
+}
+
+async function passwordResetChallenge(req, res) {
+  const input = await readBody(req);
+  const email = normalizeEmail(input.email);
+  if (!email || !validateStudentEmail(email)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "邮箱登录仅支持 @smail.nju.edu.cn 后缀" });
+    return;
+  }
+  const { rows } = await query(
+    "SELECT * FROM users WHERE email = $1 AND is_verified = true",
+    [email]
+  );
+  if (!rows[0]) {
+    json(res, 200, { message: "如果该账号存在，验证码已发送至对应邮箱" });
+    return;
+  }
+  if (!rows[0].password_hash) {
+    json(res, 400, { error: "NO_PASSWORD", message: "该账号尚未设置密码，请使用邮箱验证码登录后设置密码" });
+    return;
+  }
+  const recent = await query(
+    "SELECT created_at FROM email_challenges WHERE email = $1 AND created_at > now() - interval '60 seconds' ORDER BY created_at DESC LIMIT 1",
+    [email]
+  );
+  if (recent.rows[0]) {
+    json(res, 429, { error: "EMAIL_RATE_LIMIT", message: "验证码发送太频繁，请稍后再试" });
+    return;
+  }
+  const code = makeEmailCode();
+  const challengeId = makeId("email_challenge");
+  await query(
+    "INSERT INTO email_challenges (id, email, code_hash, expires_at) VALUES ($1, $2, $3, now() + ($4 || ' minutes')::interval)",
+    [challengeId, email, hashEmailCode(email, code), EMAIL_CODE_TTL_MINUTES]
+  );
+  await sendMail({
+    to: email,
+    subject: "NanE 南易密码重置验证码",
+    text: [
+      `你的 NanE 南易密码重置验证码是：${code}`,
+      "",
+      `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`,
+      "如果这不是你本人操作，可以忽略这封邮件。"
+    ].join("\n")
+  });
+  json(res, 200, {
+    challengeId,
+    expiresIn: EMAIL_CODE_TTL_MINUTES * 60,
+    message: "验证码已发送至对应邮箱"
+  });
+}
+
+async function passwordReset(req, res) {
+  const input = await readBody(req);
+  const email = normalizeEmail(input.email);
+  const code = String(input.code || "").trim();
+  const newPassword = String(input.password || "");
+  const challengeId = String(input.challengeId || input.challenge_id || "").trim();
+  if (!email || !validateStudentEmail(email)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "邮箱登录仅支持 @smail.nju.edu.cn 后缀" });
+    return;
+  }
+  if (!/^\d{6}$/.test(code)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请填写 6 位验证码" });
+    return;
+  }
+  const validationError = validatePasswordStrength(newPassword);
+  if (validationError) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: validationError });
+    return;
+  }
+  const params = challengeId ? [challengeId, email] : [email];
+  const sql = challengeId
+    ? `SELECT * FROM email_challenges
+       WHERE id = $1 AND email = $2 AND used_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 1`
+    : `SELECT * FROM email_challenges
+       WHERE email = $1 AND used_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC LIMIT 1`;
+  const { rows } = await query(sql, params);
+  const challenge = rows[0];
+  if (!challenge || challenge.code_hash !== hashEmailCode(email, code)) {
+    json(res, 400, { error: "INVALID_CODE", message: "验证码错误或已过期" });
+    return;
+  }
+  await query("UPDATE email_challenges SET used_at = now() WHERE id = $1", [challenge.id]);
+  const salt = makePasswordSalt();
+  const passwordHash = hashUserPassword(newPassword, salt);
+  const { rows: userRows } = await query(
+    "UPDATE users SET password_hash = $1, password_salt = $2 WHERE email = $3 AND is_verified = true RETURNING *",
+    [passwordHash, salt, email]
+  );
+  if (!userRows[0]) {
+    json(res, 404, { error: "USER_NOT_FOUND", message: "账号不存在" });
+    return;
+  }
+  json(res, 200, { message: "密码重置成功，请使用新密码登录" });
 }
 
 async function emailChallenge(req, res) {
@@ -1366,6 +1624,26 @@ async function handle(req, res) {
 
   if (req.method === "POST" && pathname === "/api/auth/email/verify") {
     await emailVerify(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/password/set") {
+    await setPassword(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/password/login") {
+    await passwordLogin(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/password/reset-challenge") {
+    await passwordResetChallenge(req, res);
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/auth/password/reset") {
+    await passwordReset(req, res);
     return;
   }
 
