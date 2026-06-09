@@ -425,3 +425,13 @@
 - 新增 `idx_contact_views_unique` 唯一索引（viewer_id + item_id + view_date），启动时自动去重旧数据。
 - 前端同一详情会话内 `state.contactViewedForItem` 防止重复调用 API。
 - 已查看过时显示"你今天已查看过该物品联系方式，本次不重复消耗额度"。
+
+### UI 统一收口 (TASK-NANE-UI-012)
+
+- 统一描边颜色变量：`--line` 改为 `#e0d8c7`，`input/select/textarea` 和 `.email-combo` 均使用 `var(--line)`，消除 `#e1d2bd` 硬编码。
+- 设置页区块重排：账号 → 通知 → 外观 → 关于 NanE。
+- 深色模式下顶部 `.tabs` 导航同步适配：背景 `rgba(42,42,42,0.88)`，`border-color: var(--line)`，未选中 tab 使用 `var(--muted)`，active tab 保持南大紫。
+- 深色模式 `.secondary` 按钮改为 `#444`。
+- "我的发布"列表每条记录直接显示"编辑"按钮；状态为 `online`/`reviewing` 时显示红色"下架"按钮（`#b3261e`）。
+- 新增 `.danger` 按钮样式和 `handleListTakeDown()` 函数；点击列表下架不触发详情弹窗。
+- 移动端 `.item-card .owner-actions` 响应式适配。

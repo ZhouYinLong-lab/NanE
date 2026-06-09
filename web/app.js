@@ -276,6 +276,14 @@ function renderItem(item, options = {}) {
         `).join("")}
       </div>`
     : "";
+  const ownerActions = options.showOwnerActions
+    ? `<div class="owner-actions">
+        <button type="button" class="primary small" data-owner-action="edit" data-item-id="${escapeHtml(item.id)}">编辑</button>
+        ${item.status === "online" || item.status === "reviewing"
+          ? `<button type="button" class="danger small" data-owner-action="take-down" data-item-id="${escapeHtml(item.id)}">下架</button>`
+          : ""}
+      </div>`
+    : "";
   return `
     <article class="item-card" data-id="${escapeHtml(item.id)}">
       <div class="item-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>
@@ -288,6 +296,7 @@ function renderItem(item, options = {}) {
         <div class="badges">${badges.join("")}</div>
         ${item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(item.rejectReason)}</p>` : ""}
         ${claimPanel}
+        ${ownerActions}
       </div>
     </article>
   `;
@@ -548,7 +557,7 @@ async function loadMyItems() {
     });
     renderClaimsBanner(sorted);
     container.innerHTML = sorted.length
-      ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true })).join("")
+      ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true, showOwnerActions: true })).join("")
       : `<div class="state-card">暂无发布记录</div>`;
     const hasPending = sorted.some(item => (item.pendingClaimCount || 0) > 0);
     if (hasPending && !state.claimsModalShown) {
@@ -693,6 +702,20 @@ async function takeDownMyItem() {
     await Promise.all([loadHome(), loadMyItems()]);
   } catch (error) {
     $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(error.message || "下架失败")}</div>`;
+  }
+}
+
+async function handleListTakeDown(itemId, button) {
+  if (!confirm("确定要下架该物品吗？下架后首页将不再展示。")) return;
+  button.disabled = true;
+  button.textContent = "下架中...";
+  try {
+    const data = await api(`/me/items/${encodeURIComponent(itemId)}/take-down`, { method: "POST" });
+    await Promise.all([loadHome(), loadMyItems()]);
+  } catch (error) {
+    alert(error.message || "下架失败");
+    button.disabled = false;
+    button.textContent = "下架";
   }
 }
 
@@ -1320,11 +1343,23 @@ function bindEvents() {
     const card = event.target.closest(".item-card");
     if (card) openDetail(card.dataset.id);
   });
-  $("myItemList").addEventListener("click", event => {
+  $("myItemList").addEventListener("click", async event => {
     const claimButton = event.target.closest("[data-claim-action]");
     if (claimButton) {
       event.stopPropagation();
       reviewClaimFromButton(claimButton);
+      return;
+    }
+    const ownerButton = event.target.closest("[data-owner-action]");
+    if (ownerButton) {
+      event.stopPropagation();
+      const itemId = ownerButton.dataset.itemId;
+      if (ownerButton.dataset.ownerAction === "edit") {
+        await openMyItemDetail(itemId);
+        startEditItem();
+      } else if (ownerButton.dataset.ownerAction === "take-down") {
+        handleListTakeDown(itemId, ownerButton);
+      }
       return;
     }
     const card = event.target.closest(".item-card");

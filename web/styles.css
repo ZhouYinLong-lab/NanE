@@ -8,7 +8,7 @@
   --bg: #f6f1e8;
   --card: #fffaf2;
   --card-strong: #fffdf8;
-  --line: #e4ded3;
+  --line: #e0d8c7;
   --text: #1f1f1f;
   --muted: #6f6a61;
   --purple: #6E0065;
@@ -115,6 +115,22 @@ button {
   color: #fffaf2;
 }
 
+.danger {
+  background: #b3261e;
+  color: #fffaf2;
+}
+
+.danger.small {
+  padding: 0 18px;
+  min-height: 48px;
+  min-width: 86px;
+  font-size: 15px;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .small {
   padding: 0 18px;
   min-height: 48px;
@@ -180,7 +196,7 @@ button {
   align-items: center;
   width: 100%;
   min-width: 0;
-  border: 1px solid #e1d2bd;
+  border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--card-strong);
   overflow: hidden;
@@ -209,7 +225,7 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid #e1d2bd;
+  border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--card-strong);
   color: var(--text);
@@ -992,6 +1008,16 @@ dialog::backdrop {
     flex: 1;
     min-width: 0;
   }
+
+  .item-card .owner-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .item-card .owner-actions .small {
+    flex: 1;
+    min-width: 72px;
+  }
 }
 
 @media (max-width: 460px) {
@@ -1177,4 +1203,27 @@ dialog::backdrop {
 [data-theme="dark"] .badge {
   background: var(--card);
   color: var(--text);
+}
+
+[data-theme="dark"] .tabs {
+  background: rgba(42, 42, 42, 0.88);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .tab {
+  color: var(--muted);
+}
+
+[data-theme="dark"] .tab.active {
+  background: var(--purple);
+  color: #fffaf2;
+}
+
+[data-theme="dark"] .email-combo {
+  background: var(--card-strong);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .secondary {
+  background: #444;
 }
