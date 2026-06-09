@@ -1159,6 +1159,7 @@ async function listItems(req, res, viewer) {
   const itemType = (url.searchParams.get("itemType") || "").trim();
   const category = (url.searchParams.get("category") || "").trim();
   const status = url.searchParams.get("status") || "online";
+  const reqDebug = url.searchParams.get("debug") === "true";
 
   await query("UPDATE items SET status = 'expired' WHERE status = 'online' AND no_expiry = false AND expire_date < CURRENT_DATE");
 
@@ -1180,7 +1181,7 @@ async function listItems(req, res, viewer) {
     params.push(`%${keyword}%`);
     clauses.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length} OR category ILIKE $${params.length} OR item_type ILIKE $${params.length})`);
   }
-  if (!DEBUG_MODE) {
+  if (!DEBUG_MODE && !reqDebug) {
     clauses.push(`owner_id NOT IN ('u_demo')`);
   }
 

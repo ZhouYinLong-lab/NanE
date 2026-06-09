@@ -268,7 +268,9 @@ async function initializeDatabase() {
     }
   ];
 
+  console.log(`[seed] inserting ${seeds.length} seed items...`);
   for (const item of seeds) {
+    try {
     await query(
       `INSERT INTO items (
         id, title, item_type, item_icon, category, description, quantity, unit, campus, building, room,
@@ -302,7 +304,11 @@ async function initializeDatabase() {
         item.qq
       ]
     );
+    } catch (e) {
+      console.error(`[seed] failed to insert ${item.id}: ${e.message}`);
+    }
   }
+  console.log(`[seed] done.`);
 }
 
 module.exports = {

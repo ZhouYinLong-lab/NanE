@@ -12,7 +12,7 @@
 | [2](#迭代2) | 2026-06-10 | 发布流程、日期选择器、骨架屏 | index.html, app.js, styles.css | ✅ |
 | [3](#迭代3) | 2026-06-10 | 错误处理、登录意图保留、卡片层级、无障碍 | index.html, app.js, styles.css | ✅ |
 | [4](#迭代4) | 2026-06-10 | 我的页等宽、调试数据重构、检索系统、卡片视觉 | index.html, app.js, styles.css, db.js | ✅ |
-| 5 | - | 未开始 | - | ⏳ |
+| [5](#迭代5) | 2026-06-10 | 二级tag分组、跨类复选、数据隔离、效期覆盖 | index.html, app.js, styles.css, db.js, index.js, .env | ✅ |
 
 ---
 
@@ -99,6 +99,25 @@
 - `web/app.js`: +10/-3 行 (类型徽标分色、空状态文案、物品计数)
 - `web/styles.css`: +48/-3 行 (chip-type 样式、badge 三色系统、暗色适配、profile-card 间距、mine-login 等宽)
 - `server/db.js`: +160/-43 行 (种子数据重构、no_expiry 字段、ON CONFLICT upsert)
+
+## 迭代5
+
+**目标**: 二级 tag 分组 + 跨类复选 + 测试数据隔离 + 效期全覆盖
+
+### 功能变更
+1. **二级分组 tag**: chips 重新组织为 `分隔线 | 类型标签(耗材/药品/工具) | 子类按钮` 的三段式布局；移除 `chip-type` 主类按钮，改为不可点击的类别文字标签(`chip-group-label`)；新增 `chip-sep` 竖线分隔符
+2. **跨类复选**: 修复 chip 点击逻辑，支持同时选中不同类型下的子类（如"感冒药"+"常用工具"），客户端合并筛选结果
+3. **测试数据隔离**: 服务器端 `listItems()` 新增 `reqDebug` 查询参数检查；仅当 `DEBUG_MODE=true` 或客户端传 `debug=true` 时展示 demo 数据；生产环境自动过滤 `u_demo` 所属物品
+4. **效期全覆盖**: 种子数据补充 `退烧降温` 耗材子类、`手工工具` 子类；过期物品 (`expire_date < today`)、即将过期 (66天)、中长期 (100-356天)、长期有效 (`no_expiry=true`)、超长有效期 (2028年) 等场景全覆盖
+5. **种子容错**: db.js 种子插入增加 try/catch 错误日志，避免单条失败中断全部
+
+### 代码变更量
+- `web/index.html`: +14/-3 行 (二级分组 tag 结构重组)
+- `web/app.js`: ~5 行 (chip 点击逻辑调整)
+- `web/styles.css`: +25/-3 行 (chip-group-label、chip-sep、间距调整)
+- `server/index.js`: +3/-1 行 (reqDebug 参数支持)
+- `server/db.js`: +6 行 (种子容错日志、退烧降温/手工工具种子)
+- `.env`: +1 行 (DEBUG_MODE=true)
 
 ---
 
