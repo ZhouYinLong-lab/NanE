@@ -108,13 +108,15 @@
           </div>
           <p class="hint" id="typeHint">适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。</p>
 
-          <label for="titleInput">物品名称 *</label>
-          <input id="titleInput" required placeholder="例如：碘伏棉签 10 支">
+          <label for="titleInput">物品名称 * <span class="char-count" id="titleCount">0/30</span></label>
+          <input id="titleInput" required placeholder="例如：碘伏棉签 10 支" maxlength="30">
+          <span class="field-error" id="titleError"></span>
 
           <div class="field-grid">
             <div>
               <label for="quantityInput">数量 *</label>
               <input id="quantityInput" required type="number" min="1" value="1">
+              <span class="field-error" id="quantityError"></span>
             </div>
             <div>
               <label for="unitInput">单位 *</label>
@@ -181,24 +183,27 @@
             <input type="date" id="expireDateInput">
           </div>
 
-          <label for="descriptionInput">补充说明</label>
-          <textarea id="descriptionInput" rows="4" placeholder="包装状态、领取时间、注意事项"></textarea>
+          <label for="descriptionInput">补充说明 <span class="char-count" id="descriptionCount">0/200</span></label>
+          <textarea id="descriptionInput" rows="4" placeholder="包装状态、领取时间、注意事项" maxlength="200"></textarea>
 
           <div class="field-grid">
             <div>
               <label for="wechatInput">微信</label>
               <input id="wechatInput" placeholder="微信或 QQ 至少填一项">
+              <span class="field-error" id="wechatError"></span>
             </div>
             <div>
               <label for="qqInput">QQ</label>
               <input id="qqInput" placeholder="微信或 QQ 至少填一项">
+              <span class="field-error" id="qqError"></span>
             </div>
           </div>
 
-          <label class="checkbox-row">
+          <label class="checkbox-row" id="disclaimerRow">
             <input id="disclaimerInput" type="checkbox">
             <span>我确认本次为免费共享，不含处方药、管制药品及任何形式的收费。</span>
           </label>
+          <span class="field-error" id="disclaimerError"></span>
 
           <button class="primary wide" type="submit">提交审核</button>
           <div class="form-message" id="publishMessage"></div>

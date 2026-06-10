@@ -762,6 +762,8 @@ function startEditItem() {
   renderIconGrid();
   $("publishMessage").textContent = "正在编辑物品，提交后将重新进入审核";
   document.querySelector(".segment[data-item-type='" + state.selectedPublishType + "']")?.classList.add("active");
+  updateCharCounts();
+  clearFieldErrors();
 }
 
 async function takeDownMyItem() {
@@ -904,32 +906,66 @@ function setPublishType(itemType) {
   state.iconOtherOpen = false;
   $("medicineCategoryWrap").hidden = itemType !== "medicine";
   $("toolCategoryWrap").hidden = itemType !== "tool";
+  const today = new Date();
   if (itemType === "tool") {
     $("typeHint").textContent = "适用于偶尔需要但不常备的小工具，如锤子、镊子、砂纸、热熔胶枪等。建议注明是借用还是赠送。";
     $("titleInput").placeholder = "例如：热熔胶枪借用";
     $("noExpiryWrap").hidden = false;
-    setDateRowDisabled(false);
+    $("noExpiryInput").checked = true;
+    setDateRowDisabled(true);
   } else if (itemType === "medicine") {
     $("typeHint").textContent = "药品仅限非处方常见药品，按大类选择即可。禁止处方药、管制药品及任何收费转让。";
     $("titleInput").placeholder = "例如：未拆封感冒药一盒";
     $("noExpiryWrap").hidden = true;
     $("noExpiryInput").checked = false;
     setDateRowDisabled(false);
+    const d = new Date(today);
+    d.setFullYear(d.getFullYear() + 1);
+    setExpireDate(d.toISOString().slice(0, 10));
   } else {
     $("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
     $("titleInput").placeholder = "例如：碘伏棉签 10 支";
     $("noExpiryWrap").hidden = false;
+    $("noExpiryInput").checked = false;
     setDateRowDisabled(false);
+    const d = new Date(today);
+    d.setDate(d.getDate() + 180);
+    setExpireDate(d.toISOString().slice(0, 10));
   }
+  clearFieldErrors();
+  updateCharCounts();
   document.querySelectorAll(".segment").forEach(button => {
     button.classList.toggle("active", button.dataset.itemType === itemType);
   });
   renderIconGrid();
 }
 
+function clearFieldErrors() {
+  document.querySelectorAll(".field-error").forEach(el => { el.textContent = ""; });
+  document.querySelectorAll(".field-error-border").forEach(el => { el.classList.remove("field-error-border"); });
+}
+
+function updateCharCounts() {
+  const titleEl = $("titleCount");
+  const descEl = $("descriptionCount");
+  if (titleEl) {
+    const len = ($("titleInput").value || "").length;
+    titleEl.textContent = len + "/30";
+    titleEl.classList.toggle("over", len > 30);
+  }
+  if (descEl) {
+    const len = ($("descriptionInput").value || "").length;
+    descEl.textContent = len + "/200";
+    descEl.classList.toggle("over", len > 200);
+  }
+}
+
 async function submitPublish(event) {
   event.preventDefault();
   const message = $("publishMessage");
+  clearFieldErrors();
+  message.textContent = "";
+
   if (!isVerifiedUser()) {
     message.textContent = "请先在「我的」页登录并同意用户协议，再发布互助。";
     requireVerified(message.textContent);
@@ -940,26 +976,46 @@ async function submitPublish(event) {
     requireVerified(message.textContent);
     return;
   }
+
+  let hasError = false;
+  const title = $("titleInput").value.trim();
+  if (!title) {
+    $("titleError").textContent = "请填写物品名称";
+    hasError = true;
+  }
+
+  const quantity = Number($("quantityInput").value);
+  if (quantity <= 0 || !Number.isInteger(quantity)) {
+    $("quantityError").textContent = "数量至少为 1";
+    hasError = true;
+  }
+
   const contactWechat = $("wechatInput").value.trim();
   const contactQq = $("qqInput").value.trim();
   if (!contactWechat && !contactQq) {
-    message.textContent = "微信或 QQ 至少填写一项";
-    return;
+    $("wechatError").textContent = "至少填一项";
+    $("qqError").textContent = "至少填一项";
+    hasError = true;
   }
+
   if (!$("disclaimerInput").checked) {
-    message.textContent = "请先确认发布声明";
-    return;
+    $("disclaimerError").textContent = "请先确认发布声明";
+    $("disclaimerRow").classList.add("field-error-border");
+    hasError = true;
   }
+
+  if (hasError) return;
+
   const useProfileLocation = $("useProfileLocationInput").checked;
   const campus = useProfileLocation ? state.user.campus : $("campusSelect").value.trim();
   const building = useProfileLocation ? state.user.building : $("buildingSelect").value.trim();
   const room = useProfileLocation ? state.user.room || "" : $("roomSelect").value.trim();
   const payload = {
-    title: $("titleInput").value.trim(),
+    title,
     itemType: state.selectedPublishType,
     itemIcon: state.selectedIcon,
     category: state.selectedPublishType === "medicine" ? $("categorySelect").value : (state.selectedPublishType === "tool" ? $("toolCategorySelect").value : "应急耗材"),
-    quantity: Number($("quantityInput").value),
+    quantity,
     unit: $("unitInput").value.trim(),
     campus,
     building,
@@ -971,9 +1027,17 @@ async function submitPublish(event) {
     contactQq,
     disclaimerAccepted: true
   };
+
+  const isEdit = Boolean(state.editingItemId);
+
+  // Pre-submit confirmation dialog for new items (skip edit mode)
+  if (!isEdit) {
+    const confirmed = await showPublishConfirmDialog(payload);
+    if (!confirmed) return;
+  }
+
   const submitBtn = document.querySelector("#publishForm button[type=submit]");
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "提交中..."; }
-  const isEdit = Boolean(state.editingItemId);
   let result;
   try {
     message.textContent = isEdit ? "正在保存..." : "正在提交...";
@@ -1013,7 +1077,6 @@ async function submitPublish(event) {
       renderLocationSelects("publish");
       showToast(result.message || "已保存", "success");
     } else {
-      // Show confirmation card
       const form = $("publishForm");
       const successCard = $("publishSuccessCard");
       if (form && successCard) {
@@ -1030,6 +1093,37 @@ async function submitPublish(event) {
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "提交审核"; }
   }
+}
+
+async function showPublishConfirmDialog(payload) {
+  const expiryText = payload.noExpiry ? "长期有效" : payload.expireDate;
+  const typeLabel = payload.itemType === "medicine" ? "药品" : (payload.itemType === "tool" ? "工具" : "耗材");
+  const dialog = document.createElement("dialog");
+  dialog.className = "confirm-dialog";
+  dialog.innerHTML = `
+    <div class="confirm-dialog-content">
+      <h3>确认发布信息</h3>
+      <div class="confirm-summary">
+        <div class="confirm-row"><span class="confirm-label">物品名称</span><span>${escapeHtml(payload.title)}</span></div>
+        <div class="confirm-row"><span class="confirm-label">类型</span><span>${typeLabel} / ${payload.category}</span></div>
+        <div class="confirm-row"><span class="confirm-label">数量</span><span>${payload.quantity} ${payload.unit}</span></div>
+        <div class="confirm-row"><span class="confirm-label">校区楼栋</span><span>${payload.campus} ${payload.building}</span></div>
+        <div class="confirm-row"><span class="confirm-label">有效期</span><span>${expiryText}</span></div>
+      </div>
+      <div class="confirm-actions">
+        <button class="primary wide" id="confirmSubmitBtn" type="button">确认提交</button>
+        <button class="secondary wide" id="confirmBackBtn" type="button">再检查一下</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  dialog.showModal();
+  return new Promise(resolve => {
+    dialog.querySelector("#confirmSubmitBtn").addEventListener("click", () => { dialog.close(); dialog.remove(); resolve(true); });
+    dialog.querySelector("#confirmBackBtn").addEventListener("click", () => { dialog.close(); dialog.remove(); resolve(false); });
+    dialog.addEventListener("click", event => { if (event.target === dialog) { dialog.close(); dialog.remove(); resolve(false); } });
+    dialog.addEventListener("cancel", event => { event.preventDefault(); dialog.close(); dialog.remove(); resolve(false); });
+  });
 }
 
 async function sendCode() {
@@ -1595,6 +1689,12 @@ function bindEvents() {
   });
   $("noExpiryInput").addEventListener("change", toggleNoExpiry);
   $("publishForm").addEventListener("submit", submitPublish);
+  $("titleInput").addEventListener("input", () => { updateCharCounts(); clearFieldErrors(); });
+  $("descriptionInput").addEventListener("input", updateCharCounts);
+  $("quantityInput").addEventListener("input", clearFieldErrors);
+  $("wechatInput").addEventListener("input", clearFieldErrors);
+  $("qqInput").addEventListener("input", clearFieldErrors);
+  $("disclaimerInput").addEventListener("change", clearFieldErrors);
   $("sendEmailCodeButton").addEventListener("click", sendEmailCode);
   $("verifyEmailCodeButton").addEventListener("click", verifyEmailCode);
   $("passwordLoginButton").addEventListener("click", passwordLogin);
