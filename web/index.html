@@ -39,30 +39,11 @@
         </div>
         <div class="chips" id="filterChips">
           <button class="chip active" data-type="" data-category="">全部</button>
-          <span class="chip-sep"></span>
-          <span class="chip-group-label">耗材</span>
-          <button class="chip" data-type="consumable" data-category="">全部耗材</button>
-          <button class="chip" data-type="consumable" data-category="应急耗材">应急耗材</button>
-          <button class="chip" data-type="consumable" data-category="外伤处理">外伤处理</button>
-          <button class="chip" data-type="consumable" data-category="消毒护理">消毒护理</button>
-          <button class="chip" data-type="consumable" data-category="防护用品">防护用品</button>
-          <button class="chip" data-type="consumable" data-category="退烧降温">退烧降温</button>
-          <span class="chip-sep"></span>
-          <span class="chip-group-label">药品</span>
-          <button class="chip" data-type="medicine" data-category="">全部药品</button>
-          <button class="chip" data-type="medicine" data-category="感冒药">感冒药</button>
-          <button class="chip" data-type="medicine" data-category="退烧药">退烧药</button>
-          <button class="chip" data-type="medicine" data-category="过敏药">过敏药</button>
-          <button class="chip" data-type="medicine" data-category="肠胃药">肠胃药</button>
-          <button class="chip" data-type="medicine" data-category="其他非处方药">其他</button>
-          <span class="chip-sep"></span>
-          <span class="chip-group-label">工具</span>
-          <button class="chip" data-type="tool" data-category="">全部工具</button>
-          <button class="chip" data-type="tool" data-category="常用工具">常用工具</button>
-          <button class="chip" data-type="tool" data-category="维修工具">维修工具</button>
-          <button class="chip" data-type="tool" data-category="清洁工具">清洁工具</button>
-          <button class="chip" data-type="tool" data-category="手工工具">手工工具</button>
+          <button class="chip" data-type="consumable" data-category="">耗材</button>
+          <button class="chip" data-type="medicine" data-category="">药品</button>
+          <button class="chip" data-type="tool" data-category="">工具</button>
         </div>
+        <div class="chips chips-sub" id="subFilterChips" hidden></div>
         <div class="section-head">
           <div>
             <h2>附近物品</h2>
@@ -419,10 +400,20 @@
           <button type="button" class="link-button" id="settingsAgreementButton">用户协议</button>
           <span class="about-sep">·</span>
           <button type="button" class="link-button" id="settingsPrivacyButton">隐私保护指引</button>
-          <p class="hint">南大校园互助平台</p>
         </div>
       </section>
     </main>
+    <footer class="app-footer">
+      <p class="footer-slogan">赠人玫瑰，手有余香</p>
+      <div class="footer-links">
+        <button type="button" class="link-button" id="footerAgreementButton">用户协议</button>
+        <span class="about-sep">·</span>
+        <button type="button" class="link-button" id="footerPrivacyButton">隐私保护指引</button>
+        <span class="about-sep">·</span>
+        <a href="https://github.com/venti-cmd/NanE" target="_blank" rel="noopener" class="link-button">GitHub</a>
+      </div>
+      <p class="footer-hint">南大校园免费互助平台 — 让闲置物资在楼栋间流动</p>
+    </footer>
   </div>
 
   <dialog id="detailDialog">

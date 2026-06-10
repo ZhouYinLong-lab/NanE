@@ -455,7 +455,7 @@ async function loadHome() {
 
     $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻${items.length ? ` · ${items.length} 件` : ""}`;
     if (!items.length) {
-      $("homeState").textContent = keyword ? `未找到与「${keyword}」相关的物品` : "暂无上架物品";
+      $("homeState").innerHTML = emptyStateHTML(keyword ? "search" : "home");
     } else {
       $("homeState").textContent = "";
     }
@@ -465,7 +465,7 @@ async function loadHome() {
     list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
   } catch (error) {
     $("viewerLabel").textContent = "API 未连接";
-    $("homeState").textContent = errmsg(error, "API 未连接，请稍后重试");
+    $("homeState").innerHTML = emptyStateHTML("error", errmsg(error, "网络连接失败"));
   }
 }
 
@@ -660,7 +660,7 @@ function refreshClaimsModal() {
 async function loadMyItems() {
   const container = $("myItemList");
   if (!isVerifiedUser()) {
-    container.innerHTML = `<div class="state-card">请先登录并同意用户协议，再查看自己的发布。</div>`;
+    container.innerHTML = emptyStateHTML("guest");
     $("pendingClaimsBanner").hidden = true;
     return;
   }
@@ -677,7 +677,8 @@ async function loadMyItems() {
     renderClaimsBanner(sorted);
     container.innerHTML = sorted.length
       ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true, showOwnerActions: true })).join("")
-      : `<div class="state-card">暂无发布记录</div>`;
+      : emptyStateHTML("mine");
+    $("pendingClaimsBanner").hidden = !sorted.length;
     const hasPending = sorted.some(item => (item.pendingClaimCount || 0) > 0);
     if (hasPending && !state.claimsModalShown) {
       state.claimsModalShown = true;
@@ -1005,6 +1006,48 @@ function setPublishType(itemType) {
     button.classList.toggle("active", button.dataset.itemType === itemType);
   });
   renderIconGrid();
+}
+
+function renderSubChips(itemType) {
+  const sub = $("subFilterChips");
+  if (!sub) return;
+  const categories = {
+    consumable: ["应急耗材", "外伤处理", "消毒护理", "防护用品", "退烧降温"],
+    medicine: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"],
+    tool: ["常用工具", "维修工具", "清洁工具", "手工工具"]
+  };
+  const list = categories[itemType] || [];
+  sub.innerHTML = list.map(cat =>
+    `<button class="chip chip-sub" data-type="${itemType}" data-category="${cat}">${cat}</button>`
+  ).join("");
+  sub.hidden = false;
+}
+
+function emptyStateHTML(type, detail = "") {
+  const illustrations = {
+    search: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="26" cy="26" r="14" stroke="currentColor" stroke-width="2.5"/><path d="M36 36L48 48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="40" y="44" width="16" height="8" rx="2" stroke="currentColor" stroke-width="1.5" opacity="0.5"/></svg>`,
+    home: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none"><rect x="14" y="10" width="36" height="44" rx="4" stroke="currentColor" stroke-width="2.5"/><path d="M14 22h36" stroke="currentColor" stroke-width="2"/><circle cx="32" cy="38" r="6" stroke="currentColor" stroke-width="1.5"/></svg>`,
+    mine: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none"><path d="M14 16h28a6 6 0 016 6v28" stroke="currentColor" stroke-width="2.5"/><rect x="10" y="12" width="32" height="40" rx="4" stroke="currentColor" stroke-width="2.5"/><path d="M22 12V8a3 3 0 013-3h2" stroke="currentColor" stroke-width="2"/></svg>`,
+    error: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none"><path d="M32 12v20" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="44" r="3" fill="currentColor"/><circle cx="32" cy="32" r="22" stroke="currentColor" stroke-width="2.5"/><path d="M16 16l32 32" stroke="currentColor" stroke-width="2" opacity="0.3"/></svg>`,
+    guest: `<svg width="64" height="64" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="22" r="10" stroke="currentColor" stroke-width="2.5"/><path d="M14 52c0-10 8-18 18-18s18 8 18 18" stroke="currentColor" stroke-width="2.5"/></svg>`
+  };
+  const messages = {
+    search: `未找到与「${escapeHtml(detail)}」相关的物品`,
+    home: "附近暂无上架物品，来做第一个分享的人吧",
+    mine: `<p style="margin:0 0 16px">还没有发布过物品</p><button class="primary small" id="emptyStatePublishBtn">发布第一件物品</button>`,
+    guest: `<p style="margin:0 0 16px">登录后即可查看和管理自己的发布</p><button class="primary small" id="emptyStateLoginBtn">去登录</button>`,
+    error: escapeHtml(detail) || "网络连接失败，请检查网络后重试"
+  };
+  return `<div class="empty-state"><div class="empty-state-icon">${illustrations[type] || illustrations.home}</div><div class="empty-state-msg">${messages[type] || messages.home}</div></div>`;
+}
+
+function animateCloseDialog(dialog) {
+  if (!dialog) return;
+  dialog.classList.add("is-closing");
+  dialog.addEventListener("animationend", () => {
+    dialog.classList.remove("is-closing");
+    dialog.close();
+  }, { once: true });
 }
 
 function clearFieldErrors() {
@@ -1660,30 +1703,45 @@ function bindEvents() {
     const chip = event.target.closest(".chip");
     if (!chip) return;
     const isAll = chip.dataset.type === "" && chip.dataset.category === "";
-    // Toggle this chip
+    // Primary chips: mutually exclusive (radio behavior)
+    document.querySelectorAll("#filterChips .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    if (isAll) {
+      $("subFilterChips").hidden = true;
+    } else {
+      renderSubChips(chip.dataset.type);
+    }
+    loadHome();
+  });
+
+  $("subFilterChips").addEventListener("click", event => {
+    const chip = event.target.closest(".chip");
+    if (!chip) return;
     chip.classList.toggle("active");
-    if (isAll && chip.classList.contains("active")) {
-      // "全部" activated: deactivate all others
-      document.querySelectorAll(".chip").forEach(c => {
-        if (c !== chip) c.classList.remove("active");
-      });
-    } else if (!isAll) {
-      // Specific chip toggled: deactivate "全部"
-      const allChip = document.querySelector('.chip[data-type=""][data-category=""]');
-      if (allChip) allChip.classList.remove("active");
-    }
-    // If nothing active, activate "全部"
-    if (!document.querySelector(".chip.active")) {
-      const allChip = document.querySelector('.chip[data-type=""][data-category=""]');
-      if (allChip) allChip.classList.add("active");
-    }
     loadHome();
   });
   $("itemList").addEventListener("click", event => {
     const card = event.target.closest(".item-card");
     if (card) openDetail(card.dataset.id);
   });
+  // Empty state button delegation
+  $("homeState").addEventListener("click", event => {
+    if (event.target.id === "emptyStatePublishBtn") {
+      document.querySelector('.tab[data-view="publish"]')?.click();
+    }
+  });
   $("myItemList").addEventListener("click", async event => {
+    const btn = event.target.closest("#emptyStatePublishBtn");
+    if (btn) {
+      document.querySelector('.tab[data-view="publish"]')?.click();
+      return;
+    }
+    const loginBtn = event.target.closest("#emptyStateLoginBtn");
+    if (loginBtn) {
+      const loginCard = $("mineLoginCard");
+      if (loginCard) loginCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const claimButton = event.target.closest("[data-claim-action]");
     if (claimButton) {
       event.stopPropagation();
@@ -1705,7 +1763,7 @@ function bindEvents() {
     const card = event.target.closest(".item-card");
     if (card) openMyItemDetail(card.dataset.id);
   });
-  $("closeDetailButton").addEventListener("click", () => $("detailDialog").close());
+  $("closeDetailButton").addEventListener("click", () => animateCloseDialog($("detailDialog")));
   $("detailDialog").addEventListener("click", event => {
     if (event.target.id === "contactButton") viewContact();
     if (event.target.id === "claimButton") requestClaim();
@@ -1779,7 +1837,7 @@ function bindEvents() {
     $("agreementDialog").showModal();
   });
   $("closeAgreementButton").addEventListener("click", () => $("agreementDialog").close());
-  $("closeClaimsModalButton").addEventListener("click", () => $("claimsModal").close());
+  $("closeClaimsModalButton").addEventListener("click", () => animateCloseDialog($("claimsModal")));
   $("claimsModal").addEventListener("click", event => {
     const claimBtn = event.target.closest("[data-claim-action]");
     if (claimBtn) {
@@ -1942,6 +2000,21 @@ function bindEvents() {
     $("agreementDialog").showModal();
   });
   $("settingsPrivacyButton").addEventListener("click", async () => {
+    try {
+      const data = await api("/legal/privacy");
+      $("agreementBody").innerHTML = markdownToHtml(data.markdown || "隐私保护指引暂不可用。");
+      document.querySelector("#agreementDialog h3").textContent = "NanE 隐私保护指引";
+      $("agreementDialog").showModal();
+    } catch (error) {
+      showToast("隐私保护指引加载失败", "error");
+    }
+  });
+  $("footerAgreementButton")?.addEventListener("click", async () => {
+    document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
+    await loadAgreement();
+    $("agreementDialog").showModal();
+  });
+  $("footerPrivacyButton")?.addEventListener("click", async () => {
     try {
       const data = await api("/legal/privacy");
       $("agreementBody").innerHTML = markdownToHtml(data.markdown || "隐私保护指引暂不可用。");

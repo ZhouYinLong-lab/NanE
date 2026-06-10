@@ -495,6 +495,17 @@ textarea:focus {
   margin: 0 4px;
 }
 
+.chips-sub {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.chip-sub {
+  font-size: 12px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
 .chip,
 .segment {
   flex-shrink: 0;
@@ -614,6 +625,92 @@ textarea:focus {
 
 .state-card:empty {
   display: none;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.empty-state-icon {
+  color: var(--muted);
+  opacity: 0.45;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.empty-state-msg {
+  color: var(--muted);
+  font-weight: var(--fw-heavy);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ===== View Transitions ===== */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+  animation: viewFadeIn 0.2s ease;
+}
+
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Dialog Animations ===== */
+#detailDialog,
+#claimsModal {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 480px;
+  width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+
+#detailDialog[open],
+#claimsModal[open] {
+  animation: dialogIn 0.25s ease;
+}
+
+#detailDialog::backdrop,
+#claimsModal::backdrop {
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+}
+
+#detailDialog.is-closing,
+#claimsModal.is-closing {
+  animation: dialogOut 0.2s ease forwards;
+}
+
+@keyframes dialogOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.92); }
+}
+
+/* Contact skeleton in detail */
+.skeleton-text {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--line);
+  animation: shimmer 1.2s ease-in-out infinite;
+  margin: 4px 0;
+}
+
+.skeleton-text.w-60 { width: 60%; }
+.skeleton-text.w-80 { width: 80%; }
+.skeleton-text.w-40 { width: 40%; }
+
+@keyframes shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
 }
 
 /* ===== Skeleton Cards ===== */
@@ -1487,6 +1584,40 @@ dialog::backdrop {
 .about-sep {
   margin: 0 var(--space-sm);
   color: var(--muted);
+}
+
+/* ===== App Footer ===== */
+.app-footer {
+  margin-top: var(--space-xl);
+  padding: var(--space-xl) var(--space-lg);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.footer-slogan {
+  margin: 0 0 var(--space-sm);
+  font-size: 18px;
+  font-weight: var(--fw-bold);
+  color: var(--purple);
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--space-sm);
+  font-size: 13px;
+}
+
+.footer-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+[data-theme="dark"] .footer-slogan {
+  color: #c97dc9;
 }
 
 /* ===== Mine Sub-nav ===== */
