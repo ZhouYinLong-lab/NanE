@@ -886,11 +886,14 @@ async function viewContact() {
     const noteText = data.alreadyViewed
       ? "今天已查看过该联系方式，本次不重复计入次数。"
       : "为保护每位同学的隐私，每日查看次数设有上限。";
+    const fields = [];
+    if (data.contact?.wechat) fields.push(`<div class="contact-field"><span class="contact-label">微信</span><span class="contact-value">${escapeHtml(data.contact.wechat)}</span></div>`);
+    if (data.contact?.qq) fields.push(`<div class="contact-field"><span class="contact-label">QQ</span><span class="contact-value">${escapeHtml(data.contact.qq)}</span></div>`);
+    if (!fields.length) fields.push(`<div class="contact-field"><span class="contact-value">暂未填写联系方式</span></div>`);
     $("contactResult").innerHTML = `
       <div class="contact-box">
-        微信：${escapeHtml(data.contact?.wechat || "未填写")}<br>
-        QQ：${escapeHtml(data.contact?.qq || "未填写")}<br>
-        今日剩余查看次数：<span class="contact-count">${escapeHtml(data.remaining)}</span><br>
+        ${fields.join("")}
+        <div class="contact-meta">今日剩余查看次数：<span class="contact-count">${escapeHtml(data.remaining)}</span></div>
         <span class="contact-note">${noteText}</span>
       </div>
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
@@ -898,13 +901,9 @@ async function viewContact() {
     `;
     const btn = $("contactButton");
     if (btn) {
-      if (data.remaining > 0) {
-        btn.innerHTML = `查看联系方式（剩 <span class="contact-count">${escapeHtml(data.remaining)}</span> 次/日）`;
-        btn.disabled = false;
-      } else {
-        btn.textContent = "今日次数已用完";
-        btn.disabled = true;
-      }
+      btn.textContent = "已查看联系方式 ✓";
+      btn.disabled = true;
+      btn.classList.add("contact-viewed");
     }
     loadProfile();
   } catch (error) {

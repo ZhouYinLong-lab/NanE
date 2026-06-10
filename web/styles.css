@@ -1044,6 +1044,15 @@ textarea:focus {
   margin-top: var(--space-md);
 }
 
+#contactButton.contact-viewed {
+  background: var(--purple-soft);
+  color: var(--purple);
+  border: 1px solid transparent;
+  box-shadow: none;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* ===== Claim Banner ===== */
 .claim-banner {
   margin-bottom: 20px;
@@ -1554,13 +1563,43 @@ dialog::backdrop {
   border-radius: var(--radius-md);
   background: var(--purple-soft);
   color: var(--purple);
+  line-height: 1.6;
+}
+
+.contact-field {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
   font-weight: var(--fw-heavy);
-  line-height: 1.7;
+}
+
+.contact-field + .contact-field {
+  margin-top: 6px;
+}
+
+.contact-label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: var(--fw-bold);
+  opacity: 0.7;
+  min-width: 2.2em;
+}
+
+.contact-value {
+  font-size: 15px;
+}
+
+.contact-meta {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(110, 0, 101, 0.15);
+  font-size: 14px;
+  font-weight: var(--fw-bold);
 }
 
 .contact-note {
-  display: inline-block;
-  margin-top: var(--space-sm);
+  display: block;
+  margin-top: 6px;
   color: var(--muted);
   font-size: 13px;
   font-weight: var(--fw-bold);
@@ -1946,6 +1985,15 @@ dialog::backdrop {
 }
 
 [data-theme="dark"] .contact-box {
+  background: var(--purple-soft);
+  color: #d4a0d4;
+}
+
+[data-theme="dark"] .contact-meta {
+  border-top-color: rgba(110, 0, 101, 0.25);
+}
+
+[data-theme="dark"] #contactButton.contact-viewed {
   background: var(--purple-soft);
   color: #d4a0d4;
 }
