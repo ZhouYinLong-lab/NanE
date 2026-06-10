@@ -201,22 +201,63 @@ button {
   box-shadow: var(--shadow);
   font-family: "Font Awesome 7 Free";
   font-weight: var(--fw-heavy);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.icon-button:hover {
+  background: var(--purple-soft);
+  border-color: var(--purple);
+}
+
+.icon-button:active {
+  transform: scale(0.95);
 }
 
 .primary {
   background: var(--purple);
   color: var(--on-accent);
   box-shadow: 0 12px 26px rgba(110, 0, 101, 0.18);
+  transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(110, 0, 101, 0.24);
+}
+
+.primary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .secondary {
   background: var(--text);
   color: var(--on-accent);
+  transition: filter 0.15s, transform 0.15s;
+}
+
+.secondary:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.secondary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .danger {
   background: var(--danger);
   color: var(--on-accent);
+  transition: filter 0.15s, transform 0.15s;
+}
+
+.danger:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.danger:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .primary:focus-visible,
@@ -224,6 +265,11 @@ button {
 .danger:focus-visible,
 .icon-button:focus-visible,
 .tab:focus-visible,
+.login-tab:focus-visible,
+.mine-subtab:focus-visible,
+.link-button:focus-visible,
+.segment:focus-visible,
+.chip:focus-visible,
 button:focus-visible {
   outline: 3px solid var(--purple-glow);
   outline-offset: 2px;
@@ -426,11 +472,6 @@ textarea:focus {
   color: var(--on-accent);
 }
 
-.chip-type {
-  font-weight: var(--fw-black);
-  font-size: 14px;
-}
-
 /* ===== Notice ===== */
 .notice-line {
   margin: 18px 0 28px;
@@ -587,6 +628,10 @@ textarea:focus {
 
 .item-card:active {
   opacity: 0.6;
+}
+
+.item-card:last-child {
+  border-bottom: none;
 }
 
 .item-icon {
@@ -1578,7 +1623,8 @@ dialog::backdrop {
     padding: 22px;
   }
 
-  .date-row {
+  #dateRow {
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

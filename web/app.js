@@ -26,7 +26,10 @@ const icons = {
   soap: "\ue06e"
 };
 
-const DEBUG_MODE = false; // Set to true for development
+const DEBUG_MODE = (() => {
+  const url = new URLSearchParams(window.location.search);
+  return url.get("debug") !== null || localStorage.getItem("nane_debug") === "1";
+})();
 
 const iconOptions = [
   ["plus", "通用"],
@@ -968,6 +971,8 @@ async function submitPublish(event) {
     contactQq,
     disclaimerAccepted: true
   };
+  const submitBtn = document.querySelector("#publishForm button[type=submit]");
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "提交中..."; }
   const isEdit = Boolean(state.editingItemId);
   let result;
   try {
@@ -1022,6 +1027,8 @@ async function submitPublish(event) {
     loadMyItems();
   } catch (error) {
     message.textContent = errmsg(error, "提交失败");
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "提交审核"; }
   }
 }
 
