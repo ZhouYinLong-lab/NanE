@@ -1994,12 +1994,12 @@ function bindEvents() {
       if (homeTab) homeTab.click();
     });
   }
-  $("settingsAgreementButton").addEventListener("click", () => {
+  $("settingsAgreementButton")?.addEventListener("click", () => {
     document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
     loadAgreement();
     $("agreementDialog").showModal();
   });
-  $("settingsPrivacyButton").addEventListener("click", async () => {
+  $("settingsPrivacyButton")?.addEventListener("click", async () => {
     try {
       const data = await api("/legal/privacy");
       $("agreementBody").innerHTML = markdownToHtml(data.markdown || "隐私保护指引暂不可用。");

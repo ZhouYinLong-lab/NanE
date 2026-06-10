@@ -509,7 +509,7 @@ textarea:focus {
 .chip,
 .segment {
   flex-shrink: 0;
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
@@ -1342,7 +1342,7 @@ textarea:focus {
 
 .login-tab {
   flex: 1;
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--card);
@@ -1629,7 +1629,7 @@ dialog::backdrop {
 
 .mine-subtab {
   flex: 1;
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--card);
@@ -2061,6 +2061,124 @@ dialog::backdrop {
   }
 }
 
+/* ===== Responsive: ≤480px ===== */
+@media (max-width: 480px) {
+  /* D1: Chips horizontal scroll with gradient mask */
+  .chips {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(to right, black 82%, transparent 98%);
+    mask-image: linear-gradient(to right, black 82%, transparent 98%);
+    padding-bottom: 6px;
+  }
+
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chips-sub {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(to right, black 82%, transparent 98%);
+    mask-image: linear-gradient(to right, black 82%, transparent 98%);
+  }
+
+  .chips-sub::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* D3: Dialog fullscreen */
+  #detailDialog,
+  #claimsModal,
+  #agreementDialog {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .confirm-dialog {
+    width: 100vw;
+    max-width: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* D5: Detail dialog sticky contact button */
+  #detailDialog {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #detailDialog .dialog-head {
+    flex-shrink: 0;
+    padding: 16px var(--space-lg) 12px;
+  }
+
+  #detailBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 var(--space-lg) 16px;
+  }
+
+  #contactButton {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    z-index: 2;
+  }
+
+  #contactResult {
+    padding-bottom: 8px;
+  }
+
+  /* Claims modal sticky actions */
+  #claimsModal {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #claimsModal .dialog-head {
+    flex-shrink: 0;
+    padding: 16px var(--space-lg) 12px;
+  }
+
+  #claimsModalBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 var(--space-lg) 16px;
+  }
+
+  /* Agreement dialog scroll */
+  #agreementDialog {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #agreementDialog .dialog-head {
+    flex-shrink: 0;
+    padding: 16px var(--space-lg) 12px;
+  }
+
+  .agreement-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  /* Confirm dialog scroll */
+  .confirm-dialog-content {
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
+}
+
 /* ===== Responsive: ≤460px ===== */
 @media (max-width: 460px) {
   .app-shell {
@@ -2071,6 +2189,18 @@ dialog::backdrop {
     min-width: 72px;
     padding-inline: 14px;
     font-size: 14px;
+  }
+
+  /* D2: Form buttons full-width stacking */
+  .search-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .search-row .small,
+  .search-row .primary {
+    width: 100%;
   }
 
   .auth-row {
@@ -2110,6 +2240,109 @@ dialog::backdrop {
 
   .item-title-row h3 {
     font-size: 18px;
+  }
+
+  /* Dialog fullscreen padding */
+  #detailDialog .dialog-head,
+  #claimsModal .dialog-head,
+  #agreementDialog .dialog-head {
+    padding: 12px var(--space-md);
+  }
+
+  #detailBody,
+  #claimsModalBody {
+    padding: 0 var(--space-md) 12px;
+  }
+
+  /* Owner actions stacking */
+  .owner-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .owner-actions .small {
+    width: 100%;
+  }
+
+  /* Toast full-width on mobile */
+  #toastContainer {
+    left: 12px;
+    right: 12px;
+    max-width: none;
+  }
+
+  /* Profile card compact */
+  .profile-card {
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .avatar img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .profile-card h2 {
+    font-size: 20px;
+  }
+
+  /* Segmented control compact */
+  .segmented {
+    gap: 6px;
+  }
+
+  .segment {
+    padding: 0 10px;
+    font-size: 12px;
+    min-height: 44px;
+  }
+
+  /* Form card compact */
+  .form-card {
+    padding: var(--space-md);
+  }
+
+  /* Icon grid compact */
+  .icon-grid {
+    gap: 6px;
+  }
+
+  .icon-option {
+    min-height: 50px;
+    padding: 6px 4px;
+  }
+
+  .icon-option strong {
+    font-size: 18px;
+  }
+
+  /* Claim banner compact */
+  .claim-banner {
+    padding: 14px var(--space-md);
+  }
+
+  .claim-banner-head h3 {
+    font-size: 17px;
+  }
+
+  .claim-banner-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Footer compact */
+  .app-footer {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .footer-slogan {
+    font-size: 16px;
   }
 }
 
