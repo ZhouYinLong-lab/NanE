@@ -274,15 +274,14 @@ button {
 }
 
 .secondary {
-  background: var(--card-strong);
-  color: var(--text);
-  border: 1px solid var(--line);
-  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  background: #e8dfcf;
+  color: var(--text-strong);
+  border: 1px solid transparent;
+  transition: background 0.15s, transform 0.15s;
 }
 
 .secondary:hover:not(:disabled) {
-  border-color: var(--muted);
-  background: var(--card);
+  background: #ddd3c0;
   transform: translateY(-1px);
 }
 
@@ -1936,8 +1935,13 @@ dialog::backdrop {
 }
 
 [data-theme="dark"] .secondary {
-  background: var(--card);
-  border-color: #555;
+  background: #3d3d3d;
+  color: #d8d8d8;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .secondary:hover:not(:disabled) {
+  background: #4a4a4a;
 }
 
 [data-theme="dark"] .icon-button {
