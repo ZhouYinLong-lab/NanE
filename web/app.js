@@ -701,9 +701,22 @@ async function openDetail(id) {
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
       <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行检查物品状况与适用性，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
-      <button class="primary wide" id="contactButton" ${(state.user?.dailyContactRemaining ?? 0) <= 0 && isVerifiedUser() && profileComplete() ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.user?.dailyContactRemaining ?? 5) > 0 ? `查看联系方式（今日剩余 <span class="contact-count">${state.user?.dailyContactRemaining ?? 5}</span> 次）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
+      <button class="primary wide" id="contactButton" ${(state.user?.dailyContactRemaining ?? 0) <= 0 && isVerifiedUser() && profileComplete() ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.user?.dailyContactRemaining ?? 5) > 0 ? `查看联系方式（剩 <span class="contact-count">${state.user?.dailyContactRemaining ?? 5}</span> 次/日）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
+      <button class="secondary wide" id="shareItemButton" style="margin-top:8px">复制物品链接分享给同学</button>
     `;
+    const shareBtn = $("detailBody").querySelector("#shareItemButton");
+    if (shareBtn) {
+      shareBtn.addEventListener("click", () => {
+        const url = new URL(window.location.href);
+        url.search = new URLSearchParams({ item: id }).toString();
+        navigator.clipboard.writeText(url.toString()).then(() => {
+          showToast("链接已复制，发送给同学即可快速查看", "success");
+        }).catch(() => {
+          showToast("复制失败，请手动复制地址栏链接", "error");
+        });
+      });
+    }
     $("detailDialog").showModal();
   } catch (error) {
     showToast(errmsg(error, "详情加载失败"), "error");
@@ -2070,11 +2083,16 @@ function parseUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view") || "";
   const focus = params.get("focus") || "";
-  return { view, focus };
+  const item = params.get("item") || "";
+  return { view, focus, item };
 }
 
 async function applyUrlParams() {
-  const { view, focus } = parseUrlParams();
+  const { view, focus, item } = parseUrlParams();
+  if (item && item.startsWith("item_")) {
+    try { await openDetail(item); } catch (e) { /* item may not exist */ }
+    return;
+  }
   if (view === "mine") {
     const mineTab = document.querySelector('.tab[data-view="mine"]');
     if (mineTab) mineTab.click();
