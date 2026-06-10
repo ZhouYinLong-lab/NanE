@@ -478,7 +478,6 @@ async function loadProfile() {
   try {
     const data = await api("/me");
     state.user = data.user;
-    state.contactLimit = data.contactLimit || { daily: 5, used: 0, remaining: 5 };
     if (data.user) {
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       $("profileName").textContent = data.user.name || "南易用户";
@@ -709,7 +708,7 @@ async function openDetail(id) {
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
       <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行检查物品状况与适用性，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
-      <button class="primary wide" id="contactButton" ${isVerifiedUser() && profileComplete() && (state.contactLimit?.remaining ?? 0) === 0 ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.contactLimit?.remaining ?? 5) > 0 ? `查看联系方式（剩 <span class="contact-count">${escapeHtml(state.contactLimit?.remaining ?? 5)}</span> 次/日）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
+      <button class="primary wide" id="contactButton">${isVerifiedUser() && profileComplete() ? "查看联系方式" : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
       <button class="secondary wide" id="shareItemButton" style="margin-top:8px">复制物品链接分享给同学</button>
     `;
@@ -886,7 +885,7 @@ async function viewContact() {
     state.contactViewedForItem = state.selectedDetail.id;
     const noteText = data.alreadyViewed
       ? "今天已查看过该联系方式，本次不重复计入次数。"
-      : "为保护每位同学的隐私，每日查看次数设有上限。";
+      : "为保护每位同学的隐私，请不要将联系方式外传。";
     const fields = [];
     if (data.contact?.wechat) fields.push(`<div class="contact-field"><span class="contact-label">微信</span><span class="contact-value">${escapeHtml(data.contact.wechat)}</span></div>`);
     if (data.contact?.qq) fields.push(`<div class="contact-field"><span class="contact-label">QQ</span><span class="contact-value">${escapeHtml(data.contact.qq)}</span></div>`);
@@ -894,16 +893,11 @@ async function viewContact() {
     $("contactResult").innerHTML = `
       <div class="contact-box">
         ${fields.join("")}
-        <div class="contact-meta">今日剩余查看次数：<span class="contact-count">${escapeHtml(data.remaining)}</span></div>
         <span class="contact-note">${noteText}</span>
       </div>
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
       <div id="claimResult"></div>
     `;
-    if (state.contactLimit) {
-      state.contactLimit.remaining = data.remaining;
-      state.contactLimit.used = (state.contactLimit.daily || 5) - data.remaining;
-    }
     const btn = $("contactButton");
     if (btn) {
       btn.textContent = "已查看联系方式 ✓";

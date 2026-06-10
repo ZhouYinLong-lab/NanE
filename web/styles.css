@@ -536,18 +536,6 @@ textarea:focus {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Contact remaining counter flip */
-.contact-count {
-  display: inline-block;
-  animation: countFlip 0.4s ease;
-}
-
-@keyframes countFlip {
-  0% { transform: rotateX(0deg); }
-  50% { transform: rotateX(90deg); }
-  100% { transform: rotateX(0deg); }
-}
-
 .chip:hover {
   border-color: var(--muted);
 }
@@ -1588,13 +1576,6 @@ dialog::backdrop {
   font-size: 15px;
 }
 
-.contact-meta {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(110, 0, 101, 0.15);
-  font-size: 14px;
-  font-weight: var(--fw-bold);
-}
 
 .contact-note {
   display: block;
@@ -1991,10 +1972,6 @@ dialog::backdrop {
 [data-theme="dark"] .contact-box {
   background: var(--purple-soft);
   color: #d4a0d4;
-}
-
-[data-theme="dark"] .contact-meta {
-  border-top-color: rgba(110, 0, 101, 0.25);
 }
 
 [data-theme="dark"] #contactButton.contact-viewed {
