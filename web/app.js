@@ -1212,6 +1212,10 @@ async function submitPublish(event) {
 async function showPublishConfirmDialog(payload) {
   const expiryText = payload.noExpiry ? "长期有效" : payload.expireDate;
   const typeLabel = payload.itemType === "medicine" ? "药品" : (payload.itemType === "tool" ? "工具" : "耗材");
+  const contactParts = [];
+  if (payload.wechat) contactParts.push(`微信 ${payload.wechat}`);
+  if (payload.qq) contactParts.push(`QQ ${payload.qq}`);
+  const contactText = contactParts.join(" / ") || "未填写";
   const dialog = document.createElement("dialog");
   dialog.className = "confirm-dialog";
   dialog.innerHTML = `
@@ -1223,6 +1227,7 @@ async function showPublishConfirmDialog(payload) {
         <div class="confirm-row"><span class="confirm-label">数量</span><span>${payload.quantity} ${payload.unit}</span></div>
         <div class="confirm-row"><span class="confirm-label">校区楼栋</span><span>${payload.campus} ${payload.building}</span></div>
         <div class="confirm-row"><span class="confirm-label">有效期</span><span>${expiryText}</span></div>
+        <div class="confirm-row"><span class="confirm-label">联系方式</span><span>${contactText}</span></div>
       </div>
       <div class="confirm-actions">
         <button class="primary wide" id="confirmSubmitBtn" type="button">确认提交</button>
@@ -1840,6 +1845,12 @@ function bindEvents() {
     renderLocationSelects("profile");
   });
   $("useProfileLocationInput").addEventListener("change", event => {
+    if (event.target.checked && (!state.user?.campus || !state.user?.building)) {
+      showToast("请先在「我的」页设置校区和楼栋，或取消勾选后手动选择", "info");
+      event.target.checked = false;
+      $("publishLocationFields").hidden = false;
+      return;
+    }
     $("publishLocationFields").hidden = event.target.checked;
   });
   $("noExpiryInput").addEventListener("change", toggleNoExpiry);
