@@ -39,10 +39,10 @@
   --radius-xl: 24px;
 
   /* Font Weights */
-  --fw-black: 950;
-  --fw-heavy: 900;
-  --fw-bold: 800;
-  --fw-normal: 700;
+  --fw-black: 900;
+  --fw-heavy: 650;
+  --fw-bold: 600;
+  --fw-normal: 400;
 
   /* Spacing */
   --space-xs: 4px;
@@ -431,7 +431,7 @@ textarea:focus {
 
 .chip-group-label {
   font-size: 12px;
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-bold);
   color: var(--muted);
   letter-spacing: 0.05em;
   padding: 0 4px 0 10px;
@@ -663,7 +663,7 @@ textarea:focus {
   margin: 0;
   font-size: 22px;
   line-height: 1.25;
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-heavy);
   color: var(--text);
 }
 
@@ -747,7 +747,7 @@ textarea:focus {
   margin-bottom: 10px;
   color: var(--purple);
   font-size: 14px;
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-bold);
 }
 
 .claim-row {
@@ -890,7 +890,7 @@ textarea:focus {
   display: block;
   margin: 18px 0 var(--space-sm);
   color: var(--text-strong);
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-bold);
 }
 
 .label-row {
@@ -1050,7 +1050,7 @@ textarea:focus {
 .secondary-login summary {
   cursor: pointer;
   color: var(--purple);
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-bold);
 }
 
 .agreement-row {
@@ -1264,7 +1264,7 @@ dialog::backdrop {
 .mine-about-footer h2 {
   margin: 0 0 var(--space-md);
   font-size: 20px;
-  font-weight: var(--fw-black);
+  font-weight: var(--fw-heavy);
 }
 
 .about-sep {
