@@ -66,7 +66,10 @@
 }
 
 .toast {
-  padding: 14px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
   border-radius: var(--radius-md);
   background: var(--text);
   color: var(--on-accent);
@@ -77,6 +80,41 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
 }
 
+.toast-out {
+  animation: toastOut 0.25s ease forwards;
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  font-family: "Font Awesome 7 Free";
+  font-weight: 900;
+  font-size: 16px;
+  margin-top: 1px;
+}
+
+.toast-msg {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  margin-top: 0px;
+  font-weight: var(--fw-heavy);
+}
+
 .toast-error {
   background: var(--danger);
   color: #fff;
@@ -85,6 +123,16 @@
 .toast-success {
   background: #3d7a33;
   color: #fff;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(24px); }
 }
 
 @keyframes toastIn {
@@ -458,7 +506,32 @@ textarea:focus {
   color: var(--muted);
   font-weight: var(--fw-heavy);
   font-size: 13px;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.15s ease;
+}
+
+.chip:active {
+  transform: scale(0.92);
+}
+
+.list-dirty {
+  animation: listSlideIn 0.25s ease;
+}
+
+@keyframes listSlideIn {
+  from { opacity: 0.6; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Contact remaining counter flip */
+.contact-count {
+  display: inline-block;
+  animation: countFlip 0.4s ease;
+}
+
+@keyframes countFlip {
+  0% { transform: rotateX(0deg); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
 }
 
 .chip:hover {
@@ -732,6 +805,52 @@ textarea:focus {
   border-color: var(--success-border);
   background: var(--success-bg);
   color: var(--success-text);
+}
+
+.badge.urgency-warn {
+  border-color: #e6a817;
+  background: #fff8e1;
+  color: #8d6a00;
+}
+
+.badge.urgency-critical {
+  border-color: #d93025;
+  background: #fce8e6;
+  color: #c62828;
+  animation: pulseUrgency 1.5s ease-in-out infinite;
+}
+
+.badge.expired-badge {
+  border-color: #d93025;
+  background: #fce8e6;
+  color: #c62828;
+}
+
+.item-expired {
+  opacity: 0.62;
+}
+
+@keyframes pulseUrgency {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Card remove animation */
+.card-removing {
+  animation: cardRemove 0.35s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes cardRemove {
+  from { opacity: 1; transform: scale(1); max-height: 300px; }
+  to { opacity: 0; transform: scale(0.92); max-height: 0; margin: 0; padding: 0; overflow: hidden; }
+}
+
+.claim-confirmed {
+  background: #3d7a33 !important;
+  color: #fff !important;
+  border-color: #3d7a33 !important;
+  pointer-events: none;
 }
 
 /* ===== Claim Panel ===== */
@@ -1672,6 +1791,31 @@ dialog::backdrop {
 
 .search-row input::-webkit-search-cancel-button:hover {
   opacity: 1;
+}
+
+[data-theme="dark"] .badge.urgency-warn {
+  border-color: #8d6a00;
+  background: #3d2e00;
+  color: #fdd835;
+}
+
+[data-theme="dark"] .badge.urgency-critical,
+[data-theme="dark"] .badge.expired-badge {
+  border-color: #c62828;
+  background: #3e1212;
+  color: #f28b82;
+}
+
+[data-theme="dark"] .item-expired {
+  opacity: 0.5;
+}
+
+[data-theme="dark"] .toast-close {
+  background: rgba(255,255,255,0.12);
+}
+
+[data-theme="dark"] .claim-confirmed {
+  background: #2e5a24 !important;
 }
 
 /* ===== Responsive: ≤680px ===== */

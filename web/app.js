@@ -84,14 +84,20 @@ function $(id) {
 function showToast(message, type = "info") {
   const container = document.getElementById("toastContainer");
   if (!container) return;
+  const icons = { success: "", error: "", info: "" };
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  toast.addEventListener("click", () => toast.remove());
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-msg">${escapeHtml(message)}</span><button class="toast-close" aria-label="关闭">&times;</button>`;
+  toast.querySelector(".toast-close").addEventListener("click", e => { e.stopPropagation(); dismissToast(toast); });
+  toast.addEventListener("click", () => dismissToast(toast));
   container.appendChild(toast);
-  setTimeout(() => {
-    if (toast.parentNode) toast.remove();
-  }, 4500);
+  setTimeout(() => dismissToast(toast), 5000);
+}
+
+function dismissToast(toast) {
+  if (!toast.parentNode) return;
+  toast.classList.add("toast-out");
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 250);
 }
 
 function errmsg(error, fallback) {
@@ -126,10 +132,31 @@ function token() {
 }
 
 function currentAgreementPayload() {
+  const storedVer = localStorage.getItem("nane_agreement_accepted");
+  const currentVer = state.agreementVersion || AGREEMENT_VERSION_FALLBACK;
   return {
-    agreementAccepted: Boolean($("agreementInput")?.checked),
-    agreementVersion: state.agreementVersion || AGREEMENT_VERSION_FALLBACK
+    agreementAccepted: storedVer === currentVer || Boolean($("agreementInput")?.checked),
+    agreementVersion: currentVer
   };
+}
+
+function rememberAgreementAccepted() {
+  localStorage.setItem("nane_agreement_accepted", state.agreementVersion || AGREEMENT_VERSION_FALLBACK);
+}
+
+function syncAgreementUI() {
+  const row = document.querySelector(".agreement-row");
+  const input = $("agreementInput");
+  if (!row || !input) return;
+  const storedVer = localStorage.getItem("nane_agreement_accepted");
+  const currentVer = state.agreementVersion || AGREEMENT_VERSION_FALLBACK;
+  if (storedVer === currentVer) {
+    row.hidden = true;
+    input.checked = false;
+  } else {
+    row.hidden = false;
+    input.checked = false;
+  }
 }
 
 async function api(path, options = {}) {
@@ -181,6 +208,7 @@ function saveSession(tokenValue, user) {
   if (tokenValue) {
     localStorage.setItem(TOKEN_KEY, tokenValue);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    rememberAgreementAccepted();
   }
 }
 
@@ -288,12 +316,27 @@ function expiryBadge(item) {
   }
   const days = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
   if (days < 0) {
-    return `<span class="badge warning">已过期</span>`;
+    return `<span class="badge expired-badge">已过期</span>`;
+  }
+  if (days <= 3) {
+    return `<span class="badge urgency-critical">⏳ 还剩 ${days} 天</span>`;
+  }
+  if (days <= 7) {
+    return `<span class="badge urgency-warn">⏳ 还剩 ${days} 天</span>`;
   }
   if (days <= 15) {
     return `<span class="badge warning">还有 ${days} 天到期</span>`;
   }
   return "";
+}
+
+function itemExpiredClass(item) {
+  if (item.noExpiry || !item.expireDate) return "";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(`${item.expireDate}T00:00:00`);
+  if (Number.isNaN(expiry.getTime())) return "";
+  return expiry.getTime() < today.getTime() ? "item-expired" : "";
 }
 
 function expiryText(item) {
@@ -335,7 +378,7 @@ function renderItem(item, options = {}) {
       </div>`
     : "";
   return `
-    <article class="item-card" data-id="${escapeHtml(item.id)}">
+    <article class="item-card ${itemExpiredClass(item)}" data-id="${escapeHtml(item.id)}">
       <div class="item-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>
       <div class="item-main">
         <div class="item-title-row">
@@ -416,7 +459,10 @@ async function loadHome() {
     } else {
       $("homeState").textContent = "";
     }
-    $("itemList").innerHTML = items.map(item => renderItem(item)).join("");
+    const list = $("itemList");
+    list.innerHTML = items.map(item => renderItem(item)).join("");
+    list.classList.add("list-dirty");
+    list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
   } catch (error) {
     $("viewerLabel").textContent = "API 未连接";
     $("homeState").textContent = errmsg(error, "API 未连接，请稍后重试");
@@ -656,7 +702,7 @@ async function openDetail(id) {
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
       <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行确认包装完好与有效期，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
-      <button class="primary wide" id="contactButton">${isVerifiedUser() && profileComplete() ? `查看联系方式（今日剩余 ${state.user?.dailyContactRemaining ?? 5} 次）` : "登录并完善资料后查看联系方式"}</button>
+      <button class="primary wide" id="contactButton" ${(state.user?.dailyContactRemaining ?? 0) <= 0 && isVerifiedUser() && profileComplete() ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.user?.dailyContactRemaining ?? 5) > 0 ? `查看联系方式（今日剩余 <span class="contact-count">${state.user?.dailyContactRemaining ?? 5}</span> 次）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
     `;
     $("detailDialog").showModal();
@@ -786,7 +832,15 @@ async function handleListDelete(itemId, button) {
   button.textContent = "删除中...";
   try {
     await api(`/me/items/${encodeURIComponent(itemId)}/delete`, { method: "POST" });
-    await Promise.all([loadHome(), loadMyItems()]);
+    const card = button.closest(".item-card");
+    if (card) {
+      card.classList.add("card-removing");
+      card.addEventListener("animationend", () => {
+        Promise.all([loadHome(), loadMyItems()]);
+      }, { once: true });
+    } else {
+      await Promise.all([loadHome(), loadMyItems()]);
+    }
   } catch (error) {
     showToast(errmsg(error, "删除失败"), "error");
     button.disabled = false;
@@ -813,7 +867,7 @@ async function viewContact() {
       <div class="contact-box">
         微信：${escapeHtml(data.contact?.wechat || "未填写")}<br>
         QQ：${escapeHtml(data.contact?.qq || "未填写")}<br>
-        今日剩余查看次数：${escapeHtml(data.remaining)}<br>
+        今日剩余查看次数：<span class="contact-count">${escapeHtml(data.remaining)}</span><br>
         <span class="contact-note">${noteText}</span>
       </div>
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
@@ -860,10 +914,23 @@ async function reviewClaimFromButton(button) {
   button.textContent = action === "confirm" ? "确认中..." : "处理中...";
   try {
     const data = await api(`/claims/${encodeURIComponent(claimId)}/${action}`, { method: "POST" });
-    await Promise.all([loadHome(), loadProfile(), loadMyItems()]);
+    if (action === "confirm") {
+      button.textContent = "✓ 已确认";
+      button.classList.add("claim-confirmed");
+      const card = button.closest(".item-card");
+      if (card) {
+        setTimeout(() => {
+          card.classList.add("card-removing");
+          card.addEventListener("animationend", () => {
+            Promise.all([loadHome(), loadProfile(), loadMyItems()]);
+          }, { once: true });
+        }, 1200);
+      }
+    } else {
+      await Promise.all([loadHome(), loadProfile(), loadMyItems()]);
+    }
   } catch (error) {
     showToast(errmsg(error, "处理失败"), "error");
-  } finally {
     button.disabled = false;
     button.textContent = action === "confirm" ? "确认领取" : "忽略";
   }
@@ -1540,6 +1607,7 @@ function syncSettingsAccount() {
   } else {
     loginCard.hidden = false;
     loggedInContent.hidden = true;
+    syncAgreementUI();
   }
 }
 
