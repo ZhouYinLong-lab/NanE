@@ -279,13 +279,15 @@ button {
 }
 
 .secondary {
-  background: var(--text);
-  color: var(--on-accent);
-  transition: filter 0.15s, transform 0.15s;
+  background: var(--card-strong);
+  color: var(--text);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
 }
 
 .secondary:hover:not(:disabled) {
-  filter: brightness(1.15);
+  border-color: var(--muted);
+  background: var(--card);
   transform: translateY(-1px);
 }
 
@@ -405,6 +407,10 @@ button:focus-visible {
 
 .auth-row input {
   min-width: 0;
+}
+
+.auth-row + .auth-row {
+  margin-top: var(--space-md);
 }
 
 /* Full-width controls in stacked auth rows */
@@ -1371,6 +1377,7 @@ textarea:focus {
 
 .forgot-row {
   margin-top: 10px !important;
+  text-align: right;
 }
 
 .secondary-login summary {
@@ -1836,7 +1843,8 @@ dialog::backdrop {
 }
 
 [data-theme="dark"] .secondary {
-  background: #444;
+  background: var(--card);
+  border-color: #555;
 }
 
 [data-theme="dark"] .icon-button {
