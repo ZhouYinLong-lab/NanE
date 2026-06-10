@@ -1554,6 +1554,20 @@ dialog::backdrop {
 }
 
 .mine-login-center h3 {
+  transition: color 0.25s;
+}
+
+/* Login section transitions */
+.login-section-in {
+  animation: loginSectionIn 0.25s ease;
+}
+
+@keyframes loginSectionIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mine-login-center h3 {
   margin: 0 0 var(--space-sm);
   text-align: center;
 }

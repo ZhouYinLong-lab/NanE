@@ -1324,26 +1324,51 @@ function switchLoginMode(mode) {
   const forgotSection = $("forgotPasswordSection");
   const setPasswordPrompt = $("setPasswordPrompt");
   const tabs = document.querySelectorAll(".login-tab");
+  const tabsRow = document.querySelector(".login-tabs");
+  const nannaDetails = document.querySelector(".secondary-login");
+  const cardHeading = document.querySelector("#mineLoginCard h3");
 
-  codeSection.hidden = true;
-  passwordSection.hidden = true;
-  forgotSection.hidden = true;
-  if (setPasswordPrompt) setPasswordPrompt.hidden = true;
+  const allSections = [codeSection, passwordSection, forgotSection, setPasswordPrompt].filter(Boolean);
+
+  // Hide all sections first
+  allSections.forEach(s => { s.hidden = true; s.classList.remove("login-section-in"); });
   tabs.forEach(tab => tab.classList.remove("active"));
 
+  let target = null;
+
   if (mode === "code") {
-    codeSection.hidden = false;
+    target = codeSection;
     const codeTab = document.querySelector('.login-tab[data-login-mode="code"]');
     if (codeTab) codeTab.classList.add("active");
+    if (tabsRow) tabsRow.hidden = false;
+    if (nannaDetails) nannaDetails.hidden = false;
+    if (cardHeading) cardHeading.textContent = "登录 NanE";
   } else if (mode === "password") {
-    passwordSection.hidden = false;
+    target = passwordSection;
     const pwTab = document.querySelector('.login-tab[data-login-mode="password"]');
     if (pwTab) pwTab.classList.add("active");
+    if (tabsRow) tabsRow.hidden = false;
+    if (nannaDetails) nannaDetails.hidden = false;
+    if (cardHeading) cardHeading.textContent = "登录 NanE";
   } else if (mode === "forgot") {
-    forgotSection.hidden = false;
+    target = forgotSection;
+    if (tabsRow) tabsRow.hidden = true;
+    if (nannaDetails) nannaDetails.hidden = true;
+    if (cardHeading) cardHeading.textContent = "重置密码";
   } else if (mode === "setPassword") {
-    if (setPasswordPrompt) setPasswordPrompt.hidden = false;
+    target = setPasswordPrompt;
+    if (tabsRow) tabsRow.hidden = true;
+    if (nannaDetails) nannaDetails.hidden = true;
+    if (cardHeading) cardHeading.textContent = "设置登录密码";
   }
+
+  if (target) {
+    target.hidden = false;
+    requestAnimationFrame(() => {
+      target.classList.add("login-section-in");
+    });
+  }
+
   $("authMessage").textContent = "";
 }
 
