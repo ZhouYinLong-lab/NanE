@@ -560,6 +560,56 @@ textarea:focus {
   color: var(--on-accent);
 }
 
+/* ===== Welcome Banner ===== */
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
+  margin-bottom: var(--space-xl);
+  border: 1px solid var(--purple);
+  border-radius: var(--radius-lg);
+  background: var(--purple-soft);
+  color: var(--purple);
+  line-height: 1.55;
+}
+
+.welcome-banner strong {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: 18px;
+  font-weight: var(--fw-black);
+}
+
+.welcome-banner p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--fw-normal);
+  color: var(--muted);
+}
+
+.welcome-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--purple);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+  font-family: "Font Awesome 7 Free";
+  font-weight: 900;
+  font-size: 24px;
+}
+
+[data-theme="dark"] .welcome-banner {
+  background: rgba(110, 0, 101, 0.15);
+}
+
+[data-theme="dark"] .welcome-banner p {
+  color: #aaa;
+}
+
 /* ===== Notice ===== */
 .notice-line {
   margin: 18px 0 28px;

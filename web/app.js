@@ -277,7 +277,12 @@ function syncProfileForm() {
   }
   $("nicknameInput").value = state.user?.name || "";
   setSelectionByLocation("profile", state.user?.campus || "仙林校区", state.user?.building || "南苑 A 栋", state.user?.room || "");
-  $("profileMessage").textContent = profileComplete() ? "" : "请补全账号资料后再发布或查看联系方式";
+  if (!profileComplete()) {
+    card.hidden = false;
+    $("profileMessage").textContent = "请补全账号资料后再发布或查看联系方式";
+  } else {
+    $("profileMessage").textContent = "";
+  }
   if (state.user && !state.user.hasPassword) {
     switchLoginMode("setPassword");
   }
@@ -394,6 +399,8 @@ function renderItem(item, options = {}) {
 }
 
 async function loadHome() {
+  const banner = $("welcomeBanner");
+  if (banner) banner.hidden = isVerifiedUser();
   $("homeState").textContent = "";
   const skeletonHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
   $("itemList").innerHTML = skeletonHTML + skeletonHTML + skeletonHTML;
