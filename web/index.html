@@ -88,113 +88,125 @@
             <span id="publishRulesText">应急耗材免费共享，适用于创可贴、碘伏棉签、口罩、消毒用品等低风险物品。发布后需经人工审核。</span>
           </div>
 
-          <label>物品类型</label>
-          <div class="segmented">
-            <button type="button" class="segment active" data-item-type="consumable">耗材</button>
-            <button type="button" class="segment" data-item-type="medicine">药品</button>
-            <button type="button" class="segment" data-item-type="tool">工具</button>
-          </div>
-          <p class="hint" id="typeHint">适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。</p>
+          <fieldset>
+            <legend>基本信息</legend>
 
-          <label for="titleInput">物品名称 * <span class="char-count" id="titleCount">0/30</span></label>
-          <input id="titleInput" required placeholder="例如：碘伏棉签 10 支" maxlength="30">
-          <span class="field-error" id="titleError"></span>
-
-          <div class="field-grid">
-            <div>
-              <label for="quantityInput">数量 *</label>
-              <input id="quantityInput" required type="number" min="1" value="1">
-              <span class="field-error" id="quantityError"></span>
+            <label>物品类型</label>
+            <div class="segmented">
+              <button type="button" class="segment active" data-item-type="consumable">耗材</button>
+              <button type="button" class="segment" data-item-type="medicine">药品</button>
+              <button type="button" class="segment" data-item-type="tool">工具</button>
             </div>
-            <div>
-              <label for="unitInput">单位 *</label>
-              <input id="unitInput" required value="件">
-            </div>
-          </div>
+            <p class="hint" id="typeHint">适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。</p>
 
-          <div id="medicineCategoryWrap" hidden>
-            <label for="categorySelect">药品笼统分类 *</label>
-            <select id="categorySelect">
-              <option>感冒药</option>
-              <option>退烧药</option>
-              <option>过敏药</option>
-              <option>肠胃药</option>
-              <option>其他非处方药</option>
-            </select>
-          </div>
+            <label for="titleInput">物品名称 * <span class="char-count" id="titleCount">0/30</span></label>
+            <input id="titleInput" required placeholder="例如：碘伏棉签 10 支" maxlength="30">
+            <span class="field-error" id="titleError"></span>
 
-          <div id="toolCategoryWrap" hidden>
-            <label for="toolCategorySelect">工具分类</label>
-            <select id="toolCategorySelect">
-              <option>常用工具</option>
-              <option>维修工具</option>
-              <option>手工工具</option>
-              <option>清洁工具</option>
-              <option>其他工具</option>
-            </select>
-          </div>
-
-          <label>选择图标（可选）</label>
-          <div class="icon-grid" id="iconGrid"></div>
-
-          <label class="checkbox-row">
-            <input id="useProfileLocationInput" type="checkbox" checked>
-            <span>使用账号对应楼栋及宿舍号</span>
-          </label>
-
-          <div id="publishLocationFields" hidden>
             <div class="field-grid">
               <div>
-                <label for="campusSelect">校区 *</label>
-                <select id="campusSelect" required></select>
+                <label for="quantityInput">数量 *</label>
+                <input id="quantityInput" required type="number" min="1" value="1">
+                <span class="field-error" id="quantityError"></span>
               </div>
               <div>
-                <label for="buildingSelect">楼栋 *</label>
-                <select id="buildingSelect" required></select>
+                <label for="unitInput">单位 *</label>
+                <input id="unitInput" required value="件">
               </div>
             </div>
 
-            <label for="roomSelect">宿舍号（选填，不公开展示）</label>
-            <select id="roomSelect">
-              <option value="">不填写宿舍号</option>
-            </select>
-          </div>
+            <div id="medicineCategoryWrap" hidden>
+              <label for="categorySelect">药品笼统分类 *</label>
+              <select id="categorySelect">
+                <option>感冒药</option>
+                <option>退烧药</option>
+                <option>过敏药</option>
+                <option>肠胃药</option>
+                <option>其他非处方药</option>
+              </select>
+            </div>
 
-          <div class="label-row">
-            <label>有效期 *</label>
-            <label class="inline-check" id="noExpiryWrap">
-              <input id="noExpiryInput" type="checkbox">
-              <span>长期有效 / 无保质期</span>
+            <div id="toolCategoryWrap" hidden>
+              <label for="toolCategorySelect">工具分类</label>
+              <select id="toolCategorySelect">
+                <option>常用工具</option>
+                <option>维修工具</option>
+                <option>手工工具</option>
+                <option>清洁工具</option>
+                <option>其他工具</option>
+              </select>
+            </div>
+
+            <label>选择图标（可选）</label>
+            <div class="icon-grid" id="iconGrid"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>物品详情</legend>
+
+            <label class="checkbox-row">
+              <input id="useProfileLocationInput" type="checkbox" checked>
+              <span>使用账号对应楼栋及宿舍号</span>
             </label>
-          </div>
-          <div id="dateRow">
-            <input type="date" id="expireDateInput">
-          </div>
 
-          <label for="descriptionInput">补充说明 <span class="char-count" id="descriptionCount">0/200</span></label>
-          <textarea id="descriptionInput" rows="4" placeholder="物品状况、领取时间、注意事项" maxlength="200"></textarea>
+            <div id="publishLocationFields" hidden>
+              <div class="field-grid">
+                <div>
+                  <label for="campusSelect">校区 *</label>
+                  <select id="campusSelect" required></select>
+                </div>
+                <div>
+                  <label for="buildingSelect">楼栋 *</label>
+                  <select id="buildingSelect" required></select>
+                </div>
+              </div>
 
-          <div class="field-grid">
-            <div>
-              <label for="wechatInput">微信</label>
-              <input id="wechatInput" placeholder="微信或 QQ 至少填一项">
-              <span class="field-error" id="wechatError"></span>
+              <label for="roomSelect">宿舍号（选填，不公开展示）</label>
+              <select id="roomSelect">
+                <option value="">不填写宿舍号</option>
+              </select>
             </div>
-            <div>
-              <label for="qqInput">QQ</label>
-              <input id="qqInput" placeholder="微信或 QQ 至少填一项">
-              <span class="field-error" id="qqError"></span>
+
+            <div class="label-row">
+              <label>有效期 *</label>
+              <label class="inline-check" id="noExpiryWrap">
+                <input id="noExpiryInput" type="checkbox">
+                <span>长期有效 / 无保质期</span>
+              </label>
             </div>
-          </div>
+            <div id="dateRow">
+              <input type="date" id="expireDateInput">
+            </div>
 
-          <label class="checkbox-row" id="disclaimerRow">
-            <input id="disclaimerInput" type="checkbox">
-            <span>我确认本次为免费共享，不含处方药、管制药品及任何形式的收费。</span>
-          </label>
-          <span class="field-error" id="disclaimerError"></span>
+            <label for="descriptionInput">补充说明 <span class="char-count" id="descriptionCount">0/200</span></label>
+            <textarea id="descriptionInput" rows="4" placeholder="物品状况、领取时间、注意事项" maxlength="200"></textarea>
+          </fieldset>
 
-          <button class="primary wide" type="submit">提交审核</button>
-          <div class="form-message" id="publishMessage"></div>
+          <fieldset>
+            <legend>联系方式与确认</legend>
+
+            <div class="field-grid">
+              <div>
+                <label for="wechatInput">微信</label>
+                <input id="wechatInput" placeholder="微信或 QQ 至少填一项">
+                <span class="field-error" id="wechatError"></span>
+              </div>
+              <div>
+                <label for="qqInput">QQ</label>
+                <input id="qqInput" placeholder="微信或 QQ 至少填一项">
+                <span class="field-error" id="qqError"></span>
+              </div>
+            </div>
+
+            <label class="checkbox-row" id="disclaimerRow">
+              <input id="disclaimerInput" type="checkbox">
+              <span>我确认本次为免费共享，不含处方药、管制药品及任何形式的收费。</span>
+            </label>
+            <span class="field-error" id="disclaimerError"></span>
+
+            <button class="primary wide" type="submit">提交审核</button>
+            <div class="form-message" id="publishMessage"></div>
+          </fieldset>
         </form>
       </section>
 

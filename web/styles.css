@@ -1426,7 +1426,24 @@ textarea:focus {
   margin-top: var(--space-lg) !important;
 }
 
+/* ===== Fieldset ===== */
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin: 0 0 var(--space-lg);
+}
+
+legend {
+  font-weight: var(--fw-heavy);
+  font-size: 15px;
+  color: var(--purple);
+  padding: 0 var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
 /* ===== Guest Publish ===== */
+
 .guest-publish-icon {
   font-family: "Font Awesome 7 Free";
   font-size: 52px;
@@ -1614,6 +1631,7 @@ dialog::backdrop {
 .mine-login-center {
   max-width: 520px;
   margin: 0 auto;
+  scroll-margin-top: 80px;
 }
 
 .mine-login-center h3 {
@@ -1969,6 +1987,14 @@ dialog::backdrop {
 
 [data-theme="dark"] .mine-login-center {
   background: var(--card);
+}
+
+[data-theme="dark"] fieldset {
+  border-color: #3a3a3a;
+}
+
+[data-theme="dark"] legend {
+  color: var(--purple);
 }
 
 [data-theme="dark"] .skeleton-icon,

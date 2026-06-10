@@ -1189,6 +1189,8 @@ async function listItems(req, res, viewer) {
   const category = (url.searchParams.get("category") || "").trim();
   const status = url.searchParams.get("status") || "online";
   const reqDebug = url.searchParams.get("debug") === "true";
+  const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get("limit")) || 50));
+  const offset = Math.max(0, parseInt(url.searchParams.get("offset")) || 0);
 
   await query("UPDATE items SET status = 'expired' WHERE status = 'online' AND no_expiry = false AND expire_date < CURRENT_DATE");
 
@@ -1221,9 +1223,15 @@ async function listItems(req, res, viewer) {
     params
   );
   const sortedRows = sortByProximity(rows, viewer);
+  const total = sortedRows.length;
+  const paged = sortedRows.slice(offset, offset + limit);
 
   json(res, 200, {
-    items: sortedRows.map(row => itemFromRow(row, viewer)),
+    items: paged.map(row => itemFromRow(row, viewer)),
+    total,
+    offset,
+    limit,
+    hasMore: offset + limit < total,
     viewer: {
       campus: viewer.campus,
       building: viewer.building
