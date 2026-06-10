@@ -407,18 +407,23 @@ button:focus-visible {
   min-width: 0;
 }
 
-/* Match button height to input height in form rows */
-.auth-row .small,
-.auth-row .primary.small,
-.auth-row .secondary.small {
-  min-height: 54px;
+/* Full-width controls in stacked auth rows */
+.auth-row > button {
+  flex: 1;
+  min-height: 50px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+
+.auth-row > input {
+  flex: 1;
 }
 
 /* ===== Email Combo ===== */
 .email-combo {
   display: flex;
   align-items: center;
-  width: 100%;
+  flex: 1;
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -674,9 +679,9 @@ textarea:focus {
 #claimsModal {
   border: none;
   border-radius: var(--radius-lg);
-  padding: 0;
-  max-width: 480px;
-  width: 90vw;
+  padding: 20px 24px;
+  max-width: 520px;
+  width: min(520px, calc(100vw - 24px));
   box-shadow: 0 20px 60px rgba(0,0,0,0.18);
 }
 
@@ -1450,6 +1455,7 @@ textarea:focus {
 /* ===== Dialog ===== */
 dialog {
   width: min(620px, calc(100% - 24px));
+  padding: 20px 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: var(--card);
@@ -1466,6 +1472,7 @@ dialog::backdrop {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
+  padding-bottom: 14px;
 }
 
 .dialog-head h3 {
@@ -2234,8 +2241,7 @@ dialog::backdrop {
     grid-template-columns: 1fr;
   }
 
-  .auth-row .small,
-  .auth-row .secondary {
+  .auth-row > button {
     width: 100%;
   }
 

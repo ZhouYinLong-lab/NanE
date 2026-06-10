@@ -220,11 +220,15 @@
                   <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
-                <button class="secondary small" id="sendEmailCodeButton">发送验证码</button>
               </div>
-              <div class="auth-row email-code-row">
+              <div class="auth-row">
+                <button class="secondary" id="sendEmailCodeButton">发送验证码</button>
+              </div>
+              <div class="auth-row">
                 <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
-                <button class="primary small" id="verifyEmailCodeButton">登录</button>
+              </div>
+              <div class="auth-row">
+                <button class="primary" id="verifyEmailCodeButton">登录</button>
               </div>
             </div>
             <div id="passwordLoginSection" hidden>
@@ -234,9 +238,11 @@
                   <span>@smail.nju.edu.cn</span>
                 </div>
               </div>
-              <div class="auth-row email-code-row">
+              <div class="auth-row">
                 <input id="passwordInput" type="password" autocomplete="current-password" placeholder="输入密码">
-                <button class="primary small" id="passwordLoginButton">登录</button>
+              </div>
+              <div class="auth-row">
+                <button class="primary" id="passwordLoginButton">登录</button>
               </div>
               <p class="hint forgot-row">
                 <button type="button" class="link-button" id="forgotPasswordButton">忘记密码？</button>
@@ -250,14 +256,18 @@
                   <input id="resetEmailInput" autocomplete="username" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
-                <button class="secondary small" id="sendResetCodeButton">发送验证码</button>
               </div>
-              <div class="auth-row email-code-row">
+              <div class="auth-row">
+                <button class="secondary" id="sendResetCodeButton">发送验证码</button>
+              </div>
+              <div class="auth-row">
                 <input id="resetCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位验证码">
               </div>
-              <div class="auth-row email-code-row">
+              <div class="auth-row">
                 <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
-                <button class="primary small" id="resetPasswordButton">重置密码</button>
+              </div>
+              <div class="auth-row">
+                <button class="primary" id="resetPasswordButton">重置密码</button>
               </div>
               <p class="hint forgot-row">
                 <button type="button" class="link-button" id="backFromForgotButton">← 返回登录</button>
@@ -268,7 +278,9 @@
               <p class="hint">设置密码后，下次可直接使用密码登录，无需等待验证码。</p>
               <div class="auth-row">
                 <input id="setPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
-                <button class="primary small" id="setPasswordButton">设置密码</button>
+              </div>
+              <div class="auth-row">
+                <button class="primary" id="setPasswordButton">设置密码</button>
               </div>
               <p class="hint forgot-row">
                 <button type="button" class="link-button" id="skipSetPasswordButton">暂不设置</button>
