@@ -15,7 +15,7 @@ const { proximityForItem, sortByProximity } = require("./proximity");
 const locations = require("../miniprogram/data/locations");
 
 const PORT = Number(process.env.PORT || 37878);
-const JWT_SECRET = process.env.JWT_SECRET || "nane-dev-secret";
+const JWT_SECRET = process.env.JWT_SECRET || (() => { console.warn("WARNING: JWT_SECRET not set, using dev fallback — do NOT use in production"); return "nane-dev-secret"; })();
 const NANNA_API_BASE = String(process.env.NANNA_API_BASE || "").replace(/\/+$/, "");
 const NANNA_APP_UID = process.env.NANNA_APP_UID || "";
 const NANNA_API_KEY = process.env.NANNA_API_KEY || "";
@@ -85,6 +85,18 @@ function defaultItemIcon(itemType) {
 function normalizeItemIcon(input, itemType) {
   const value = String(input || "").trim();
   return ALLOWED_ITEM_ICONS.has(value) ? value : defaultItemIcon(itemType);
+}
+
+// In-memory rate limiting for password login: email → {attempts, lockedUntil}
+const loginAttempts = new Map();
+function recordFailedLogin(key) {
+  const now = Date.now();
+  const rec = loginAttempts.get(key) || { attempts: 0, lockedUntil: 0 };
+  rec.attempts += 1;
+  if (rec.attempts >= 5) {
+    rec.lockedUntil = now + 15 * 60 * 1000;
+  }
+  loginAttempts.set(key, rec);
 }
 
 function randomNickname() {
@@ -197,7 +209,8 @@ function base64url(input) {
 
 function signToken(payload) {
   const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body = base64url(JSON.stringify({ ...payload, iat: Date.now() }));
+  const now = Math.floor(Date.now() / 1000);
+  const body = base64url(JSON.stringify({ ...payload, iat: now, exp: now + 60 * 60 * 24 * 30 }));
   const signature = crypto.createHmac("sha256", JWT_SECRET).update(`${header}.${body}`).digest("base64url");
   return `${header}.${body}.${signature}`;
 }
@@ -769,12 +782,24 @@ async function passwordLogin(req, res) {
     json(res, 400, { error: "VALIDATION_ERROR", message: "请输入密码" });
     return;
   }
+
+  // Rate limit: check failed attempts
+  const attemptKey = `pwd:${email}`;
+  const now = Date.now();
+  const record = loginAttempts.get(attemptKey);
+  if (record && record.lockedUntil > now) {
+    const waitMinutes = Math.ceil((record.lockedUntil - now) / 60000);
+    json(res, 429, { error: "LOGIN_RATE_LIMIT", message: `登录尝试次数过多，请 ${waitMinutes} 分钟后再试` });
+    return;
+  }
+
   const { rows } = await query(
     "SELECT * FROM users WHERE email = $1 AND is_verified = true",
     [email]
   );
   const user = rows[0];
   if (!user || !user.password_hash || !user.password_salt) {
+    recordFailedLogin(attemptKey);
     json(res, 401, { error: "INVALID_LOGIN", message: "账号或密码错误" });
     return;
   }
@@ -782,9 +807,13 @@ async function passwordLogin(req, res) {
   const expectedBuffer = Buffer.from(expectedHash, "hex");
   const actualBuffer = Buffer.from(user.password_hash, "hex");
   if (expectedBuffer.length !== actualBuffer.length || !crypto.timingSafeEqual(expectedBuffer, actualBuffer)) {
+    recordFailedLogin(attemptKey);
     json(res, 401, { error: "INVALID_LOGIN", message: "账号或密码错误" });
     return;
   }
+
+  // Successful login clears failed attempts
+  loginAttempts.delete(attemptKey);
   if (!user.agreement_version || user.agreement_version !== AGREEMENT_VERSION) {
     await query(
       "UPDATE users SET agreement_version = $1, agreement_accepted_at = now() WHERE id = $2",
@@ -1445,24 +1474,30 @@ async function reviewClaim(req, res, viewer, claimId, action) {
   }
 
   const claimedQuantity = Math.min(Number(claim.quantity), Number(claim.item_quantity));
-  const remainingQuantity = Math.max(Number(claim.item_quantity) - claimedQuantity, 0);
-  const nextStatus = remainingQuantity === 0 ? "claimed" : "online";
+  const nextStatus = claimedQuantity >= Number(claim.item_quantity) ? "claimed" : "online";
   const reviewed = await query(
     "UPDATE claim_requests SET status = 'confirmed', reviewed_at = now() WHERE id = $1 RETURNING *",
     [claimId]
   );
   const item = await query(
     `UPDATE items
-     SET quantity = $1, status = $2, reviewed_at = CASE WHEN $2 = 'claimed' THEN now() ELSE reviewed_at END
-     WHERE id = $3
+     SET quantity = GREATEST(quantity - $1, 0),
+         status = CASE WHEN quantity - $1 <= 0 THEN 'claimed' ELSE 'online' END,
+         reviewed_at = CASE WHEN quantity - $1 <= 0 THEN now() ELSE reviewed_at END
+     WHERE id = $2 AND quantity >= $1
      RETURNING *`,
-    [remainingQuantity, nextStatus, claim.item_id]
+    [claimedQuantity, claim.item_id]
   );
+  if (!item.rows[0]) {
+    json(res, 409, { error: "INSUFFICIENT_QUANTITY", message: "物品数量不足，已被其他人领取" });
+    return;
+  }
 
+  const updatedItem = item.rows[0];
   json(res, 200, {
     claimRequest: claimFromRow(reviewed.rows[0]),
-    item: itemFromRow(item.rows[0], viewer, { includeRoom: true }),
-    message: remainingQuantity === 0 ? "已确认领取，物品已自动下架" : `已确认领取，剩余 ${remainingQuantity}${item.rows[0].unit}`
+    item: itemFromRow(updatedItem, viewer, { includeRoom: true }),
+    message: updatedItem.status === "claimed" ? "已确认领取，物品已自动下架" : `已确认领取，剩余 ${updatedItem.quantity}${updatedItem.unit}`
   });
 }
 
@@ -2131,7 +2166,7 @@ async function handle(req, res) {
 const server = http.createServer((req, res) => {
   handle(req, res).catch(error => {
     console.error(error);
-    json(res, 500, { error: "SERVER_ERROR", message: error.message });
+    json(res, 500, { error: "SERVER_ERROR", message: "服务器内部错误，请稍后重试" });
   });
 });
 
