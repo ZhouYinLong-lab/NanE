@@ -718,6 +718,7 @@ async function openDetail(id) {
         const url = new URL(window.location.href);
         url.search = new URLSearchParams({ item: id }).toString();
         navigator.clipboard.writeText(url.toString()).then(() => {
+          $("detailDialog").close();
           showToast("链接已复制，发送给同学即可快速查看", "success");
         }).catch(() => {
           showToast("复制失败，请手动复制地址栏链接", "error");
@@ -895,6 +896,16 @@ async function viewContact() {
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
       <div id="claimResult"></div>
     `;
+    const btn = $("contactButton");
+    if (btn) {
+      if (data.remaining > 0) {
+        btn.innerHTML = `查看联系方式（剩 <span class="contact-count">${escapeHtml(data.remaining)}</span> 次/日）`;
+        btn.disabled = false;
+      } else {
+        btn.textContent = "今日次数已用完";
+        btn.disabled = true;
+      }
+    }
     loadProfile();
   } catch (error) {
     $("contactResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "查看失败"))}</div>`;
@@ -1819,10 +1830,10 @@ function bindEvents() {
   });
   $("closeDetailButton").addEventListener("click", () => animateCloseDialog($("detailDialog")));
   $("detailDialog").addEventListener("click", event => {
-    if (event.target.id === "contactButton") viewContact();
-    if (event.target.id === "claimButton") requestClaim();
-    if (event.target.id === "editItemButton") startEditItem();
-    if (event.target.id === "takeDownButton") takeDownMyItem();
+    if (event.target.closest("#contactButton")) viewContact();
+    if (event.target.closest("#claimButton")) requestClaim();
+    if (event.target.closest("#editItemButton")) startEditItem();
+    if (event.target.closest("#takeDownButton")) takeDownMyItem();
     const claimBtn = event.target.closest("[data-claim-action]");
     if (claimBtn) {
       event.stopPropagation();
