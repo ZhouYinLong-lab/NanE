@@ -78,7 +78,7 @@
         <form class="card form-card" id="publishForm">
           <div class="rules-card">
             <strong>发布须知</strong>
-            <span>本平台仅支持低风险应急耗材与非处方药品的免费共享。药品按大类选择即可，无需填写具体药名；处方药与管制药品禁止发布。</span>
+            <span id="publishRulesText">应急耗材免费共享，适用于创可贴、碘伏棉签、口罩、消毒用品等低风险物品。发布后需经人工审核。</span>
           </div>
 
           <label>物品类型</label>
@@ -165,7 +165,7 @@
           </div>
 
           <label for="descriptionInput">补充说明 <span class="char-count" id="descriptionCount">0/200</span></label>
-          <textarea id="descriptionInput" rows="4" placeholder="包装状态、领取时间、注意事项" maxlength="200"></textarea>
+          <textarea id="descriptionInput" rows="4" placeholder="物品状况、领取时间、注意事项" maxlength="200"></textarea>
 
           <div class="field-grid">
             <div>
@@ -215,15 +215,15 @@
               <button class="login-tab" data-login-mode="password">密码登录</button>
             </div>
             <div id="codeLoginSection">
-              <div class="auth-row" style="margin-bottom:8px">
+              <div class="auth-row">
                 <div class="email-combo">
                   <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
+                <button class="secondary small" id="sendEmailCodeButton">发送验证码</button>
               </div>
               <div class="auth-row email-code-row">
                 <input id="emailCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位邮箱验证码">
-                <button class="primary small" id="sendEmailCodeButton">发送验证码</button>
                 <button class="primary small" id="verifyEmailCodeButton">登录</button>
               </div>
             </div>
@@ -250,13 +250,13 @@
                   <input id="resetEmailInput" autocomplete="username" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
-                <button class="primary small" id="sendResetCodeButton">发送验证码</button>
+                <button class="secondary small" id="sendResetCodeButton">发送验证码</button>
               </div>
               <div class="auth-row email-code-row">
                 <input id="resetCodeInput" inputmode="numeric" maxlength="6" placeholder="输入 6 位验证码">
               </div>
               <div class="auth-row email-code-row">
-                <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="输入新密码（至少8位，含字母和数字）">
+                <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
                 <button class="primary small" id="resetPasswordButton">重置密码</button>
               </div>
               <p class="hint forgot-row">
@@ -322,9 +322,23 @@
           </div>
           <div class="card form-card">
             <div id="settingsLoggedIn">
-              <button class="primary wide" id="settingsEditProfileButton">修改资料</button>
-              <button class="primary wide" id="settingsChangePasswordButton" style="margin-top:10px">修改密码</button>
-              <button class="secondary wide" id="settingsLogoutButton" style="margin-top:10px">登出</button>
+              <div class="settings-row">
+                <div>
+                  <strong>账号资料</strong>
+                  <p class="hint">修改昵称、校区、楼栋、联系方式</p>
+                </div>
+                <button class="secondary small" id="settingsEditProfileButton">修改</button>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <strong>登录密码</strong>
+                  <p class="hint">设置或修改登录密码</p>
+                </div>
+                <button class="secondary small" id="settingsChangePasswordButton">修改</button>
+              </div>
+              <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line)">
+                <button class="danger wide" id="settingsLogoutButton">登出</button>
+              </div>
               <div id="changePasswordForm" hidden style="margin-top:16px">
                 <h4>修改密码</h4>
                 <input id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="当前密码" style="margin-bottom:8px">

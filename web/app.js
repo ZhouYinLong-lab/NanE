@@ -702,7 +702,7 @@ async function openDetail(id) {
       ${escapeHtml(data.item.itemTypeText)} · ${escapeHtml(data.item.category)} · 剩余 ${escapeHtml(data.item.quantity)}${escapeHtml(data.item.unit)}<br>
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
-      <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行确认包装完好与有效期，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
+      <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行检查物品状况与适用性，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
       <button class="primary wide" id="contactButton" ${(state.user?.dailyContactRemaining ?? 0) <= 0 && isVerifiedUser() && profileComplete() ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.user?.dailyContactRemaining ?? 5) > 0 ? `查看联系方式（今日剩余 <span class="contact-count">${state.user?.dailyContactRemaining ?? 5}</span> 次）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
     `;
@@ -787,10 +787,13 @@ function startEditItem() {
     if (toolCat) toolCat.value = item.category || "常用工具";
   }
   if (item.itemType === "tool") {
+    $("publishRulesText").textContent = "常用工具免费借用或赠送。请注明借用时长与归还方式。禁止危险工具及任何收费转让。发布后需经人工审核。";
     $("typeHint").textContent = "适用于偶尔需要但不常备的小工具，如锤子、镊子、砂纸、热熔胶枪等。建议注明是借用还是赠送。";
   } else if (item.itemType === "medicine") {
+    $("publishRulesText").textContent = "仅限非处方常见药品，按大类笼统选择。禁止处方药、管制药品、拆封不明药品及任何收费转让。药品须填写有效期。发布后需经人工审核。";
     $("typeHint").textContent = "药品仅限非处方常见药品，按大类选择即可。禁止处方药、管制药品及任何收费转让。";
   } else {
+    $("publishRulesText").textContent = "应急耗材免费共享，适用于创可贴、碘伏棉签、口罩、消毒用品等低风险物品。发布后需经人工审核。";
     $("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
   }
   if (item.noExpiry) {
@@ -976,12 +979,14 @@ function setPublishType(itemType) {
   $("toolCategoryWrap").hidden = itemType !== "tool";
   const today = new Date();
   if (itemType === "tool") {
+    $("publishRulesText").textContent = "常用工具免费借用或赠送。请注明借用时长与归还方式。禁止危险工具及任何收费转让。发布后需经人工审核。";
     $("typeHint").textContent = "适用于偶尔需要但不常备的小工具，如锤子、镊子、砂纸、热熔胶枪等。建议注明是借用还是赠送。";
     $("titleInput").placeholder = "例如：热熔胶枪借用";
     $("noExpiryWrap").hidden = false;
     $("noExpiryInput").checked = true;
     setDateRowDisabled(true);
   } else if (itemType === "medicine") {
+    $("publishRulesText").textContent = "仅限非处方常见药品，按大类笼统选择。禁止处方药、管制药品、拆封不明药品及任何收费转让。药品须填写有效期。发布后需经人工审核。";
     $("typeHint").textContent = "药品仅限非处方常见药品，按大类选择即可。禁止处方药、管制药品及任何收费转让。";
     $("titleInput").placeholder = "例如：未拆封感冒药一盒";
     $("noExpiryWrap").hidden = true;
@@ -991,6 +996,7 @@ function setPublishType(itemType) {
     d.setFullYear(d.getFullYear() + 1);
     setExpireDate(d.toISOString().slice(0, 10));
   } else {
+    $("publishRulesText").textContent = "应急耗材免费共享，适用于创可贴、碘伏棉签、口罩、消毒用品等低风险物品。发布后需经人工审核。";
     $("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
     $("titleInput").placeholder = "例如：碘伏棉签 10 支";
     $("noExpiryWrap").hidden = false;
@@ -1012,9 +1018,9 @@ function renderSubChips(itemType) {
   const sub = $("subFilterChips");
   if (!sub) return;
   const categories = {
-    consumable: ["应急耗材", "外伤处理", "消毒护理", "防护用品", "退烧降温"],
+    consumable: ["应急耗材", "退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"],
     medicine: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"],
-    tool: ["常用工具", "维修工具", "清洁工具", "手工工具"]
+    tool: ["常用工具", "维修工具", "手工工具", "清洁工具", "其他工具"]
   };
   const list = categories[itemType] || [];
   sub.innerHTML = list.map(cat =>
