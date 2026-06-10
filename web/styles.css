@@ -126,18 +126,13 @@
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes toastOut {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(24px); }
-}
-
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== Skip Link ===== */
@@ -386,15 +381,6 @@ button:focus-visible {
 .tab.active {
   background: var(--purple);
   color: var(--on-accent);
-}
-
-/* ===== Views ===== */
-.view {
-  display: none;
-}
-
-.view.active {
-  display: block;
 }
 
 /* ===== Search & Auth Rows ===== */
@@ -717,7 +703,7 @@ textarea:focus {
   height: 14px;
   border-radius: 4px;
   background: var(--line);
-  animation: shimmer 1.2s ease-in-out infinite;
+  animation: textShimmer 1.2s ease-in-out infinite;
   margin: 4px 0;
 }
 
@@ -725,7 +711,7 @@ textarea:focus {
 .skeleton-text.w-80 { width: 80%; }
 .skeleton-text.w-40 { width: 40%; }
 
-@keyframes shimmer {
+@keyframes textShimmer {
   0% { opacity: 0.5; }
   50% { opacity: 1; }
   100% { opacity: 0.5; }
@@ -1429,10 +1415,6 @@ textarea:focus {
   font-weight: var(--fw-heavy);
 }
 
-.profile-room-spacer {
-  margin-bottom: var(--space-xl);
-}
-
 /* ===== Date Row ===== */
 #dateRow {
   margin-bottom: var(--space-sm);
@@ -1440,6 +1422,10 @@ textarea:focus {
 
 #expireDateInput {
   max-width: 260px;
+}
+
+#saveProfileButton {
+  margin-top: var(--space-xl);
 }
 
 /* ===== Avatar ===== */
@@ -2074,8 +2060,7 @@ dialog::backdrop {
   }
 
   #dateRow {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: block;
   }
 
   .claim-row {
