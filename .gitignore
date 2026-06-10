@@ -7,3 +7,18 @@ coverage/
 miniprogram/miniprogram_npm/
 server/data/*.local.json
 project.private.config.json
+
+# Development tooling
+.playwright-mcp/
+.claude/iteration-log.md
+.claude/settings.local.json
+
+# Process artifacts
+docs/cc-task-packages-*.md
+*.docx
+
+# Screenshot dumps
+iteration-*.png
+round*.png
+mine-tab-before.png
+screenshots/
