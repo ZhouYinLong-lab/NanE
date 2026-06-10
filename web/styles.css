@@ -79,10 +79,12 @@
 
 .toast-error {
   background: var(--danger);
+  color: #fff;
 }
 
 .toast-success {
-  background: var(--success-text);
+  background: #3d7a33;
+  color: #fff;
 }
 
 @keyframes toastIn {
@@ -215,6 +217,25 @@ button {
 .danger {
   background: var(--danger);
   color: var(--on-accent);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.danger:focus-visible,
+.icon-button:focus-visible,
+.tab:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--purple-glow);
+  outline-offset: 2px;
+}
+
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled,
+.small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* ===== Button Sizes ===== */
