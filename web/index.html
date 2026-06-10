@@ -34,7 +34,7 @@
     <main id="main-content">
       <section class="view active" id="view-home" role="region" aria-label="发现物品">
         <div class="search-row">
-          <input id="keywordInput" type="search" placeholder="搜索物品">
+          <input id="keywordInput" type="search" placeholder="搜索物品" aria-label="搜索物品">
           <button class="primary small" id="searchButton">搜索</button>
         </div>
         <div class="chips" id="filterChips">
@@ -261,7 +261,7 @@
               <p class="hint">输入邮箱前缀，验证码将发送到你的南大学生邮箱。</p>
               <div class="auth-row">
                 <div class="email-combo">
-                  <input id="resetEmailInput" placeholder="邮箱前缀">
+                  <input id="resetEmailInput" autocomplete="username" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
                 <button class="primary small" id="sendResetCodeButton">发送验证码</button>

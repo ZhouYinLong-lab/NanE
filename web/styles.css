@@ -1463,6 +1463,14 @@ dialog::backdrop {
   color: var(--purple);
 }
 
+[data-theme="dark"] .form-message {
+  color: #c97dc9;
+}
+
+[data-theme="dark"] .claim-title {
+  color: #c97dc9;
+}
+
 [data-theme="dark"] .claim-panel {
   background: rgba(42, 42, 42, 0.82);
 }
@@ -1473,10 +1481,20 @@ dialog::backdrop {
 
 [data-theme="dark"] .rules-card {
   background: var(--purple-soft);
+  color: #d4a0d4;
 }
 
 [data-theme="dark"] .contact-box {
   background: var(--purple-soft);
+  color: #d4a0d4;
+}
+
+[data-theme="dark"] .link-button {
+  color: #c97dc9;
+}
+
+[data-theme="dark"] .claim-banner-head h3 {
+  color: #c97dc9;
 }
 
 [data-theme="dark"] .icon-option {
