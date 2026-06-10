@@ -152,10 +152,8 @@ function syncAgreementUI() {
   const currentVer = state.agreementVersion || AGREEMENT_VERSION_FALLBACK;
   if (storedVer === currentVer) {
     row.hidden = true;
-    input.checked = false;
   } else {
     row.hidden = false;
-    input.checked = false;
   }
 }
 
