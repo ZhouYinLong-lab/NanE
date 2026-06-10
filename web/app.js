@@ -708,7 +708,7 @@ async function openDetail(id) {
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
       <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行检查物品状况与适用性，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
-      <button class="primary wide" id="contactButton" ${(state.user?.dailyContactRemaining ?? 0) <= 0 && isVerifiedUser() && profileComplete() ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.user?.dailyContactRemaining ?? 5) > 0 ? `查看联系方式（剩 <span class="contact-count">${state.user?.dailyContactRemaining ?? 5}</span> 次/日）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
+      <button class="primary wide" id="contactButton" ${Number(state.user?.dailyContactRemaining) === 0 && isVerifiedUser() && profileComplete() ? "disabled" : ""}>${isVerifiedUser() && profileComplete() ? ((state.user?.dailyContactRemaining ?? 5) > 0 ? `查看联系方式（剩 <span class="contact-count">${state.user?.dailyContactRemaining ?? 5}</span> 次/日）` : "今日次数已用完") : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
       <button class="secondary wide" id="shareItemButton" style="margin-top:8px">复制物品链接分享给同学</button>
     `;
