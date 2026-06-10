@@ -407,6 +407,13 @@ button:focus-visible {
   min-width: 0;
 }
 
+/* Match button height to input height in form rows */
+.auth-row .small,
+.auth-row .primary.small,
+.auth-row .secondary.small {
+  min-height: 54px;
+}
+
 /* ===== Email Combo ===== */
 .email-combo {
   display: flex;
@@ -2230,7 +2237,6 @@ dialog::backdrop {
   .auth-row .small,
   .auth-row .secondary {
     width: 100%;
-    min-height: 46px;
   }
 
   .email-combo span {
