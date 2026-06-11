@@ -74,8 +74,12 @@ const state = {
   profileCampusIndex: 0,
   profileBuildingIndex: 0,
   agreementVersion: AGREEMENT_VERSION_FALLBACK,
-  pendingAction: null
+  pendingAction: null,
+  homeOffset: 0,
+  homeHasMore: false
 };
+
+const HOME_PAGE_SIZE = 20;
 
 function $(id) {
   return document.getElementById(id);
@@ -402,11 +406,17 @@ async function loadHome() {
   const banner = $("welcomeBanner");
   if (banner) banner.hidden = isVerifiedUser();
   $("homeState").textContent = "";
+  const moreBtn = $("homeLoadMore");
+  if (moreBtn) moreBtn.hidden = true;
+  state.homeOffset = 0;
+  state.homeHasMore = false;
   const skeletonHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
   $("itemList").innerHTML = skeletonHTML + skeletonHTML + skeletonHTML;
   try {
     const keyword = $("keywordInput").value.trim();
     const params = new URLSearchParams();
+    params.set("limit", HOME_PAGE_SIZE);
+    params.set("offset", "0");
     if (keyword) params.set("keyword", keyword);
     if (DEBUG_MODE) params.set("debug", "true");
 
@@ -458,7 +468,10 @@ async function loadHome() {
       });
     }
 
-    $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻${items.length ? ` · ${items.length} 件` : ""}`;
+    state.homeHasMore = data.hasMore;
+    state.homeOffset = items.length;
+
+    $("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻${data.total ? ` · 共 ${data.total} 件` : ""}`;
     if (!items.length) {
       $("homeState").innerHTML = emptyStateHTML(keyword ? "search" : "home");
     } else {
@@ -468,9 +481,52 @@ async function loadHome() {
     list.innerHTML = items.map(item => renderItem(item)).join("");
     list.classList.add("list-dirty");
     list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
+    updateLoadMoreButton();
   } catch (error) {
     $("viewerLabel").textContent = "API 未连接";
     $("homeState").innerHTML = emptyStateHTML("error", errmsg(error, "网络连接失败"));
+  }
+}
+
+async function loadMoreHome() {
+  const btn = $("homeLoadMore");
+  if (!btn) return;
+  btn.classList.add("is-loading");
+  btn.textContent = "加载中...";
+  btn.disabled = true;
+  try {
+    const keyword = $("keywordInput").value.trim();
+    const params = new URLSearchParams();
+    params.set("limit", HOME_PAGE_SIZE);
+    params.set("offset", state.homeOffset);
+    if (keyword) params.set("keyword", keyword);
+    if (DEBUG_MODE) params.set("debug", "true");
+
+    const data = await api(`/items${params.toString() ? `?${params}` : ""}`);
+    state.homeHasMore = data.hasMore;
+    state.homeOffset += data.items.length;
+
+    const list = $("itemList");
+    list.insertAdjacentHTML("beforeend", data.items.map(item => renderItem(item)).join(""));
+    list.classList.add("list-dirty");
+    list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
+    updateLoadMoreButton();
+  } catch (error) {
+    showToast("加载失败，请稍后重试", "error");
+  } finally {
+    btn.classList.remove("is-loading");
+    btn.disabled = false;
+  }
+}
+
+function updateLoadMoreButton() {
+  const btn = $("homeLoadMore");
+  if (!btn) return;
+  if (state.homeHasMore) {
+    btn.hidden = false;
+    btn.textContent = "加载更多";
+  } else {
+    btn.hidden = true;
   }
 }
 
@@ -1751,6 +1807,7 @@ function bindEvents() {
 
   $("refreshButton").addEventListener("click", () => Promise.all([loadHome(), loadProfile()]));
   $("searchButton").addEventListener("click", loadHome);
+  $("homeLoadMore").addEventListener("click", loadMoreHome);
   let searchDebounce;
   $("keywordInput").addEventListener("input", () => {
     clearTimeout(searchDebounce);
