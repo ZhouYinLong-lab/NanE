@@ -17,8 +17,11 @@ project.private.config.json
 docs/cc-task-packages-*.md
 *.docx
 
-# Screenshot dumps
-iteration-*.png
-round*.png
-mine-tab-before.png
+# Screenshot dumps and debug artifacts
+*.png
+!assets/brand/*.png
 screenshots/
+*-snap.txt
+dialog-open.txt
+snap-*.txt
+*.local.json
