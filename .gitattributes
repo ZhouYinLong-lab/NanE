@@ -1,0 +1,10 @@
+# 统一使用 LF，防止 CRLF 污染 diff
+* text=auto
+*.js   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.sql  text eol=lf
+*.wxss text eol=lf
+*.wxml text eol=lf

@@ -12,6 +12,16 @@ project.private.config.json
 .playwright-mcp/
 .claude/iteration-log.md
 .claude/settings.local.json
+.claude/ralph-loop.local.md
+
+# Local debug snapshots
+*-snap.txt
+snap-*.txt
+dialog-open.txt
+login-check.json
+
+# Desktop build artifacts
+desktop/build/*.cer
 
 # Process artifacts
 docs/cc-task-packages-*.md
