@@ -910,7 +910,8 @@ function startEditItem() {
 async function takeDownMyItem() {
   const item = state.selectedDetail;
   if (!item) return;
-  if (!confirm("确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。")) return;
+  const ok = await showConfirmDialog("确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。");
+  if (!ok) return;
   try {
     const data = await api(`/me/items/${encodeURIComponent(item.id)}/delete`, { method: "POST" });
     $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "发布记录已删除。")}</div>`;
@@ -922,7 +923,8 @@ async function takeDownMyItem() {
 }
 
 async function handleListDelete(itemId, button) {
-  if (!confirm("确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。")) return;
+  const ok = await showConfirmDialog("确定要删除这条发布记录吗？上架中或审核中的物品会同时下架。");
+  if (!ok) return;
   button.disabled = true;
   button.textContent = "删除中...";
   try {
@@ -1153,6 +1155,26 @@ function animateCloseDialog(dialog) {
     dialog.classList.remove("is-closing");
     dialog.close();
   }, { once: true });
+}
+
+function showConfirmDialog(message, confirmText = "确定", cancelText = "取消") {
+  return new Promise(resolve => {
+    const d = document.createElement("dialog");
+    d.className = "confirm-dialog";
+    d.innerHTML = `<div class="confirm-dialog-content">
+      <p style="margin:0 0 18px;line-height:1.6">${escapeHtml(message)}</p>
+      <div class="confirm-actions">
+        <button class="primary wide" id="confirmYesBtn" type="button">${escapeHtml(confirmText)}</button>
+        <button class="secondary wide" id="confirmNoBtn" type="button">${escapeHtml(cancelText)}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(d);
+    d.showModal();
+    d.querySelector("#confirmYesBtn").addEventListener("click", () => { d.close(); d.remove(); resolve(true); });
+    d.querySelector("#confirmNoBtn").addEventListener("click", () => { d.close(); d.remove(); resolve(false); });
+    d.addEventListener("click", e => { if (e.target === d) { d.close(); d.remove(); resolve(false); } });
+    d.addEventListener("cancel", e => { e.preventDefault(); d.close(); d.remove(); resolve(false); });
+  });
 }
 
 function clearFieldErrors() {
@@ -2062,8 +2084,9 @@ function bindEvents() {
     });
   });
 
-  $("settingsLogoutButton").addEventListener("click", () => {
-    if (confirm("确定要登出吗？")) logout();
+  $("settingsLogoutButton").addEventListener("click", async () => {
+    const ok = await showConfirmDialog("确定要登出吗？");
+    if (ok) logout();
   });
   // Post-publish confirmation buttons
   const viewMyBtn = $("viewMyPublishBtn");
