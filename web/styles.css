@@ -1779,7 +1779,7 @@ dialog::backdrop {
   position: relative;
   display: inline-block;
   width: 52px;
-  height: 28px;
+  height: 32px;
   flex-shrink: 0;
 }
 
@@ -1802,8 +1802,8 @@ dialog::backdrop {
 .toggle-slider::before {
   content: "";
   position: absolute;
-  height: 22px;
-  width: 22px;
+  height: 26px;
+  width: 26px;
   left: 3px;
   bottom: 3px;
   background: #fff;
@@ -1816,7 +1816,7 @@ dialog::backdrop {
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
-  transform: translateX(24px);
+  transform: translateX(20px);
 }
 
 /* ===== Dark Mode ===== */
