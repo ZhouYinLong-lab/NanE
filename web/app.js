@@ -773,12 +773,28 @@ async function openDetail(id) {
       shareBtn.addEventListener("click", () => {
         const url = new URL(window.location.href);
         url.search = new URLSearchParams({ item: id }).toString();
-        navigator.clipboard.writeText(url.toString()).then(() => {
-          $("detailDialog").close();
-          showToast("链接已复制，发送给同学即可快速查看", "success");
-        }).catch(() => {
-          showToast("复制失败，请手动复制地址栏链接", "error");
-        });
+        const urlStr = url.toString();
+        const fallbackCopy = (text) => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); return true; } catch(e) { return false; }
+          finally { document.body.removeChild(ta); }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(urlStr).then(() => {
+            $("detailDialog").close();
+            showToast("链接已复制，发送给同学即可快速查看", "success");
+          }).catch(() => {
+            if (!fallbackCopy(urlStr)) showToast("复制失败，请手动复制地址栏链接", "error");
+            else { $("detailDialog").close(); showToast("链接已复制", "success"); }
+          });
+        } else {
+          if (fallbackCopy(urlStr)) { $("detailDialog").close(); showToast("链接已复制", "success"); }
+          else showToast("复制失败，请手动复制地址栏链接", "error");
+        }
       });
     }
     $("detailDialog").showModal();
