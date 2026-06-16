@@ -3,6 +3,7 @@
   font-family: "Font Awesome 7 Free";
   src: url("/assets/fontawesome/fa-solid-900.woff2") format("woff2");
   font-weight: 900;
+  font-display: swap;
 }
 
 /* ===== Design Tokens ===== */
