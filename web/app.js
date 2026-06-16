@@ -1752,7 +1752,12 @@ function applyDarkMode(enabled) {
 
 function initDarkMode() {
   const saved = localStorage.getItem("nane_dark_mode");
-  const enabled = saved === "1";
+  let enabled;
+  if (saved !== null) {
+    enabled = saved === "1";
+  } else {
+    enabled = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
   if ($("darkModeToggle")) $("darkModeToggle").checked = enabled;
   applyDarkMode(enabled);
 }
