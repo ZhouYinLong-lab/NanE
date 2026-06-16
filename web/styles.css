@@ -2240,9 +2240,9 @@ dialog::backdrop {
   }
 
   /* D3: Dialog fullscreen */
-  #detailDialog,
-  #claimsModal,
-  #agreementDialog {
+  #detailDialog[open],
+  #claimsModal[open],
+  #agreementDialog[open] {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -2264,7 +2264,7 @@ dialog::backdrop {
   }
 
   /* D5: Detail dialog sticky contact button */
-  #detailDialog {
+  #detailDialog[open] {
     display: flex;
     flex-direction: column;
   }
@@ -2294,7 +2294,7 @@ dialog::backdrop {
   }
 
   /* Claims modal sticky actions */
-  #claimsModal {
+  #claimsModal[open] {
     display: flex;
     flex-direction: column;
   }
@@ -2313,7 +2313,7 @@ dialog::backdrop {
   }
 
   /* Agreement dialog scroll */
-  #agreementDialog {
+  #agreementDialog[open] {
     display: flex;
     flex-direction: column;
   }
