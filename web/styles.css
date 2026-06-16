@@ -2267,6 +2267,7 @@ dialog::backdrop {
 
   #detailBody {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 0 var(--space-lg) 16px;
   }
@@ -2295,6 +2296,7 @@ dialog::backdrop {
 
   #claimsModalBody {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 0 var(--space-lg) 16px;
   }
@@ -2312,6 +2314,7 @@ dialog::backdrop {
 
   .agreement-body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 
