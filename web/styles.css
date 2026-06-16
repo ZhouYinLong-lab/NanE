@@ -99,8 +99,10 @@
 
 .toast-close {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  min-width: 44px;
+  min-height: 44px;
+  width: auto;
+  height: auto;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -109,8 +111,9 @@
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-top: 0px;
   font-weight: var(--fw-heavy);
 }
