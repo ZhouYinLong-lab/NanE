@@ -1496,9 +1496,8 @@ function switchLoginMode(mode) {
 
   if (target) {
     target.hidden = false;
-    requestAnimationFrame(() => {
-      target.classList.add("login-section-in");
-    });
+    target.offsetHeight; // force reflow to avoid flicker
+    target.classList.add("login-section-in");
   }
 
   $("authMessage").textContent = "";
