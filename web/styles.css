@@ -2274,6 +2274,7 @@ dialog::backdrop {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0 var(--space-lg) 16px;
   }
 
@@ -2303,6 +2304,7 @@ dialog::backdrop {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0 var(--space-lg) 16px;
   }
 
@@ -2321,6 +2323,7 @@ dialog::backdrop {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   /* Confirm dialog scroll */
