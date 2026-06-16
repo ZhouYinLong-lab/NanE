@@ -612,7 +612,8 @@ textarea:focus {
 /* ===== Link Button ===== */
 .link-button {
   border: 0;
-  padding: 0;
+  padding: 10px 4px;
+  min-height: 44px;
   background: transparent;
   color: var(--purple);
   font-weight: var(--fw-black);
