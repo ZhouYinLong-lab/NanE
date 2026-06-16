@@ -237,7 +237,7 @@
             <div id="codeLoginSection">
               <div class="auth-row">
                 <div class="email-combo">
-                  <input id="emailLoginInput" autocomplete="username" placeholder="邮箱前缀">
+                  <input id="emailLoginInput" autocomplete="username" inputmode="email" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
               </div>
@@ -254,7 +254,7 @@
             <div id="passwordLoginSection" hidden>
               <div class="auth-row">
                 <div class="email-combo">
-                  <input id="passwordEmailInput" autocomplete="username" placeholder="邮箱前缀">
+                  <input id="passwordEmailInput" autocomplete="username" inputmode="email" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
               </div>
@@ -273,7 +273,7 @@
               <p class="hint">输入邮箱前缀，验证码将发送到你的南大学生邮箱。</p>
               <div class="auth-row">
                 <div class="email-combo">
-                  <input id="resetEmailInput" autocomplete="username" placeholder="邮箱前缀">
+                  <input id="resetEmailInput" autocomplete="username" inputmode="email" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
               </div>
@@ -311,7 +311,7 @@
             <summary>其他登录方式</summary>
             <p class="hint">输入邮箱或学号后，南哪小帮手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
             <div class="field-grid">
-              <input id="authEmail" placeholder="邮箱（可选）">
+              <input id="authEmail" type="email" inputmode="email" placeholder="邮箱（可选）">
               <input id="authStudentId" placeholder="学号（可选）">
             </div>
             <div class="auth-row">
