@@ -56,7 +56,7 @@
 /* ===== Toast ===== */
 #toastContainer {
   position: fixed;
-  top: 16px;
+  top: max(16px, env(safe-area-inset-top, 0px));
   right: 16px;
   z-index: 1000;
   display: flex;
