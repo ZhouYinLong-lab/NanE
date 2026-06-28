@@ -52,7 +52,7 @@ async function adminItems(req, res) {
 }
 
 async function reviewItem(req, res, itemId, action) {
-  const admin = await requireAdmin(req, res);
+  const admin = await requireAdmin(req, res, "moderator");
   if (!admin) {
     return;
   }
@@ -117,6 +117,7 @@ async function batchReviewItems(req, res) {
     json(res, 400, { error: "VALIDATION_ERROR", message: "无效的操作" });
     return;
   }
+  const logAction = action === "take-down" ? "take_down" : action;
   const status = action === "approve" ? "online" : action === "reject" ? "rejected" : "taken_down";
   const rejectReason = action === "reject" ? (reason || "未通过审核") : null;
   const results = [];
@@ -129,7 +130,7 @@ async function batchReviewItems(req, res) {
     if (rows[0]) {
       await query(
         "INSERT INTO review_logs (id, item_id, admin_id, action, reason) VALUES ($1, $2, $3, $4, $5)",
-        [makeId("log"), id, admin.sub, action, rejectReason]
+        [makeId("log"), id, admin.sub, logAction, rejectReason]
       );
       results.push(rows[0].id);
     }
