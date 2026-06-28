@@ -6,7 +6,8 @@
   <title>NanE 南易</title>
   <link rel="icon" type="image/png" href="/assets/brand/web-logo.png">
   <link rel="apple-touch-icon" href="/assets/brand/web-logo.png">
-  <link rel="stylesheet" href="/web/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a href="#main-content" class="skip-link">跳到主要内容</a>
@@ -17,7 +18,7 @@
         <div>
           <div class="brand-row">
             <h1>南易</h1>
-            <img src="/web/NanE-logo.svg" alt="NanE logo">
+            <img src="/NanE-logo.svg" alt="NanE logo">
           </div>
         </div>
       </div>
@@ -39,8 +40,8 @@
         </div>
         <div class="chips" id="filterChips">
           <button class="chip active" data-type="" data-category="">全部</button>
-          <div class="chip chip-select" data-type="consumable" data-category="">
-            <button class="chip-select-btn" type="button">耗材 <span class="chip-chevron">&#9662;</span></button>
+          <div class="chip chip-select" data-type="consumable">
+            <button class="chip-select-btn">耗材 <span class="chip-chevron">&#9662;</span></button>
             <ul class="chip-dropdown" hidden>
               <li data-category="">耗材</li>
               <li data-category="应急耗材">应急耗材</li>
@@ -51,8 +52,8 @@
               <li data-category="其他耗材">其他耗材</li>
             </ul>
           </div>
-          <div class="chip chip-select" data-type="medicine" data-category="">
-            <button class="chip-select-btn" type="button">药品 <span class="chip-chevron">&#9662;</span></button>
+          <div class="chip chip-select" data-type="medicine">
+            <button class="chip-select-btn">药品 <span class="chip-chevron">&#9662;</span></button>
             <ul class="chip-dropdown" hidden>
               <li data-category="">药品</li>
               <li data-category="感冒药">感冒药</li>
@@ -62,8 +63,8 @@
               <li data-category="其他非处方药">其他非处方药</li>
             </ul>
           </div>
-          <div class="chip chip-select" data-type="tool" data-category="">
-            <button class="chip-select-btn" type="button">工具 <span class="chip-chevron">&#9662;</span></button>
+          <div class="chip chip-select" data-type="tool">
+            <button class="chip-select-btn">工具 <span class="chip-chevron">&#9662;</span></button>
             <ul class="chip-dropdown" hidden>
               <li data-category="">工具</li>
               <li data-category="常用工具">常用工具</li>
@@ -205,11 +206,6 @@
 
             <label for="descriptionInput">补充说明 <span class="char-count" id="descriptionCount">0/200</span></label>
             <textarea id="descriptionInput" rows="4" placeholder="物品状况、领取时间、注意事项" maxlength="200"></textarea>
-
-            <label for="imageInput">物品图片（最多 3 张）</label>
-            <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" multiple>
-            <p class="hint">建议上传包装、数量或有效期照片；药品请勿拍摄个人隐私信息。</p>
-            <div class="image-preview-list" id="imagePreviewList"></div>
           </fieldset>
 
           <fieldset>
@@ -254,10 +250,6 @@
         <div id="mineLoginCard" class="card form-card mine-login-center">
           <h3>登录 NanE</h3>
           <p class="hint">首选南京大学学生邮箱登录，仅支持 <strong>@smail.nju.edu.cn</strong> 后缀。</p>
-          <label class="checkbox-row agreement-row">
-            <input id="agreementInput" type="checkbox">
-            <span>我已阅读并同意 <button type="button" class="link-button" id="openAgreementButton">《NanE 南易用户协议》</button></span>
-          </label>
           <div class="login-block primary-login">
             <div class="login-tabs">
               <button class="login-tab active" data-login-mode="code">验证码登录</button>
@@ -269,15 +261,11 @@
                   <input id="emailLoginInput" autocomplete="username" inputmode="email" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
-              </div>
-              <div class="auth-row">
-                <button class="secondary" id="sendEmailCodeButton">发送验证码</button>
+                <button class="secondary auth-btn" id="sendEmailCodeButton">发送验证码</button>
               </div>
               <div class="auth-row">
                 <input id="emailCodeInput" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="输入 6 位邮箱验证码">
-              </div>
-              <div class="auth-row">
-                <button class="primary" id="verifyEmailCodeButton">登录</button>
+                <button class="primary auth-btn" id="verifyEmailCodeButton">登录</button>
               </div>
             </div>
             <div id="passwordLoginSection" hidden>
@@ -289,9 +277,7 @@
               </div>
               <div class="auth-row">
                 <input id="passwordInput" type="password" autocomplete="current-password" placeholder="输入密码">
-              </div>
-              <div class="auth-row">
-                <button class="primary" id="passwordLoginButton">登录</button>
+                <button class="primary auth-btn" id="passwordLoginButton">登录</button>
               </div>
               <p class="hint forgot-row">
                 <button type="button" class="link-button" id="forgotPasswordButton">忘记密码？</button>
@@ -305,18 +291,14 @@
                   <input id="resetEmailInput" autocomplete="username" inputmode="email" placeholder="邮箱前缀">
                   <span>@smail.nju.edu.cn</span>
                 </div>
-              </div>
-              <div class="auth-row">
-                <button class="secondary" id="sendResetCodeButton">发送验证码</button>
+                <button class="secondary auth-btn" id="sendResetCodeButton">发送验证码</button>
               </div>
               <div class="auth-row">
                 <input id="resetCodeInput" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="输入 6 位验证码">
+                <button class="primary auth-btn" id="resetPasswordButton">重置密码</button>
               </div>
               <div class="auth-row">
                 <input id="resetPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
-              </div>
-              <div class="auth-row">
-                <button class="primary" id="resetPasswordButton">重置密码</button>
               </div>
               <p class="hint forgot-row">
                 <button type="button" class="link-button" id="backFromForgotButton">← 返回登录</button>
@@ -327,17 +309,19 @@
               <p class="hint">设置密码后，下次可直接使用密码登录，无需等待验证码。</p>
               <div class="auth-row">
                 <input id="setPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少8位，含字母和数字）">
-              </div>
-              <div class="auth-row">
-                <button class="primary" id="setPasswordButton">设置密码</button>
+                <button class="primary auth-btn" id="setPasswordButton">设置密码</button>
               </div>
               <p class="hint forgot-row">
                 <button type="button" class="link-button" id="skipSetPasswordButton">暂不设置</button>
               </p>
             </div>
           </div>
+          <label class="checkbox-row agreement-row">
+            <input id="agreementInput" type="checkbox">
+            <span>我已阅读并同意 <button type="button" class="link-button" id="openAgreementButton">《NanE 南易用户协议》</button></span>
+          </label>
           <details class="login-block secondary-login">
-            <summary>其他登录方式</summary>
+            <summary><span>其他登录方式</span></summary>
             <p class="hint">输入邮箱或学号后，南哪小帮手发送验证码；验证成功后网页版会保存 NanE 登录态。</p>
             <div class="field-grid">
               <input id="authEmail" type="email" inputmode="email" placeholder="邮箱（可选）">
@@ -345,8 +329,10 @@
             </div>
             <div class="auth-row">
               <input id="authCode" inputmode="numeric" maxlength="6" placeholder="南哪小帮手验证码">
-              <button class="primary small" id="sendCodeButton">发送</button>
-              <button class="primary small" id="verifyCodeButton">验证</button>
+            </div>
+            <div class="auth-row">
+              <button class="primary auth-btn" id="sendCodeButton">发送</button>
+              <button class="primary auth-btn" id="verifyCodeButton">验证</button>
             </div>
           </details>
           <div class="form-message" id="authMessage"></div>
@@ -366,13 +352,6 @@
               <span id="pendingClaimsCount"></span>
             </div>
             <div id="pendingClaimsList"></div>
-          </div>
-          <div id="pendingReviewsBanner" class="card review-banner" hidden>
-            <div class="claim-banner-head">
-              <h3>待评价履约记录</h3>
-              <span id="pendingReviewsCount"></span>
-            </div>
-            <div id="pendingReviewsList"></div>
           </div>
           <div class="section-head">
             <div>
@@ -492,16 +471,16 @@
   </div>
 
   <nav class="bottom-nav" aria-label="主要页面">
-    <button class="nav-item active" data-view="home" type="button">
-      <span class="nav-glyph"></span>
+    <button class="nav-item active" data-view="home">
+      <i class="fa-solid fa-compass"></i>
       <span>发现</span>
     </button>
-    <button class="nav-item" data-view="publish" type="button">
-      <span class="nav-glyph"></span>
+    <button class="nav-item" data-view="publish">
+      <i class="fa-solid fa-circle-plus"></i>
       <span>发布</span>
     </button>
-    <button class="nav-item" data-view="mine" type="button">
-      <span class="nav-glyph"></span>
+    <button class="nav-item" data-view="mine">
+      <i class="fa-solid fa-user"></i>
       <span>我的</span>
     </button>
   </nav>
@@ -522,14 +501,6 @@
     <div id="claimsModalBody"></div>
   </dialog>
 
-  <dialog id="reviewDialog" class="review-dialog">
-    <div class="dialog-head">
-      <h3>履约评价</h3>
-      <button id="closeReviewDialogButton" class="icon-button" aria-label="关闭"></button>
-    </div>
-    <div id="reviewDialogBody"></div>
-  </dialog>
-
   <dialog id="agreementDialog" class="agreement-dialog">
     <div class="dialog-head">
       <h3>NanE 南易用户协议</h3>
@@ -538,6 +509,6 @@
     <article id="agreementBody" class="agreement-body">正在加载协议...</article>
   </dialog>
 
-  <script src="/web/app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

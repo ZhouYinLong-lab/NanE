@@ -31,9 +31,6 @@ const DEBUG_MODE = (() => {
   return url.get("debug") !== null || localStorage.getItem("nane_debug") === "1";
 })();
 
-const REVIEW_TAGS = ["沟通顺畅", "按约交接", "物品真实", "及时确认", "友善可信"];
-const ISSUE_REVIEW_TAGS = ["物品不符", "未按约时间", "联系方式无效", "沟通不顺", "未完成交接"];
-
 const iconOptions = [
   ["plus", "通用"],
   ["bandage", "创可贴"],
@@ -79,11 +76,7 @@ const state = {
   agreementVersion: AGREEMENT_VERSION_FALLBACK,
   pendingAction: null,
   homeOffset: 0,
-  homeHasMore: false,
-  pendingReviews: [],
-  activeReviewClaimId: "",
-  uploadedImageUrls: [],
-  imageUploading: false
+  homeHasMore: false
 };
 
 const HOME_PAGE_SIZE = 20;
@@ -244,36 +237,12 @@ function requireVerified(message, pendingAction) {
   if (pendingAction) {
     state.pendingAction = pendingAction;
   }
-  switchView("mine");
+  const activeMineTab = document.querySelector('.nav-item[data-view="mine"]');
+  if (activeMineTab) {
+    activeMineTab.click();
+  }
   $("authMessage").textContent = text;
   return false;
-}
-
-function viewButtonSelector(view) {
-  return `.nav-item[data-view="${view}"], .tab[data-view="${view}"]`;
-}
-
-function switchView(view) {
-  const trigger = document.querySelector(viewButtonSelector(view));
-  if (trigger) trigger.click();
-}
-
-function closeFilterDropdowns(except = null) {
-  document.querySelectorAll("#filterChips .chip-select").forEach(select => {
-    if (select === except) return;
-    select.classList.remove("open");
-    const dropdown = select.querySelector(".chip-dropdown");
-    if (dropdown) dropdown.hidden = true;
-  });
-}
-
-function setFilterSelectLabel(select, label) {
-  const button = select?.querySelector(".chip-select-btn");
-  if (!button) return;
-  const textNode = [...button.childNodes].find(node => node.nodeType === Node.TEXT_NODE);
-  if (textNode) {
-    textNode.textContent = `${label} `;
-  }
 }
 
 function executePendingAction() {
@@ -384,195 +353,6 @@ function expiryText(item) {
   return item.expireDate || "未填写";
 }
 
-function compactDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-}
-
-function avatarInitial(name) {
-  const text = String(name || "南").trim();
-  return escapeHtml(text.slice(0, 1) || "南");
-}
-
-function trustSummaryHTML(summary, variant = "compact") {
-  const completed = Number(summary?.completedCount || 0);
-  const given = Number(summary?.givenCount || 0);
-  const received = Number(summary?.receivedCount || 0);
-  const tags = Array.isArray(summary?.topTags) ? summary.topTags.slice(0, 3) : [];
-  const tagHTML = tags.map(tag => `<span class="trust-tag">${escapeHtml(tag)}</span>`).join("");
-  if (variant === "card") {
-    return `
-      <div class="trust-card">
-        <div class="trust-card-head">
-          <strong>发布者可信记录</strong>
-          <span>已送出 ${escapeHtml(given)} 件 · 已领取 ${escapeHtml(received)} 件</span>
-        </div>
-        <div class="trust-card-tags">
-          ${tagHTML || `<span class="trust-muted">完成履约后会积累评价标签</span>`}
-        </div>
-      </div>
-    `;
-  }
-  return `
-    <div class="trust-summary">
-      <span class="trust-count">已完成 ${escapeHtml(completed)} 次互助</span>
-      ${tagHTML ? `<span class="trust-tags">${tagHTML}</span>` : `<span class="trust-muted">暂无评价标签</span>`}
-    </div>
-  `;
-}
-
-function profileTrustHTML(summary) {
-  const given = Number(summary?.givenCount || 0);
-  const received = Number(summary?.receivedCount || 0);
-  const tags = Array.isArray(summary?.topTags) ? summary.topTags.slice(0, 3) : [];
-  return `
-    <div class="profile-trust-card" id="profileTrustCard">
-      <div class="profile-trust-stats">
-        <span><strong>${escapeHtml(given)}</strong> 次送出</span>
-        <span><strong>${escapeHtml(received)}</strong> 次领取</span>
-      </div>
-      <div class="trust-card-tags">
-        ${tags.length ? tags.map(tag => `<span class="trust-tag">${escapeHtml(tag)}</span>`).join("") : `<span class="trust-muted">完成履约评价后，这里会出现你的可信标签</span>`}
-      </div>
-    </div>
-  `;
-}
-
-function renderProfileTrust(summary) {
-  const profileCard = document.querySelector(".profile-card");
-  if (!profileCard) return;
-  const existing = $("profileTrustCard");
-  if (!summary) {
-    existing?.remove();
-    return;
-  }
-  if (existing) {
-    existing.outerHTML = profileTrustHTML(summary);
-  } else {
-    profileCard.insertAdjacentHTML("afterend", profileTrustHTML(summary));
-  }
-}
-
-function itemMediaHTML(item) {
-  const image = Array.isArray(item.imageUrls) ? item.imageUrls[0] : "";
-  if (image) {
-    return `
-      <div class="item-media">
-        <img src="${escapeHtml(image)}" alt="${escapeHtml(item.title)}" loading="lazy" onerror="this.closest('.item-media').classList.add('image-failed'); this.remove();">
-        <span class="item-type-overlay" aria-label="${escapeHtml(item.itemTypeText || "类型")}">${iconGlyph(item.itemIcon, item.itemType)}</span>
-      </div>
-    `;
-  }
-  return `<div class="item-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>`;
-}
-
-function itemGalleryHTML(item) {
-  const images = Array.isArray(item.imageUrls) ? item.imageUrls.slice(0, 3) : [];
-  if (!images.length) {
-    return `<div class="item-icon detail-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>`;
-  }
-  return `
-    <div class="detail-gallery">
-      ${images.map((url, index) => `<img src="${escapeHtml(url)}" alt="${escapeHtml(item.title)} 图片 ${index + 1}" loading="lazy" onerror="this.remove();">`).join("")}
-    </div>
-  `;
-}
-
-function renderImagePreviews() {
-  const list = $("imagePreviewList");
-  if (!list) return;
-  if (state.imageUploading) {
-    list.innerHTML = `
-      <div class="image-upload-progress">
-        <span>正在处理图片...</span>
-        <div class="image-progress-track"><div></div></div>
-      </div>
-    `;
-    return;
-  }
-  if (!state.uploadedImageUrls.length) {
-    list.innerHTML = `<div class="image-empty">暂未上传图片</div>`;
-    return;
-  }
-  list.innerHTML = state.uploadedImageUrls.map((url, index) => `
-    <div class="image-preview">
-      <img src="${escapeHtml(url)}" alt="已上传图片 ${index + 1}">
-      <button type="button" class="image-remove" data-image-index="${index}" aria-label="移除第 ${index + 1} 张图片">×</button>
-    </div>
-  `).join("");
-}
-
-function resetUploadedImages() {
-  state.uploadedImageUrls = [];
-  if ($("imageInput")) $("imageInput").value = "";
-  renderImagePreviews();
-}
-
-function fileToCompressedDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("请选择图片文件"));
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      reject(new Error("单张图片不能超过 8MB"));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("图片读取失败"));
-    reader.onload = () => {
-      const image = new Image();
-      image.onerror = () => reject(new Error("图片解析失败"));
-      image.onload = () => {
-        const maxSide = 1280;
-        const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(image.width * ratio));
-        canvas.height = Math.max(1, Math.round(image.height * ratio));
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/webp", 0.82));
-      };
-      image.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-async function uploadSelectedImages(files) {
-  const message = $("publishMessage");
-  const remaining = 3 - state.uploadedImageUrls.length;
-  const selected = [...files].slice(0, remaining);
-  if (!selected.length) {
-    showToast("最多上传 3 张图片", "info");
-    return;
-  }
-  state.imageUploading = true;
-  renderImagePreviews();
-  message.textContent = "正在上传图片...";
-  try {
-    for (const file of selected) {
-      const dataUrl = await fileToCompressedDataUrl(file);
-      const uploaded = await api("/uploads/images", {
-        method: "POST",
-        body: JSON.stringify({ dataUrl, filename: file.name })
-      });
-      state.uploadedImageUrls.push(uploaded.url);
-      renderImagePreviews();
-    }
-    message.textContent = "";
-    showToast("图片已上传", "success");
-  } catch (error) {
-    message.textContent = errmsg(error, "图片上传失败");
-  } finally {
-    state.imageUploading = false;
-    $("imageInput").value = "";
-    renderImagePreviews();
-  }
-}
-
 function renderItem(item, options = {}) {
   const typeClass = `badge badge-${item.itemType || "consumable"}`;
   const badges = [
@@ -604,16 +384,9 @@ function renderItem(item, options = {}) {
         <button type="button" class="danger small" data-owner-action="delete" data-item-id="${escapeHtml(item.id)}">删除</button>
       </div>`
     : "";
-  const trust = item.ownerTrustSummary || {};
-  const trustTags = Array.isArray(trust.topTags) ? trust.topTags : [];
-  const praiseCount = Number(trust.positiveReviewCount || 0);
-  const trustBadge = praiseCount >= 1
-    ? `<span class="trust-mini-badge">好评 ${escapeHtml(praiseCount)} 次</span>`
-    : "";
-  const created = compactDate(item.createdAt);
   return `
     <article class="item-card ${itemExpiredClass(item)}" data-id="${escapeHtml(item.id)}">
-      ${itemMediaHTML(item)}
+      <div class="item-icon">${iconGlyph(item.itemIcon, item.itemType)}</div>
       <div class="item-main">
         <div class="item-title-row">
           <h3>${escapeHtml(item.title)}</h3>
@@ -621,14 +394,6 @@ function renderItem(item, options = {}) {
         </div>
         <p class="item-desc">${escapeHtml(item.description || "暂未填写补充信息")}</p>
         <div class="badges">${badges.join("")}</div>
-        <div class="item-footer">
-          <span class="owner-mini">
-            <span class="owner-avatar">${avatarInitial(item.ownerName)}</span>
-            <span>${escapeHtml(item.ownerName || "南易同学")}</span>
-            ${trustBadge}
-          </span>
-          ${created ? `<time datetime="${escapeHtml(item.createdAt)}">${escapeHtml(created)}</time>` : ""}
-        </div>
         ${item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(item.rejectReason)}</p>` : ""}
         ${claimPanel}
         ${ownerActions}
@@ -774,20 +539,17 @@ async function loadProfile() {
       $("profileName").textContent = data.user.name || "南易用户";
       $("profileCampus").textContent = `${data.user.campus || "未设置校区"} · ${data.user.building || "未设置楼栋"}${data.user.room ? ` · ${data.user.room}` : ""}`;
       $("verifyBadge").textContent = data.user.profileComplete ? "校园身份与楼栋已设置" : "请补全楼栋资料";
-      renderProfileTrust(data.user.trustSummary);
     } else {
       clearSession();
       $("profileName").textContent = "欢迎来访";
       $("profileCampus").textContent = "登录后即可发布物品、查看联系方式";
       $("verifyBadge").textContent = "未登录";
-      renderProfileTrust(null);
     }
     syncProfileForm();
   } catch (error) {
     $("profileName").textContent = "暂时无法读取账号";
     $("profileCampus").textContent = "服务连接异常，请稍后重试";
     $("verifyBadge").textContent = "未连接";
-    renderProfileTrust(null);
   }
 }
 
@@ -956,129 +718,17 @@ function refreshClaimsModal() {
   }
 }
 
-function renderPendingReviews(reviews) {
-  const banner = $("pendingReviewsBanner");
-  const list = $("pendingReviewsList");
-  const countEl = $("pendingReviewsCount");
-  if (!banner || !list || !countEl) return;
-  state.pendingReviews = Array.isArray(reviews) ? reviews : [];
-  if (!state.pendingReviews.length) {
-    banner.hidden = true;
-    list.innerHTML = "";
-    return;
-  }
-  banner.hidden = false;
-  countEl.textContent = `${state.pendingReviews.length} 条待评价`;
-  list.innerHTML = state.pendingReviews.map(review => `
-    <div class="review-banner-row">
-      <div class="claim-banner-info">
-        <strong>${escapeHtml(review.itemTitle)}</strong>
-        <span>${escapeHtml(review.reviewerRole === "owner" ? "领取同学" : "发布同学")}：${escapeHtml(review.revieweeName || "同学")} · ${escapeHtml(review.quantity || 1)}${escapeHtml(review.unit || "件")}</span>
-      </div>
-      <span class="claim-actions">
-        <button type="button" class="primary small" data-review-action="open" data-claim-id="${escapeHtml(review.claimId)}">评价履约</button>
-      </span>
-    </div>
-  `).join("");
-}
-
-async function loadPendingReviews() {
-  if (!isVerifiedUser()) {
-    renderPendingReviews([]);
-    return;
-  }
-  try {
-    const data = await api("/me/reviews/pending");
-    renderPendingReviews(data.reviews || []);
-  } catch (error) {
-    renderPendingReviews([]);
-    showToast(errmsg(error, "待评价记录加载失败"), "error");
-  }
-}
-
-function openReviewDialog(claimId) {
-  const review = state.pendingReviews.find(item => item.claimId === claimId);
-  if (!review) return;
-  state.activeReviewClaimId = claimId;
-  $("reviewDialogBody").innerHTML = `
-    <div class="review-target">
-      <strong>${escapeHtml(review.itemTitle)}</strong>
-      <span>评价 ${escapeHtml(review.revieweeName || "同学")} 的本次履约</span>
-    </div>
-    <div class="review-tags" id="reviewTagList">
-      ${REVIEW_TAGS.map(tag => `<button type="button" class="review-tag" data-review-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`).join("")}
-    </div>
-    <label class="checkbox-row review-issue-toggle">
-      <input id="reviewIssueInput" type="checkbox">
-      <span>本次履约遇到问题</span>
-    </label>
-    <textarea id="reviewCommentInput" rows="3" maxlength="160" placeholder="可选：补充一句对这次互助的说明"></textarea>
-    <div class="form-message" id="reviewMessage"></div>
-    <button type="button" class="primary wide" id="submitReviewButton">提交评价</button>
-  `;
-  $("reviewDialog").showModal();
-}
-
-function renderReviewTags(isIssue) {
-  const list = $("reviewTagList");
-  if (!list) return;
-  const tags = isIssue ? ISSUE_REVIEW_TAGS : REVIEW_TAGS;
-  list.innerHTML = tags.map(tag => `<button type="button" class="review-tag" data-review-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`).join("");
-  const comment = $("reviewCommentInput");
-  if (comment) {
-    comment.placeholder = isIssue ? "可选：说明遇到的问题，便于后续改进" : "可选：补充一句对这次互助的说明";
-  }
-}
-
-async function submitReview() {
-  const claimId = state.activeReviewClaimId;
-  if (!claimId) return;
-  const selectedTags = [...$("reviewDialogBody").querySelectorAll(".review-tag.active")]
-    .map(button => button.dataset.reviewTag);
-  const outcome = $("reviewIssueInput")?.checked ? "issue" : "positive";
-  const message = $("reviewMessage");
-  if (!selectedTags.length) {
-    message.textContent = "请至少选择一个履约标签";
-    return;
-  }
-  const submitBtn = $("submitReviewButton");
-  submitBtn.disabled = true;
-  submitBtn.textContent = "提交中...";
-  try {
-    await api(`/claims/${encodeURIComponent(claimId)}/reviews`, {
-      method: "POST",
-      body: JSON.stringify({
-        tags: selectedTags,
-        outcome,
-        comment: $("reviewCommentInput").value.trim()
-      })
-    });
-    animateCloseDialog($("reviewDialog"));
-    state.activeReviewClaimId = "";
-    showToast("履约评价已提交", "success");
-    await Promise.all([loadPendingReviews(), loadHome(), loadMyItems()]);
-  } catch (error) {
-    message.textContent = errmsg(error, "提交评价失败");
-    submitBtn.disabled = false;
-    submitBtn.textContent = "提交评价";
-  }
-}
-
 async function loadMyItems() {
   const container = $("myItemList");
   if (!isVerifiedUser()) {
     container.innerHTML = emptyStateHTML("guest");
     $("pendingClaimsBanner").hidden = true;
-    $("pendingReviewsBanner").hidden = true;
     return;
   }
   const skHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
   container.innerHTML = skHTML + skHTML + skHTML;
   try {
-    const [data, reviewData] = await Promise.all([
-      api("/me/items"),
-      api("/me/reviews/pending")
-    ]);
+    const data = await api("/me/items");
     const sorted = [...data.items];
     sorted.sort((a, b) => {
       const aPending = (a.pendingClaimCount || 0) > 0 ? 1 : 0;
@@ -1086,10 +736,10 @@ async function loadMyItems() {
       return bPending - aPending;
     });
     renderClaimsBanner(sorted);
-    renderPendingReviews(reviewData.reviews || []);
     container.innerHTML = sorted.length
       ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true, showOwnerActions: true })).join("")
       : emptyStateHTML("mine");
+    $("pendingClaimsBanner").hidden = !sorted.length;
     const hasPending = sorted.some(item => (item.pendingClaimCount || 0) > 0);
     if (hasPending && !state.claimsModalShown) {
       state.claimsModalShown = true;
@@ -1098,7 +748,6 @@ async function loadMyItems() {
   } catch (error) {
     container.innerHTML = `<div class="state-card">${escapeHtml(errmsg(error, "加载失败"))}</div>`;
     $("pendingClaimsBanner").hidden = true;
-    $("pendingReviewsBanner").hidden = true;
   }
 }
 
@@ -1109,12 +758,11 @@ async function openDetail(id) {
     state.selectedDetail = data.item;
     $("detailTitle").textContent = data.item.title;
     $("detailBody").innerHTML = `
-      ${itemGalleryHTML(data.item)}
+      <div class="item-icon">${iconGlyph(data.item.itemIcon, data.item.itemType)}</div>
       <p class="detail-meta">${escapeHtml(data.item.campus)} · ${escapeHtml(data.item.building)}<br>
       ${escapeHtml(data.item.itemTypeText)} · ${escapeHtml(data.item.category)} · 剩余 ${escapeHtml(data.item.quantity)}${escapeHtml(data.item.unit)}<br>
       有效期：${escapeHtml(expiryText(data.item))} · ${escapeHtml(data.item.distanceLabel || "")}</p>
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
-      ${trustSummaryHTML(data.item.ownerTrustSummary, "card")}
       <div class="notice-line">本平台仅提供信息匹配，不涉及物品流转。领取前请自行检查物品状况与适用性，评估使用风险。平台禁止处方药、管制药品及任何收费行为。</div>
       <button class="primary wide" id="contactButton">${isVerifiedUser() && profileComplete() ? "查看联系方式" : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
@@ -1163,14 +811,13 @@ async function openMyItemDetail(id) {
     $("detailTitle").textContent = data.item.title;
     const statusLabel = data.item.status !== "online" ? ` <span class="badge">${escapeHtml(statusText(data.item.status))}</span>` : "";
     $("detailBody").innerHTML = `
-      ${itemGalleryHTML(data.item)}
+      <div class="item-icon">${iconGlyph(data.item.itemIcon, data.item.itemType)}</div>
       <p class="detail-meta">
         ${escapeHtml(data.item.itemTypeText)} · ${escapeHtml(data.item.category)} · 剩余 ${escapeHtml(data.item.quantity)}${escapeHtml(data.item.unit)}<br>
         ${escapeHtml(data.item.campus)} · ${escapeHtml(data.item.building)}${data.item.room ? ` · ${escapeHtml(data.item.room)}` : ""}<br>
         有效期：${escapeHtml(expiryText(data.item))}<br>
         状态：${escapeHtml(statusText(data.item.status))}${statusLabel}
       </p>
-      ${trustSummaryHTML(data.item.ownerTrustSummary, "card")}
       ${data.item.rejectReason ? `<p class="item-desc">驳回原因：${escapeHtml(data.item.rejectReason)}</p>` : ""}
       <p class="item-desc">${escapeHtml(data.item.description || "暂未填写补充信息")}</p>
       <div class="contact-box">
@@ -1207,7 +854,8 @@ function startEditItem() {
   const item = state.selectedDetail;
   if (!item) return;
   $("detailDialog").close();
-  switchView("publish");
+  const tab = document.querySelector('.nav-item[data-view="publish"]');
+  if (tab) tab.click();
   state.selectedPublishType = item.itemType || "consumable";
   state.selectedIcon = item.itemIcon || "plus";
   state.iconOtherOpen = false;
@@ -1220,8 +868,6 @@ function startEditItem() {
   $("descriptionInput").value = item.description || "";
   $("wechatInput").value = item.contact?.wechat || "";
   $("qqInput").value = item.contact?.qq || "";
-  state.uploadedImageUrls = Array.isArray(item.imageUrls) ? [...item.imageUrls].slice(0, 3) : [];
-  renderImagePreviews();
   $("medicineCategoryWrap").hidden = item.itemType !== "medicine";
   $("toolCategoryWrap").hidden = item.itemType !== "tool";
   if (item.itemType === "medicine") {
@@ -1614,7 +1260,6 @@ async function submitPublish(event) {
     expireDate: $("noExpiryInput").checked ? "" : getExpireDate(),
     noExpiry: (state.selectedPublishType === "consumable" || state.selectedPublishType === "tool") && $("noExpiryInput").checked,
     description: $("descriptionInput").value.trim(),
-    imageUrls: [...state.uploadedImageUrls],
     contactWechat,
     contactQq,
     disclaimerAccepted: true
@@ -1643,7 +1288,6 @@ async function submitPublish(event) {
           description: payload.description,
           expireDate: payload.expireDate,
           noExpiry: payload.noExpiry,
-          imageUrls: payload.imageUrls,
           contactWechat: payload.contactWechat,
           contactQq: payload.contactQq
         })
@@ -1666,7 +1310,6 @@ async function submitPublish(event) {
       $("useProfileLocationInput").checked = true;
       $("publishLocationFields").hidden = true;
       $("disclaimerInput").checked = false;
-      resetUploadedImages();
       setPublishType(state.selectedPublishType);
       renderLocationSelects("publish");
       showToast(result.message || "已保存", "success");
@@ -1693,8 +1336,8 @@ async function showPublishConfirmDialog(payload) {
   const expiryText = payload.noExpiry ? "长期有效" : payload.expireDate;
   const typeLabel = payload.itemType === "medicine" ? "药品" : (payload.itemType === "tool" ? "工具" : "耗材");
   const contactParts = [];
-  if (payload.contactWechat) contactParts.push(`微信 ${payload.contactWechat}`);
-  if (payload.contactQq) contactParts.push(`QQ ${payload.contactQq}`);
+  if (payload.wechat) contactParts.push(`微信 ${payload.wechat}`);
+  if (payload.qq) contactParts.push(`QQ ${payload.qq}`);
   const contactText = contactParts.join(" / ") || "未填写";
   const dialog = document.createElement("dialog");
   dialog.className = "confirm-dialog";
@@ -1707,7 +1350,6 @@ async function showPublishConfirmDialog(payload) {
         <div class="confirm-row"><span class="confirm-label">数量</span><span>${payload.quantity} ${payload.unit}</span></div>
         <div class="confirm-row"><span class="confirm-label">校区楼栋</span><span>${payload.campus} ${payload.building}</span></div>
         <div class="confirm-row"><span class="confirm-label">有效期</span><span>${expiryText}</span></div>
-        <div class="confirm-row"><span class="confirm-label">图片</span><span>${payload.imageUrls.length ? `${payload.imageUrls.length} 张` : "未上传"}</span></div>
         <div class="confirm-row"><span class="confirm-label">联系方式</span><span>${contactText}</span></div>
       </div>
       <div class="confirm-actions">
@@ -2189,10 +1831,9 @@ async function loadSettings() {
 }
 
 function bindEvents() {
-  const viewButtons = document.querySelectorAll(".nav-item[data-view], .tab[data-view]");
-  viewButtons.forEach(tab => {
+  document.querySelectorAll(".nav-item").forEach(tab => {
     tab.addEventListener("click", () => {
-      viewButtons.forEach(item => item.classList.toggle("active", item.dataset.view === tab.dataset.view));
+      document.querySelectorAll(".nav-item").forEach(item => item.classList.toggle("active", item === tab));
       document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${tab.dataset.view}`));
       if (tab.dataset.view === "publish") {
         const successCard = $("publishSuccessCard");
@@ -2221,60 +1862,75 @@ function bindEvents() {
     }
   });
   $("filterChips").addEventListener("click", event => {
-    const selectButton = event.target.closest(".chip-select-btn");
-    if (selectButton) {
-      const select = selectButton.closest(".chip-select");
-      const dropdown = select.querySelector(".chip-dropdown");
-      const willOpen = !select.classList.contains("open");
-      closeFilterDropdowns(select);
-      select.classList.toggle("open", willOpen);
-      if (dropdown) dropdown.hidden = !willOpen;
-      return;
-    }
+    const chip = event.target.closest(".chip");
+    if (!chip) return;
 
-    const option = event.target.closest(".chip-dropdown li");
-    if (option) {
-      const select = option.closest(".chip-select");
-      const category = option.dataset.category || "";
+    // "全部" button
+    if (chip.tagName === "BUTTON" && !chip.classList.contains("chip-select-btn")) {
       document.querySelectorAll("#filterChips .chip").forEach(c => c.classList.remove("active"));
-      select.classList.add("active");
-      select.dataset.category = category;
-      select.querySelectorAll("li").forEach(item => item.classList.toggle("selected", item === option));
-      setFilterSelectLabel(select, option.textContent.trim());
-      closeFilterDropdowns();
-      $("subFilterChips").hidden = true;
+      chip.classList.add("active");
+      // Reset all dropdowns
+      closeAllDropdowns();
+      document.querySelectorAll("#filterChips .chip-select").forEach(sel => {
+        sel.dataset.category = "";
+        sel.querySelector(".chip-select-btn").childNodes[0].textContent = sel.dataset.type === "consumable" ? "耗材" : sel.dataset.type === "medicine" ? "药品" : "工具";
+        sel.querySelectorAll(".chip-dropdown li").forEach(li => li.classList.remove("selected"));
+      });
       loadHome();
       return;
     }
 
-    const chip = event.target.closest(".chip");
-    if (!chip || chip.classList.contains("chip-select")) return;
-    const isAll = chip.dataset.type === "" && chip.dataset.category === "";
-    document.querySelectorAll("#filterChips .chip").forEach(c => c.classList.remove("active"));
-    document.querySelectorAll("#filterChips .chip-select").forEach(select => {
-      select.dataset.category = "";
-      select.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
-      const topOption = select.querySelector("li[data-category='']");
-      if (topOption) setFilterSelectLabel(select, topOption.textContent.trim());
-    });
-    closeFilterDropdowns();
-    chip.classList.add("active");
-    if (isAll) {
-      $("subFilterChips").hidden = true;
-    } else {
-      renderSubChips(chip.dataset.type);
+    // chip-select button toggle
+    const selectBtn = event.target.closest(".chip-select-btn");
+    if (selectBtn) {
+      const chipSelect = selectBtn.closest(".chip-select");
+      const dropdown = chipSelect.querySelector(".chip-dropdown");
+      const wasOpen = !dropdown.hidden;
+      closeAllDropdowns();
+      if (!wasOpen) {
+        dropdown.hidden = false;
+        chipSelect.classList.add("open");
+      }
+      return;
     }
-    loadHome();
-  });
-  document.addEventListener("click", event => {
-    if (!event.target.closest("#filterChips")) closeFilterDropdowns();
+
+    // dropdown option click
+    const li = event.target.closest(".chip-dropdown li");
+    if (li) {
+      const chipSelect = li.closest(".chip-select");
+      const dropdown = chipSelect.querySelector(".chip-dropdown");
+      const selectedCategory = li.dataset.category;
+      const text = li.textContent;
+
+      // Update button text
+      chipSelect.querySelector(".chip-select-btn").childNodes[0].textContent = text;
+      // Mark selected
+      dropdown.querySelectorAll("li").forEach(l => l.classList.remove("selected"));
+      li.classList.add("selected");
+      // Set active state
+      document.querySelectorAll("#filterChips .chip").forEach(c => c.classList.remove("active"));
+      chipSelect.classList.add("active");
+      chipSelect.dataset.category = selectedCategory;
+      // Close
+      dropdown.hidden = true;
+      chipSelect.classList.remove("open");
+      loadHome();
+      return;
+    }
   });
 
-  $("subFilterChips").addEventListener("click", event => {
-    const chip = event.target.closest(".chip");
-    if (!chip) return;
-    chip.classList.toggle("active");
-    loadHome();
+  function closeAllDropdowns() {
+    document.querySelectorAll("#filterChips .chip-select").forEach(sel => {
+      sel.classList.remove("open");
+      sel.querySelector(".chip-dropdown").hidden = true;
+    });
+  }
+
+  // Close dropdowns when clicking outside
+  document.addEventListener("click", event => {
+    if (!event.target.closest("#filterChips")) {
+      closeAllDropdowns();
+    }
   });
   $("itemList").addEventListener("click", event => {
     const card = event.target.closest(".item-card");
@@ -2283,13 +1939,13 @@ function bindEvents() {
   // Empty state button delegation
   $("homeState").addEventListener("click", event => {
     if (event.target.id === "emptyStatePublishBtn") {
-      switchView("publish");
+      document.querySelector('.nav-item[data-view="publish"]')?.click();
     }
   });
   $("myItemList").addEventListener("click", async event => {
     const btn = event.target.closest("#emptyStatePublishBtn");
     if (btn) {
-      switchView("publish");
+      document.querySelector('.nav-item[data-view="publish"]')?.click();
       return;
     }
     const loginBtn = event.target.closest("#emptyStateLoginBtn");
@@ -2318,11 +1974,6 @@ function bindEvents() {
     }
     const card = event.target.closest(".item-card");
     if (card) openMyItemDetail(card.dataset.id);
-  });
-  $("pendingReviewsBanner").addEventListener("click", event => {
-    const button = event.target.closest("[data-review-action='open']");
-    if (!button) return;
-    openReviewDialog(button.dataset.claimId);
   });
   $("closeDetailButton").addEventListener("click", () => animateCloseDialog($("detailDialog")));
   $("detailDialog").addEventListener("click", event => {
@@ -2384,27 +2035,6 @@ function bindEvents() {
   $("publishForm").addEventListener("submit", submitPublish);
   $("titleInput").addEventListener("input", () => { updateCharCounts(); clearFieldErrors(); });
   $("descriptionInput").addEventListener("input", updateCharCounts);
-  $("imageInput").addEventListener("change", event => uploadSelectedImages(event.target.files || []));
-  $("imagePreviewList").addEventListener("click", event => {
-    const removeButton = event.target.closest("[data-image-index]");
-    if (!removeButton) return;
-    state.uploadedImageUrls.splice(Number(removeButton.dataset.imageIndex), 1);
-    renderImagePreviews();
-  });
-  $("imagePreviewList").addEventListener("dragover", event => {
-    event.preventDefault();
-    $("imagePreviewList").classList.add("is-dragover");
-  });
-  $("imagePreviewList").addEventListener("dragleave", event => {
-    if (!event.currentTarget.contains(event.relatedTarget)) {
-      $("imagePreviewList").classList.remove("is-dragover");
-    }
-  });
-  $("imagePreviewList").addEventListener("drop", event => {
-    event.preventDefault();
-    $("imagePreviewList").classList.remove("is-dragover");
-    uploadSelectedImages(event.dataTransfer?.files || []);
-  });
   $("quantityInput").addEventListener("input", clearFieldErrors);
   $("wechatInput").addEventListener("input", clearFieldErrors);
   $("qqInput").addEventListener("input", clearFieldErrors);
@@ -2435,25 +2065,6 @@ function bindEvents() {
         row?.remove();
         refreshClaimsModal();
       });
-    }
-  });
-  $("closeReviewDialogButton").addEventListener("click", () => animateCloseDialog($("reviewDialog")));
-  $("reviewDialog").addEventListener("click", event => {
-    const tagButton = event.target.closest("[data-review-tag]");
-    if (tagButton) {
-      tagButton.classList.toggle("active");
-      const message = $("reviewMessage");
-      if (message) message.textContent = "";
-      return;
-    }
-    if (event.target.closest("#reviewIssueInput")) {
-      renderReviewTags(event.target.checked);
-      const message = $("reviewMessage");
-      if (message) message.textContent = "";
-      return;
-    }
-    if (event.target.closest("#submitReviewButton")) {
-      submitReview();
     }
   });
   document.querySelector(".profile-card").addEventListener("click", () => {
@@ -2550,10 +2161,10 @@ function bindEvents() {
       $("useProfileLocationInput").checked = true;
       $("publishLocationFields").hidden = true;
       $("disclaimerInput").checked = false;
-      resetUploadedImages();
       setPublishType(state.selectedPublishType);
       renderLocationSelects("publish");
-      switchView("mine");
+      const mineTab = document.querySelector('.nav-item[data-view="mine"]');
+      if (mineTab) mineTab.click();
       setTimeout(() => {
         const itemsPanel = $("mineItemsPanel");
         if (itemsPanel) itemsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2576,7 +2187,6 @@ function bindEvents() {
         $("useProfileLocationInput").checked = true;
         $("publishLocationFields").hidden = true;
         $("disclaimerInput").checked = false;
-        resetUploadedImages();
         setPublishType(state.selectedPublishType);
         renderLocationSelects("publish");
         form.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2589,7 +2199,8 @@ function bindEvents() {
   const goToHomeBtn = $("goToHomeFromPublish");
   if (goToLoginBtn) {
     goToLoginBtn.addEventListener("click", () => {
-      switchView("mine");
+      const mineTab = document.querySelector('.nav-item[data-view="mine"]');
+      if (mineTab) mineTab.click();
       setTimeout(() => {
         const loginCard = $("mineLoginCard");
         if (loginCard) loginCard.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2598,7 +2209,8 @@ function bindEvents() {
   }
   if (goToHomeBtn) {
     goToHomeBtn.addEventListener("click", () => {
-      switchView("home");
+      const homeTab = document.querySelector('.nav-item[data-view="home"]');
+      if (homeTab) homeTab.click();
     });
   }
   $("settingsAgreementButton")?.addEventListener("click", () => {
@@ -2648,7 +2260,8 @@ async function applyUrlParams() {
     return;
   }
   if (view === "mine") {
-    switchView("mine");
+    const mineTab = document.querySelector('.nav-item[data-view="mine"]');
+    if (mineTab) mineTab.click();
     if (focus === "claims") {
       await new Promise(resolve => setTimeout(resolve, 300));
       const banner = $("pendingClaimsBanner");
@@ -2666,7 +2279,6 @@ async function init() {
   await Promise.all([loadAgreement(), loadLocations()]);
   renderIconGrid();
   setPublishType("consumable");
-  renderImagePreviews();
   await Promise.all([loadHome(), loadProfile()]);
   syncPublishView();
   await applyUrlParams();
