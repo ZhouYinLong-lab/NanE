@@ -50,6 +50,9 @@ async function initializeDatabase() {
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_salt TEXT");
   await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS claim_email_enabled BOOLEAN NOT NULL DEFAULT true");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT false");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT");
+  await query("ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'super_admin' CHECK (role IN ('super_admin', 'moderator', 'viewer'))");
   await query(
     `CREATE TABLE IF NOT EXISTS email_challenges (
       id TEXT PRIMARY KEY,

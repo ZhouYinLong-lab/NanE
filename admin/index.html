@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NanE 南易管理后台</title>
+  <link rel="stylesheet" href="/admin/styles.css">
+</head>
+<body>
+
+  <!-- ===== Login Section ===== -->
+  <section id="login-section" class="login-section">
+    <div class="login-card glass">
+      <div class="login-brand">
+        <h1>NanE 南易</h1>
+        <p>管理后台</p>
+      </div>
+      <div class="login-form">
+        <input id="username" value="admin" placeholder="用户名" autocomplete="username">
+        <input id="password" type="password" placeholder="密码" autocomplete="current-password">
+        <button class="primary wide" onclick="login()">登录</button>
+      </div>
+      <p class="login-hint">默认密码来自 ADMIN_PASSWORD 环境变量</p>
+    </div>
+  </section>
+
+  <!-- ===== Dashboard ===== -->
+  <div id="dashboard" class="dashboard" style="display:none">
+
+    <!-- Header -->
+    <header class="admin-header glass">
+      <div class="header-left">
+        <h1>NanE 南易</h1>
+        <span class="header-sub">管理后台</span>
+      </div>
+      <div class="header-right">
+        <span id="admin-info" class="header-admin"></span>
+        <button class="secondary small" onclick="logout()">退出</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(200,140,30,0.18);color:#b8860b;">!</div>
+          <div class="stat-body">
+            <span class="stat-label">待审核</span>
+            <strong id="s-reviewing" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(37,115,90,0.18);color:#25735a;">&#10003;</div>
+          <div class="stat-body">
+            <span class="stat-label">上架中</span>
+            <strong id="s-online" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(179,38,30,0.18);color:#b3261e;">&#10005;</div>
+          <div class="stat-body">
+            <span class="stat-label">已下架</span>
+            <strong id="s-offline" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(110,0,101,0.18);color:#6E0065;">&#128065;</div>
+          <div class="stat-body">
+            <span class="stat-label">今日查看</span>
+            <strong id="s-contact" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(37,115,90,0.18);color:#25735a;">&#10003;</div>
+          <div class="stat-body">
+            <span class="stat-label">已履约</span>
+            <strong id="s-claims" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(110,0,101,0.18);color:#6E0065;">&#9733;</div>
+          <div class="stat-body">
+            <span class="stat-label">履约评价</span>
+            <strong id="s-reviews" class="stat-value">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar glass">
+        <div class="toolbar-left">
+          <select id="item-status" onchange="loadItems()">
+            <option value="reviewing">待审核</option>
+            <option value="online">上架中</option>
+            <option value="rejected">已驳回</option>
+            <option value="taken_down">已下架</option>
+            <option value="claimed">已领取</option>
+            <option value="all">全部</option>
+          </select>
+          <button class="secondary" onclick="loadAll()">刷新</button>
+        </div>
+        <label class="select-all-label">
+          <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
+          全选
+        </label>
+      </div>
+
+      <!-- Items Container -->
+      <div id="items" class="items-list"></div>
+
+    </main>
+  </div>
+
+  <!-- ===== Batch Action Bar ===== -->
+  <div id="batch-bar" class="batch-bar glass" hidden>
+    <span id="selected-count">已选择 0 项</span>
+    <div class="batch-actions">
+      <button class="primary small" onclick="batchAction('approve')">批量通过</button>
+      <button class="secondary small" onclick="batchAction('reject')">批量驳回</button>
+      <button class="danger small" onclick="batchAction('take-down')">批量下架</button>
+    </div>
+  </div>
+
+  <!-- ===== Reject Reason Dialog ===== -->
+  <dialog id="rejectDialog" class="modal-dialog">
+    <div class="dialog-head">
+      <h3>驳回原因</h3>
+      <button class="dialog-close" onclick="closeRejectDialog()" aria-label="关闭">&times;</button>
+    </div>
+    <textarea id="reject-reason" rows="3" placeholder="请输入驳回原因..."></textarea>
+    <div class="dialog-actions">
+      <button class="secondary" onclick="closeRejectDialog()">取消</button>
+      <button class="primary" onclick="submitReject()">确认驳回</button>
+    </div>
+  </dialog>
+
+  <!-- ===== Toast Container ===== -->
+  <div id="toastContainer"></div>
+
+  <script src="/admin/app.js"></script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 /**
  * Admin router — admin login, item review, stats, and the admin console HTML page.
  */
+const fs = require("fs");
+const path = require("path");
 const { query, makeId, hashPassword, DEMO_USER_ID } = require("../db");
 const { readBody, json, html } = require("../lib/util");
 const { signToken } = require("../lib/jwt");
@@ -23,7 +25,7 @@ async function adminLogin(req, res) {
     return;
   }
   json(res, 200, {
-    token: signToken({ sub: admin.id, role: "admin", username: admin.username })
+    token: signToken({ sub: admin.id, role: "admin", adminRole: admin.role, username: admin.username })
   });
 }
 
@@ -93,150 +95,165 @@ async function adminStats(req, res) {
        (SELECT COUNT(*)::int
         FROM fulfillment_reviews fr
         JOIN items i ON i.id = fr.item_id
-        WHERE true ${claimFilter}) AS fulfillment_reviews
+        WHERE true ${claimFilter}) AS fulfillment_reviews,
+       (SELECT COUNT(*)::int FROM users) AS total_users,
+       (SELECT COUNT(*)::int FROM users WHERE is_banned = true) AS banned_users,
+       (SELECT COUNT(*)::int FROM users WHERE created_at >= CURRENT_DATE) AS new_users_today
      FROM items ${testFilter}`
   );
   json(res, 200, rows[0]);
 }
 
+async function batchReviewItems(req, res) {
+  const admin = await requireAdmin(req, res, "moderator");
+  if (!admin) return;
+  const input = await readBody(req);
+  const { ids, action, reason } = input;
+  if (!Array.isArray(ids) || !ids.length) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请选择至少一个物品" });
+    return;
+  }
+  if (!["approve", "reject", "take-down"].includes(action)) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "无效的操作" });
+    return;
+  }
+  const status = action === "approve" ? "online" : action === "reject" ? "rejected" : "taken_down";
+  const rejectReason = action === "reject" ? (reason || "未通过审核") : null;
+  const results = [];
+  for (const id of ids) {
+    const { rows } = await query(
+      `UPDATE items SET status = $1, reject_reason = $2, reviewed_at = now()
+       WHERE id = $3 RETURNING *`,
+      [status, rejectReason, id]
+    );
+    if (rows[0]) {
+      await query(
+        "INSERT INTO review_logs (id, item_id, admin_id, action, reason) VALUES ($1, $2, $3, $4, $5)",
+        [makeId("log"), id, admin.sub, action, rejectReason]
+      );
+      results.push(rows[0].id);
+    }
+  }
+  json(res, 200, { reviewed: results.length, total: ids.length, message: `已处理 ${results.length}/${ids.length} 个物品` });
+}
+
+async function listAdmins(req, res) {
+  const { rows } = await query("SELECT id, username, role, created_at FROM admins ORDER BY created_at ASC");
+  json(res, 200, { admins: rows });
+}
+
+async function createAdmin(req, res) {
+  const input = await readBody(req);
+  const { username, password, role } = input;
+  if (!username || !password) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "用户名和密码不能为空" });
+    return;
+  }
+  const validRoles = ["super_admin", "moderator", "viewer"];
+  const adminRole = role && validRoles.includes(role) ? role : "viewer";
+  try {
+    const { rows } = await query(
+      `INSERT INTO admins (id, username, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, username, role, created_at`,
+      [makeId("admin"), username, hashPassword(password), adminRole]
+    );
+    json(res, 201, { admin: rows[0] });
+  } catch (err) {
+    if (err.code === "23505") {
+      json(res, 409, { error: "DUPLICATE", message: "用户名已存在" });
+      return;
+    }
+    throw err;
+  }
+}
+
+async function deleteAdmin(req, res, adminId) {
+  const currentAdmin = await requireAdmin(req, res, "super_admin");
+  if (!currentAdmin) return;
+  if (adminId === currentAdmin.sub) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "不能删除自己" });
+    return;
+  }
+  const { rows: targetRows } = await query("SELECT role FROM admins WHERE id = $1", [adminId]);
+  if (!targetRows[0]) {
+    json(res, 404, { error: "NOT_FOUND", message: "管理员不存在" });
+    return;
+  }
+  // Prevent deleting the last super_admin
+  if (targetRows[0].role === "super_admin") {
+    const { rows: superRows } = await query("SELECT COUNT(*)::int AS count FROM admins WHERE role = 'super_admin'");
+    if (superRows[0].count <= 1) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "无法删除最后一个超级管理员" });
+      return;
+    }
+  }
+  await query("DELETE FROM admins WHERE id = $1", [adminId]);
+  json(res, 200, { message: "管理员已删除" });
+}
+
+async function listUsers(req, res) {
+  const url = new URL(req.url, "http://localhost");
+  const keyword = url.searchParams.get("keyword") || "";
+  const isVerified = url.searchParams.get("is_verified");
+  const isBanned = url.searchParams.get("is_banned");
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get("page_size") || "20", 10)));
+  const offset = (page - 1) * pageSize;
+
+  const params = [];
+  const clauses = [];
+
+  if (keyword) {
+    params.push(`%${keyword}%`);
+    clauses.push(`(name ILIKE $${params.length} OR email ILIKE $${params.length})`);
+  }
+  if (isVerified === "true") {
+    params.push(true);
+    clauses.push(`is_verified = $${params.length}`);
+  } else if (isVerified === "false") {
+    params.push(false);
+    clauses.push(`is_verified = $${params.length}`);
+  }
+  if (isBanned === "true") {
+    params.push(true);
+    clauses.push(`is_banned = $${params.length}`);
+  } else if (isBanned === "false") {
+    params.push(false);
+    clauses.push(`is_banned = $${params.length}`);
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const countResult = await query(`SELECT COUNT(*)::int AS total FROM users ${where}`, params);
+  const total = countResult.rows[0].total;
+  params.push(pageSize);
+  const limitIdx = params.length;
+  params.push(offset);
+  const offsetIdx = params.length;
+  const { rows } = await query(
+    `SELECT id, name, campus, building, email, student_id_masked, major, is_verified, is_banned, ban_reason, auth_provider, created_at
+     FROM users ${where} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    params
+  );
+  json(res, 200, { users: rows, total, page, page_size: pageSize, total_pages: Math.ceil(total / pageSize) });
+}
+
+async function toggleUserBan(req, res, userId) {
+  const admin = await requireAdmin(req, res, "moderator");
+  if (!admin) return;
+  const input = await readBody(req);
+  const { ban, reason } = input;
+  const { rows } = await query(
+    `UPDATE users SET is_banned = $1, ban_reason = $2 WHERE id = $3 RETURNING id, name, is_banned, ban_reason`,
+    [ban === true, ban === true ? (reason || null) : null, userId]
+  );
+  if (!rows[0]) {
+    json(res, 404, { error: "NOT_FOUND", message: "用户不存在" });
+    return;
+  }
+  json(res, 200, { user: rows[0] });
+}
+
 function adminPage() {
-  return `<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>NanE 管理后台</title>
-  <style>
-    body{margin:0;background:#f5f3ed;color:#1f2a24;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    header{padding:24px 32px;background:#173f32;color:#fff}
-    main{max-width:1100px;margin:0 auto;padding:24px}
-    .card{background:#fff;border:1px solid #e5ded2;border-radius:10px;padding:18px;margin-bottom:16px}
-    input,select,textarea{border:1px solid #d9d0c3;border-radius:8px;padding:10px;font-size:14px}
-    button{border:0;border-radius:8px;background:#25735a;color:#fff;padding:10px 14px;font-weight:700;cursor:pointer}
-    button.secondary{background:#8b6422}button.danger{background:#9f3d33}
-    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
-    .stat strong{display:block;font-size:28px;color:#25735a}.item{display:grid;grid-template-columns:1fr auto;gap:14px}
-    .muted{color:#6f7a72}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e7f5ed;color:#25735a;font-size:12px;font-weight:700}
-    @media(max-width:760px){.stats{grid-template-columns:1fr 1fr}.item{grid-template-columns:1fr}}
-  </style>
-</head>
-<body>
-  <header><h1>NanE 南易管理后台</h1><div>审核校园互助信息，确保免费共享、人工审核、禁止处方药/管控药。</div></header>
-  <main>
-    <section class="card" id="login">
-      <h2>管理员登录</h2>
-      <div class="row">
-        <input id="username" value="admin" placeholder="用户名">
-        <input id="password" type="password" placeholder="密码">
-        <button onclick="login()">登录</button>
-      </div>
-      <p class="muted">默认密码来自服务器环境变量 ADMIN_PASSWORD。</p>
-    </section>
-    <section id="dashboard" style="display:none">
-      <div class="stats">
-        <div class="card stat"><span>待审核</span><strong id="s-reviewing">0</strong></div>
-        <div class="card stat"><span>上架中</span><strong id="s-online">0</strong></div>
-        <div class="card stat"><span>已下架</span><strong id="s-offline">0</strong></div>
-        <div class="card stat"><span>今日查看</span><strong id="s-contact">0</strong></div>
-        <div class="card stat"><span>已履约</span><strong id="s-claims">0</strong></div>
-        <div class="card stat"><span>履约评价</span><strong id="s-reviews">0</strong></div>
-      </div>
-      <div class="card row">
-        <select id="item-status" onchange="loadItems()">
-          <option value="reviewing">待审核</option>
-          <option value="online">上架中</option>
-          <option value="rejected">已驳回</option>
-          <option value="taken_down">已下架</option>
-          <option value="claimed">已领取</option>
-          <option value="all">全部</option>
-        </select>
-        <button onclick="loadAll()">刷新</button>
-      </div>
-      <div id="items"></div>
-    </section>
-  </main>
-  <script>
-    let token = localStorage.getItem("nane_admin_token") || "";
-    function byId(id) { return document.getElementById(id); }
-    function escapeHtml(value) {
-      return String(value == null ? "" : value).replace(/[&<>"']/g, function(char) {
-        if (char === "&") return "&amp;";
-        if (char === "<") return "&lt;";
-        if (char === ">") return "&gt;";
-        if (char === '"') return "&quot;";
-        return "&#39;";
-      });
-    }
-    async function api(path, options = {}) {
-      const res = await fetch(path, {
-        ...options,
-        headers: {"Content-Type":"application/json", Authorization: "Bearer " + token, ...(options.headers || {})}
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "请求失败");
-      return data;
-    }
-    async function login() {
-      try {
-        const data = await api("/api/admin/login", {
-          method: "POST",
-          body: JSON.stringify({username: byId("username").value, password: byId("password").value})
-        });
-        token = data.token;
-        localStorage.setItem("nane_admin_token", token);
-        byId("login").style.display = "none";
-        byId("dashboard").style.display = "block";
-        loadAll();
-      } catch (error) { alert(error.message); }
-    }
-    async function loadAll(){ await Promise.all([loadStats(), loadItems()]); }
-    async function loadStats() {
-      const s = await api("/api/admin/stats");
-      byId("s-reviewing").textContent = s.reviewing;
-      byId("s-online").textContent = s.online;
-      byId("s-offline").textContent = s.offline;
-      byId("s-contact").textContent = s.contact_views_today;
-      byId("s-claims").textContent = s.confirmed_claims;
-      byId("s-reviews").textContent = s.fulfillment_reviews;
-    }
-    async function loadItems() {
-      const container = byId("items");
-      const statusValue = byId("item-status").value || "reviewing";
-      try {
-        const data = await api("/api/admin/items?status=" + encodeURIComponent(statusValue));
-        container.innerHTML = data.items.map(item => '<div class="card item"><div><h3>' + escapeHtml(item.title) +
-          ' <span class="pill">' + escapeHtml(item.status) + '</span></h3><p>' + escapeHtml(item.description) +
-          '</p><p class="muted">图标 ' + escapeHtml(item.itemIcon) + ' · ' + escapeHtml(item.itemTypeText) + ' · ' + escapeHtml(item.category) + ' · ' + escapeHtml(item.campus) + ' · ' + escapeHtml(item.building) + (item.room ? ' · ' + escapeHtml(item.room) : '') +
-          ' · 余 ' + escapeHtml(item.quantity) + escapeHtml(item.unit) + ' · 有效期 ' + escapeHtml(item.noExpiry ? "长期有效" : item.expireDate) +
-          ' · 图片 ' + escapeHtml((item.imageUrls || []).length) + ' 张' +
-          '</p><p class="muted">发布者：' + escapeHtml(item.ownerName) + ' · 微信 ' + escapeHtml(item.contact.wechat || "未填") + ' · QQ ' + escapeHtml(item.contact.qq || "未填") +
-          (item.rejectReason ? '</p><p>驳回原因：' + escapeHtml(item.rejectReason) : '') +
-          '</p></div><div class="row">' +
-          '<button data-id="' + escapeHtml(item.id) + '" data-action="approve" onclick="reviewFromButton(this)">通过</button>' +
-          '<button class="secondary" data-id="' + escapeHtml(item.id) + '" data-action="reject" onclick="reviewFromButton(this)">驳回</button>' +
-          '<button class="danger" data-id="' + escapeHtml(item.id) + '" data-action="take-down" onclick="reviewFromButton(this)">下架</button>' +
-          '</div></div>').join("") || '<div class="card muted">暂无数据</div>';
-      } catch (error) {
-        container.innerHTML = '<div class="card muted">列表加载失败：' + escapeHtml(error.message) + '</div>';
-      }
-    }
-    function reviewFromButton(button) {
-      review(button.dataset.id, button.dataset.action);
-    }
-    async function review(id, action) {
-      const reason = action === "reject" ? prompt("请输入驳回原因", "不符合发布规范") : "";
-      if (action === "reject" && reason === null) return;
-      await api("/api/admin/items/" + id + "/" + action, {method:"POST", body: JSON.stringify({reason})});
-      loadAll();
-    }
-    if (token) {
-      byId("login").style.display = "none";
-      byId("dashboard").style.display = "block";
-      loadAll().catch(() => {});
-    }
-  </script>
-</body>
-</html>`;
+  return fs.readFileSync(path.join(__dirname, "..", "..", "admin", "index.html"), "utf8");
 }
 
 async function handle(req, res, pathname, method) {
@@ -252,7 +269,49 @@ async function handle(req, res, pathname, method) {
     return true;
   }
 
-  // All other /api/admin/* routes require admin authentication
+  // POST /api/admin/items/batch — moderator+ only
+  if (method === "POST" && pathname === "/api/admin/items/batch") {
+    await batchReviewItems(req, res);
+    return true;
+  }
+
+  // Admin management routes — super_admin only
+  if (method === "GET" && pathname === "/api/admin/admins") {
+    const admin = await requireAdmin(req, res, "super_admin");
+    if (!admin) return true;
+    await listAdmins(req, res);
+    return true;
+  }
+  if (method === "POST" && pathname === "/api/admin/admins") {
+    const admin = await requireAdmin(req, res, "super_admin");
+    if (!admin) return true;
+    await createAdmin(req, res);
+    return true;
+  }
+  const adminDeleteMatch = pathname.match(/^\/api\/admin\/admins\/([^/]+)$/);
+  if (method === "DELETE" && adminDeleteMatch) {
+    const admin = await requireAdmin(req, res, "super_admin");
+    if (!admin) return true;
+    await deleteAdmin(req, res, adminDeleteMatch[1]);
+    return true;
+  }
+
+  // User management routes — moderator+ only
+  if (method === "GET" && pathname === "/api/admin/users") {
+    const admin = await requireAdmin(req, res, "moderator");
+    if (!admin) return true;
+    await listUsers(req, res);
+    return true;
+  }
+  const userBanMatch = pathname.match(/^\/api\/admin\/users\/([^/]+)\/ban$/);
+  if (method === "POST" && userBanMatch) {
+    const admin = await requireAdmin(req, res, "moderator");
+    if (!admin) return true;
+    await toggleUserBan(req, res, userBanMatch[1]);
+    return true;
+  }
+
+  // All other /api/admin/* routes require generic admin authentication
   if (pathname.startsWith("/api/admin/")) {
     const admin = await requireAdmin(req, res);
     if (!admin) return true;

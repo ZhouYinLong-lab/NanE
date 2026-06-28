@@ -46,6 +46,10 @@ function staticPathFromRequest(pathname) {
     const relative = pathname.replace(/^\/uploads\//, "");
     return path.join(UPLOAD_DIR, relative);
   }
+  if (pathname.startsWith("/admin/")) {
+    const relative = pathname.replace(/^\/admin\//, "");
+    return path.join(__dirname, "..", "admin", relative);
+  }
   return "";
 }
 
@@ -56,6 +60,7 @@ function serveStatic(req, res, pathname) {
   const roots = [
     path.join(__dirname, "..", "web"),
     path.join(__dirname, "..", "miniprogram", "assets"),
+    path.join(__dirname, "..", "admin"),
     UPLOAD_DIR
   ].map(root => path.resolve(root));
   const resolved = path.resolve(filePath);

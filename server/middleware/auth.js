@@ -63,11 +63,21 @@ function adminFromRequest(req) {
   return verifyToken(auth.replace(/^Bearer\s+/i, ""));
 }
 
-async function requireAdmin(req, res) {
+async function requireAdmin(req, res, requiredRole = null) {
   const admin = adminFromRequest(req);
   if (!admin || admin.role !== "admin") {
     json(res, 401, { error: "UNAUTHORIZED", message: "请先登录管理员后台" });
     return null;
+  }
+  // Role hierarchy: super_admin > moderator > viewer
+  if (requiredRole) {
+    const roles = { super_admin: 3, moderator: 2, viewer: 1 };
+    const adminLevel = roles[admin.adminRole] || 0;
+    const requiredLevel = roles[requiredRole] || 0;
+    if (adminLevel < requiredLevel) {
+      json(res, 403, { error: "FORBIDDEN", message: "权限不足" });
+      return null;
+    }
   }
   return admin;
 }
