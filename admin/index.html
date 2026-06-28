@@ -85,6 +85,27 @@
             <strong id="s-reviews" class="stat-value">0</strong>
           </div>
         </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(61,90,153,0.18);color:#3d5a99;">&#128101;</div>
+          <div class="stat-body">
+            <span class="stat-label">总用户</span>
+            <strong id="s-total-users" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(179,38,30,0.18);color:#b3261e;">&#128683;</div>
+          <div class="stat-body">
+            <span class="stat-label">已封禁</span>
+            <strong id="s-banned-users" class="stat-value">0</strong>
+          </div>
+        </div>
+        <div class="stat-card glass">
+          <div class="stat-icon" style="background:rgba(37,115,90,0.18);color:#25735a;">&#128200;</div>
+          <div class="stat-body">
+            <span class="stat-label">今日新增</span>
+            <strong id="s-new-users" class="stat-value">0</strong>
+          </div>
+        </div>
       </div>
 
       <!-- Toolbar -->
@@ -121,6 +142,24 @@
       <button class="danger small" onclick="batchAction('take-down')">批量下架</button>
     </div>
   </div>
+
+  <!-- ===== Admin Management ===== -->
+  <section id="admin-management" style="display:none" class="card admin-section">
+    <div class="admin-section-head">
+      <h3>管理员管理</h3>
+    </div>
+    <div id="admin-list" class="admin-list"></div>
+    <div class="admin-add-row">
+      <input id="new-admin-username" placeholder="用户名">
+      <input id="new-admin-password" type="password" placeholder="密码">
+      <select id="new-admin-role">
+        <option value="viewer">观察员</option>
+        <option value="moderator">审核员</option>
+        <option value="super_admin">超级管理员</option>
+      </select>
+      <button class="primary" id="create-admin-btn" onclick="createAdmin()">添加管理员</button>
+    </div>
+  </section>
 
   <!-- ===== Reject Reason Dialog ===== -->
   <dialog id="rejectDialog" class="modal-dialog">
