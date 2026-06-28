@@ -16,9 +16,9 @@
   --text: #1f1f1f;
   --muted: #7b6ba0;
   --text-strong: #3d3558;
-  --purple: #8b6faf;
-  --purple-soft: rgba(139, 111, 175, 0.12);
-  --purple-glow: rgba(139, 111, 175, 0.3);
+  --purple: #6E0065;
+  --purple-soft: rgba(110, 0, 101, 0.1);
+  --purple-glow: rgba(110, 0, 101, 0.22);
   --on-accent: #fff;
   --shadow: 0 4px 20px rgba(139, 111, 175, 0.12);
 
@@ -176,7 +176,7 @@ body {
     #faf8fc;
   background-attachment: fixed;
   color: var(--text);
-  font-family: "Times New Roman", "SimSun", serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
 }
 
 button,
@@ -221,12 +221,20 @@ button {
 
 .brand h1 {
   margin: 0;
-  font-family: "Times New Roman", serif;
+  font-family: "Times New Roman", "Georgia", serif;
   font-size: clamp(24px, 5vw, 32px);
   line-height: 1;
   letter-spacing: 0;
   font-weight: var(--fw-black);
-  color: var(--purple);
+  color: #6E0065;
+}
+
+.brand-tagline {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  font-weight: var(--fw-bold);
 }
 
 .brand img {
@@ -278,7 +286,7 @@ button {
 }
 
 .primary {
-  background: rgba(139, 111, 175, 0.7);
+  background: rgba(110, 0, 101, 0.78);
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
   color: #fff;
@@ -289,7 +297,7 @@ button {
 }
 
 .primary:hover:not(:disabled) {
-  background: rgba(139, 111, 175, 0.82);
+  background: rgba(110, 0, 101, 0.88);
   transform: translateY(-1px);
   box-shadow:
     inset 0 0 18px rgba(255, 255, 255, 0.12),
@@ -464,7 +472,7 @@ button:focus-visible {
 }
 
 .nav-item.active span:not(.nav-glyph) {
-  max-width: 50px;
+  max-width: 80px;
   opacity: 1;
   margin-left: 2px;
 }
@@ -668,13 +676,13 @@ textarea:focus {
 
 .chip.active,
 .segment.active {
-  background: rgba(139, 111, 175, 0.72);
+  background: rgba(110, 0, 101, 0.8);
   backdrop-filter: blur(16px) saturate(1.4);
   -webkit-backdrop-filter: blur(16px) saturate(1.4);
   color: #fff;
   box-shadow:
     inset 0 0 16px rgba(255, 255, 255, 0.1),
-    0 4px 16px rgba(139, 111, 175, 0.25);
+    0 4px 16px rgba(110, 0, 101, 0.22);
 }
 
 .chip-select {
