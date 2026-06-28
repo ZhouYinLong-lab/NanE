@@ -159,7 +159,6 @@
     inset 0 0 14px rgba(255, 255, 255, 0.1),
     0 2px 8px rgba(139, 111, 175, 0.08);
   transition: background var(--motion-fast), color var(--motion-fast), transform var(--motion-fast) ease, box-shadow var(--motion-fast);
-  will-change: transform;
 }
 
 .chips > .chip {
@@ -513,7 +512,7 @@
   height: 100%;
   display: block;
   object-fit: cover;
-  transition: transform 0.7s var(--motion-ease), filter 0.7s var(--motion-ease);
+  transition: transform var(--motion-base) var(--motion-ease), filter var(--motion-base) var(--motion-ease);
 }
 
 .item-card:hover .item-media img {

@@ -87,39 +87,23 @@ const state = {
 };
 
 const HOME_PAGE_SIZE = 20;
-const MOTION_REVEAL_SELECTOR = [
-  ".welcome-banner",
-  ".search-row",
-  ".chips",
-  ".section-head",
-  ".state-card",
-  ".form-card",
-  ".rules-card",
-  "fieldset",
-  ".profile-card",
-  ".claim-banner",
-  ".review-banner",
-  ".settings-row",
-  ".item-card",
-  ".claim-banner-row",
-  ".review-banner-row",
-  ".claim-modal-row",
-  ".review-target",
-  ".review-tags",
-  ".review-tag",
-  ".trust-card",
-  ".profile-trust-card",
-  ".detail-gallery",
-  ".detail-meta",
-  ".contact-field",
-  ".contact-box",
-  ".notice-line",
-  ".image-preview",
-  ".image-upload-progress",
-  ".image-empty",
-  ".icon-option",
-  ".empty-state"
-].join(",");
+
+// Components that animate in on scroll via IntersectionObserver.
+// Convention: every visible card/section/row gets a motion-ready class.
+// When adding a new component, include its CSS class here.
+// TODO: migrate to [data-motion] attribute for self-registration.
+const MOTION_CLASSES = new Set([
+  "welcome-banner", "search-row", "chips", "section-head",
+  "state-card", "form-card", "rules-card", "fieldset",
+  "profile-card", "claim-banner", "review-banner", "settings-row",
+  "item-card", "claim-banner-row", "review-banner-row", "claim-modal-row",
+  "review-target", "review-tags", "review-tag",
+  "trust-card", "profile-trust-card",
+  "detail-gallery", "detail-meta",
+  "contact-field", "contact-box", "notice-line",
+  "image-preview", "image-upload-progress", "image-empty",
+  "icon-option", "empty-state"
+]);
 
 let motionObserver = null;
 
@@ -173,12 +157,15 @@ function isMotionHidden(element) {
   return element.hidden || Boolean(element.closest("[hidden]"));
 }
 
+function motionSelector() {
+  return [...MOTION_CLASSES].map(c => `.${c}`).join(",");
+}
+
 function prepareMotion(root = document) {
   setMotionIndexes(root);
-  const descendants = root.querySelectorAll ? [...root.querySelectorAll(MOTION_REVEAL_SELECTOR)] : [];
-  const elements = root.matches?.(MOTION_REVEAL_SELECTOR)
-    ? [root, ...descendants]
-    : descendants;
+  const sel = motionSelector();
+  const descendants = root.querySelectorAll ? [...root.querySelectorAll(sel)] : [];
+  const elements = root.matches?.(sel) ? [root, ...descendants] : descendants;
   const observer = ensureMotionObserver();
   elements.forEach(element => {
     if (isMotionHidden(element) || element.dataset.motionReady === "1") return;

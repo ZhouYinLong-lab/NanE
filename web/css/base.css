@@ -99,7 +99,6 @@ button {
     inset 0 0 14px rgba(255, 255, 255, 0.08),
     0 6px 20px rgba(139, 111, 175, 0.2);
   transition: background var(--motion-fast), transform var(--motion-fast), box-shadow var(--motion-fast);
-  will-change: transform;
 }
 
 .primary:hover:not(:disabled) {
@@ -128,7 +127,6 @@ button {
     inset 0 0 12px rgba(255, 255, 255, 0.08),
     0 2px 8px rgba(139, 111, 175, 0.08);
   transition: background var(--motion-fast), transform var(--motion-fast), box-shadow var(--motion-fast);
-  will-change: transform;
 }
 
 .secondary:hover:not(:disabled) {
@@ -151,7 +149,6 @@ button {
   background: var(--danger);
   color: var(--on-accent);
   transition: filter var(--motion-fast), transform var(--motion-fast);
-  will-change: transform;
 }
 
 .danger:hover:not(:disabled) {
