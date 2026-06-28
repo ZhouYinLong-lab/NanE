@@ -5,8 +5,11 @@
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert");
 const http = require("http");
+require("../env");
+const { signToken } = require("../lib/jwt");
+const { query, makeId } = require("../db");
 
-const BASE_URL = "http://localhost:37878";
+const BASE_URL = process.env.NANE_TEST_BASE_URL || "http://localhost:37878";
 
 // ── Test utilities ──────────────────────────────────────────────
 
@@ -88,6 +91,18 @@ const ADMIN_PASSWORD = "nane-admin-demo";
 
 let demoToken = null;
 let adminToken = null;
+const viewerAdminToken = signToken({
+  sub: "admin_viewer_test",
+  role: "admin",
+  adminRole: "viewer",
+  username: "viewer-test"
+});
+const moderatorAdminToken = signToken({
+  sub: "admin_moderator_test",
+  role: "admin",
+  adminRole: "moderator",
+  username: "moderator-test"
+});
 
 // ── Test suites ─────────────────────────────────────────────────
 
@@ -648,6 +663,69 @@ describe("NanE API — Admin Authentication", () => {
       assert.strictEqual(item.status, "rejected");
     }
   });
+
+  it("viewer admin can read stats but cannot review a single item", async () => {
+    const readable = await request("/api/admin/stats", {
+      headers: { Authorization: `Bearer ${viewerAdminToken}` }
+    });
+    assert.strictEqual(readable.status, 200);
+
+    const denied = await postJSON(
+      "/api/admin/items/nonexistent_0000/approve",
+      {},
+      { Authorization: `Bearer ${viewerAdminToken}` }
+    );
+    assert.strictEqual(denied.status, 403);
+    assert.strictEqual(denied.data.error, "FORBIDDEN");
+  });
+
+  it("viewer admin cannot use batch review endpoint", async () => {
+    const { status, data } = await postJSON(
+      "/api/admin/items/batch",
+      { ids: ["nonexistent_0000"], action: "approve" },
+      { Authorization: `Bearer ${viewerAdminToken}` }
+    );
+    assert.strictEqual(status, 403);
+    assert.strictEqual(data.error, "FORBIDDEN");
+  });
+
+  it("moderator admin is authorized for single review endpoint", async () => {
+    const { status, data } = await postJSON(
+      "/api/admin/items/nonexistent_0000/approve",
+      {},
+      { Authorization: `Bearer ${moderatorAdminToken}` }
+    );
+    assert.strictEqual(status, 404);
+    assert.strictEqual(data.error, "ITEM_NOT_FOUND");
+  });
+
+  it("batch take-down stores review log action as take_down", async () => {
+    const itemId = makeId("test_item");
+    await query(
+      `INSERT INTO items
+       (id, title, item_type, item_icon, category, description, quantity, unit, campus, building, room, expire_date, no_expiry, status, owner_id, owner_name, contact_wechat, contact_qq)
+       VALUES ($1, '测试批量下架物品', 'consumable', 'plus', '应急耗材', '用于 API 测试后清理', 1, '件', '仙林校区', '南苑 A 栋', '', CURRENT_DATE + INTERVAL '30 days', false, 'online', 'u_demo', '测试同学', 'test_wechat', 'test_qq')`,
+      [itemId]
+    );
+    try {
+      const { status, data } = await postJSON(
+        "/api/admin/items/batch",
+        { ids: [itemId], action: "take-down" },
+        { Authorization: `Bearer ${moderatorAdminToken}` }
+      );
+      assert.strictEqual(status, 200);
+      assert.strictEqual(data.reviewed, 1);
+
+      const { rows } = await query(
+        "SELECT action FROM review_logs WHERE item_id = $1 ORDER BY created_at DESC LIMIT 1",
+        [itemId]
+      );
+      assert.strictEqual(rows[0]?.action, "take_down");
+    } finally {
+      await query("DELETE FROM review_logs WHERE item_id = $1", [itemId]);
+      await query("DELETE FROM items WHERE id = $1", [itemId]);
+    }
+  });
 });
 
 describe("NanE API — Static File Serving", () => {
@@ -663,13 +741,20 @@ describe("NanE API — Static File Serving", () => {
       "should be valid HTML");
   });
 
-  it("GET /web/styles.css serves CSS file", async () => {
-    const { status, data } = await request("/web/styles.css");
+  it("GET /web/css/tokens.css serves split web CSS file", async () => {
+    const { status, data } = await request("/web/css/tokens.css");
     assert.strictEqual(status, 200);
     assert.ok(typeof data === "string");
-    // Should contain CSS rules
     assert.ok(data.includes("{") && data.includes("}"),
       "response should contain CSS rule blocks");
+  });
+
+  it("GET /admin/styles.css serves admin CSS file", async () => {
+    const { status, data } = await request("/admin/styles.css");
+    assert.strictEqual(status, 200);
+    assert.ok(typeof data === "string");
+    assert.ok(data.includes(".dashboard") || data.includes(".admin-main"),
+      "response should contain admin CSS rules");
   });
 
   it("GET /assets/brand/web-logo.png serves a binary file", async () => {

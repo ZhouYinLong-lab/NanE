@@ -5,7 +5,8 @@
   "description": "NanE (南易) campus mutual-aid platform: WeChat Mini Program, API, PostgreSQL, and admin console.",
   "scripts": {
     "dev:api": "node server/index.js",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "test": "node --test server/tests"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
