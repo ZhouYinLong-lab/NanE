@@ -144,7 +144,17 @@ function showDashboard() {
 
 // ===== Role Helpers =====
 function adminRole() {
-  return localStorage.getItem("nane_admin_role") || "viewer";
+  var stored = localStorage.getItem("nane_admin_role");
+  if (stored) return stored;
+  // Backward compat: old JWT without adminRole defaults to super_admin
+  try {
+    var payload = JSON.parse(atob(token.split(".")[1]));
+    var role = payload.adminRole || "super_admin";
+    localStorage.setItem("nane_admin_role", role);
+    return role;
+  } catch (e) {
+    return "viewer";
+  }
 }
 function canModify() {
   return adminRole() === "super_admin" || adminRole() === "moderator";
