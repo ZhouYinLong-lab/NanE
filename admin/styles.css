@@ -601,6 +601,30 @@ textarea:focus {
   to { transform: translateY(0); }
 }
 
+/* ===== Item Thumbnails ===== */
+.item-thumbnails {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.item-thumbnails img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: transform var(--motion-fast);
+  background: var(--purple-soft);
+}
+
+.item-thumbnails img:hover {
+  transform: scale(1.05);
+  border-color: var(--purple);
+}
+
 .batch-bar[hidden] {
   display: none !important;
 }

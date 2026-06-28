@@ -270,8 +270,12 @@ function renderItemCard(item) {
         '<div class="item-meta">' +
           "<span>余 " + quantity + " " + unit + "</span>" +
           "<span> &middot; 有效期 " + expireText + "</span>" +
-          "<span> &middot; 图片 " + imageCount + " 张</span>" +
         "</div>" +
+        (imageCount > 0 ? '<div class="item-thumbnails">' +
+          (item.imageUrls || []).map(function(url) {
+            return '<img src="' + escapeHtml(url) + '" alt="审核图片" loading="lazy" onclick="window.open(\'' + escapeHtml(url) + '\')" title="点击查看原图">';
+          }).join("") +
+        "</div>" : "") +
         '<div class="item-owner">' +
           "<span>发布者：" + ownerName + "</span>" +
           "<span>微信 " + wechat + "</span>" +
