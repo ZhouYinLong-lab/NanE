@@ -1,0 +1,113 @@
+/* NanE — tokens */
+
+/* ===== Font ===== */
+@font-face {
+  font-family: "Font Awesome 7 Free";
+  src: url("/assets/fontawesome/fa-solid-900.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+
+/* ===== Design Tokens ===== */
+:root {
+  /* Colors */
+  --bg: #eeeaf4;
+  --card: rgba(255, 255, 255, 0.42);
+  --card-strong: rgba(255, 255, 255, 0.6);
+  --line: rgba(180, 165, 210, 0.35);
+  --text: #1f1f1f;
+  --muted: #7b6ba0;
+  --text-strong: #3d3558;
+  --purple: #6E0065;
+  --purple-soft: rgba(110, 0, 101, 0.1);
+  --purple-glow: rgba(110, 0, 101, 0.22);
+  --on-accent: #fff;
+  --shadow: 0 4px 20px rgba(139, 111, 175, 0.12);
+
+  /* Semantic colors */
+  --danger: #b3261e;
+  --warning-border: #d5ad47;
+  --warning-bg: #fff6d9;
+  --warning-text: #7b5b07;
+  --success-border: #7ca56c;
+  --success-bg: #edf7e9;
+  --success-text: #315d26;
+  --toggle-off: #d9d0c3;
+
+  /* Border Radii */
+  --radius-pill: 999px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  /* Font Weights */
+  --fw-black: 900;
+  --fw-heavy: 650;
+  --fw-bold: 600;
+  --fw-normal: 400;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+}
+
+/* ===== Reset ===== */
+* {
+  box-sizing: border-box;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.danger:focus-visible,
+.icon-button:focus-visible,
+.tab:focus-visible,
+.nav-item:focus-visible,
+.login-tab:focus-visible,
+.mine-subtab:focus-visible,
+.link-button:focus-visible,
+.segment:focus-visible,
+.chip:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--purple-glow);
+  outline-offset: 2px;
+}
+
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled,
+.small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --card: #2a2a2a;
+  --card-strong: #333333;
+  --line: #3a3a3a;
+  --text: #e8e8e8;
+  --muted: #a0a0a0;
+  --text-strong: #c0b8a8;
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.3);
+  --toggle-off: #555;
+  --purple-soft: rgba(110, 0, 101, 0.2);
+
+  --warning-bg: rgba(213, 173, 71, 0.15);
+  --success-bg: rgba(124, 165, 108, 0.15);
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
