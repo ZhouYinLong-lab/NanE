@@ -2,10 +2,10 @@
  * Items router — list, create, view detail, view contact.
  */
 const { query, makeId, DEMO_USER_ID } = require("../db");
-const { readBody, json } = require("../lib/util");
+const { readBody, json, normalizeImageUrls } = require("../lib/util");
 const { viewerFromRequest, requireVerifiedUser } = require("../middleware/auth");
 const { sortByProximity, proximityForItem } = require("../proximity");
-const { normalizeImageUrls, attachOwnerTrustSummaries, itemFromRow, ITEM_TYPES, ALLOWED_ITEM_ICONS, defaultItemIcon, normalizeItemIcon } = require("../lib/item-utils");
+const { attachOwnerTrustSummaries, itemFromRow, ITEM_TYPES, ALLOWED_ITEM_ICONS, defaultItemIcon, normalizeItemIcon } = require("../lib/item-utils");
 const { sendClaimNotificationMail } = require("../service/email");
 
 const DEBUG_MODE = String(process.env.DEBUG_MODE || "false").toLowerCase() === "true";
