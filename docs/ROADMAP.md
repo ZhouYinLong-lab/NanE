@@ -1,6 +1,6 @@
 # NanE (南易) 开发路线图
 
-> 最后更新：2026-06-11
+> 最后更新：2026-06-28
 
 ## 当前状态
 
@@ -10,12 +10,12 @@ NanE 已完成基础功能验证——用户可通过 NJU 邮箱或南哪小帮�
 
 | 维度 | 现状 | 目标 |
 |------|------|------|
-| 后端结构 | `server/index.js` 单文件 2150 行 | 按职责拆分为独立路由模块 |
+| 后端结构 | 已拆分为 `server/router/`、`lib/`、`service/`、`middleware/` | 继续收敛公共逻辑与测试边界 |
 | 前端结构 | `web/app.js` 2193 行，`styles.css` 2498 行 | 按视图/组件/API 分拆 |
 | 静态资源 | Font Awesome 全量引入 (~1.6MB) | Tree-shaking 降至 KB 级 |
-| 可观测性 | `console.error` 裸打日志 | 结构化日志 + 审计追溯 |
-| 管理后台 | 单管理员、仅审批/下架 | 多管理员分级、用户管理、数据统计 |
-| 测试 | 零测试 | 核心路径单元测试 + API 集成测试 |
+| 可观测性 | 已引入结构化日志 helper，部分路径接入 | 结构化日志 + 审计追溯全面覆盖 |
+| 管理后台 | 已支持多管理员分级、批量审核、用户管理、数据统计 | 权限审计与操作追溯继续完善 |
+| 测试 | 已有 Node 单元测试 + API smoke/regression，`npm test` 自动起隔离服务 | 扩展核心业务链路集成测试 |
 | 安全 | CORS 全开、无请求体限制 | 白名单、安全头、速率限制完善 |
 | 文档 | 无 API 文档 | 随模块拆分产出 API 参考 |
 
@@ -38,7 +38,7 @@ server/
 │   ├── claims.js     # /api/claims/* — 认领请求与确认
 │   ├── me.js         # /api/me/* — 个人信息、我的物品、设置
 │   ├── admin.js      # /api/admin/* — 管理员登录、审核、统计
-│   └── legal.js      # /api/legal/* — 用户协议、隐私指引
+│   └── info.js       # /api/health、/api/locations、/api/legal/*
 ├── middleware/
 │   ├── auth.js       # requireVerifiedUser()、requireAdmin()
 │   └── rate-limit.js # 现有限流逻辑独立

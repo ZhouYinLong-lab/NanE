@@ -6,7 +6,8 @@
   "scripts": {
     "dev:api": "node server/index.js",
     "start": "node server/index.js",
-    "test": "node --test server/tests"
+    "test": "node tools/run-tests.js",
+    "test:direct": "node --test server/tests"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",

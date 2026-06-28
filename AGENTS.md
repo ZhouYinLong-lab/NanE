@@ -14,6 +14,8 @@ The project has evolved from a WeChat Mini Program demo into a deployable Node.j
 npm install                          # Install dependencies (pg, @fortawesome/fontawesome-free)
 npm run dev:api                      # Start server on PORT (default 37878)
 npm start                            # Same as dev:api
+npm test                             # Start an isolated test API server, then run Node tests
+npm run test:direct                  # Run tests against NANE_TEST_BASE_URL or http://localhost:37878
 ```
 
 Requires Node.js >= 18 and a running PostgreSQL instance with a `nane` database. Copy `.env.example` to `.env` and fill in required values before starting.
@@ -24,7 +26,7 @@ cd ~/apps/NanE && git pull && pm2 restart nane-api --update-env
 pm2 logs nane-api --lines 100
 ```
 
-There are no tests, linters, or build steps.
+There is no frontend build step. The Node test suite covers utility modules plus API smoke/regression paths.
 
 ## Architecture
 
@@ -32,12 +34,12 @@ There are no tests, linters, or build steps.
 
 The entire server is a single ~2000-line file using Node's built-in `http` module. It handles:
 
-1. **Static file serving** — Serves `web/` for the browser client (paths `/`, `/web/*`) and `miniprogram/assets/` (paths `/assets/*`). No separate frontend build.
+1. **Static file serving** — Serves `web/` for the browser client (paths `/`, `/web/*`), `admin/` for console assets, `uploads/` for local image uploads, and `miniprogram/assets/` (paths `/assets/*`). No separate frontend build.
 2. **User-facing API** — All routes under `/api/*` (auth, items, me, claims).
-3. **Admin API + HTML console** — `/admin` returns an inline HTML page with embedded CSS/JS; `/api/admin/*` handles admin actions.
+3. **Admin API + HTML console** — `/admin` returns `admin/index.html`; `/admin/*` serves console assets; `/api/admin/*` handles admin actions.
 4. **Database initialization** — `initializeDatabase()` in `server/db.js` runs `schema.sql` and applies ALTER TABLE migrations on every startup. Seed data is inserted on first run.
 
-**Routing pattern:** The `handle()` function at line 1624 is a flat sequence of `if (method === "X" && pathname.match(...))` checks. New routes should follow the same pattern — add the check before the final 404 fallback.
+**Routing pattern:** `server/index.js` keeps static serving and iterates the router modules in `server/router/`. Add new API routes inside the matching router module, then include a new router in the `routers` array only when a new route family is introduced.
 
 ### Key server modules
 

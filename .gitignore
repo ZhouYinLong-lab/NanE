@@ -1,4 +1,5 @@
 node_modules/
+njumatch-clone/
 .DS_Store
 *.log
 .env
