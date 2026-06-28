@@ -29,6 +29,7 @@ async function initializeDatabase() {
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS room TEXT");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_type TEXT NOT NULL DEFAULT 'consumable'");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS item_icon TEXT NOT NULL DEFAULT 'plus'");
+  await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS image_urls TEXT[] NOT NULL DEFAULT '{}'::TEXT[]");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS no_expiry BOOLEAN NOT NULL DEFAULT false");
   await query("ALTER TABLE items ADD COLUMN IF NOT EXISTS owner_hidden BOOLEAN NOT NULL DEFAULT false");
   await query("ALTER TABLE items ALTER COLUMN expire_date DROP NOT NULL");
@@ -75,6 +76,23 @@ async function initializeDatabase() {
   await query("ALTER TABLE claim_requests ALTER COLUMN status SET DEFAULT 'pending'");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC)");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC)");
+  await query(
+    `CREATE TABLE IF NOT EXISTS fulfillment_reviews (
+      id TEXT PRIMARY KEY,
+      claim_id TEXT NOT NULL REFERENCES claim_requests(id),
+      item_id TEXT NOT NULL REFERENCES items(id),
+      reviewer_id TEXT NOT NULL REFERENCES users(id),
+      reviewee_id TEXT NOT NULL REFERENCES users(id),
+      reviewer_role TEXT NOT NULL CHECK (reviewer_role IN ('owner', 'requester')),
+      outcome TEXT NOT NULL DEFAULT 'positive' CHECK (outcome IN ('positive', 'issue')),
+      tags TEXT[] NOT NULL DEFAULT '{}'::TEXT[],
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`
+  );
+  await query("CREATE UNIQUE INDEX IF NOT EXISTS idx_fulfillment_reviews_claim_reviewer ON fulfillment_reviews(claim_id, reviewer_id)");
+  await query("CREATE INDEX IF NOT EXISTS idx_fulfillment_reviews_reviewee ON fulfillment_reviews(reviewee_id, created_at DESC)");
+  await query("CREATE INDEX IF NOT EXISTS idx_fulfillment_reviews_item ON fulfillment_reviews(item_id, created_at DESC)");
   await query("ALTER TABLE items DROP CONSTRAINT IF EXISTS items_item_type_check");
   await query("ALTER TABLE items ADD CONSTRAINT items_item_type_check CHECK (item_type IN ('consumable', 'medicine', 'tool'))");
   await query(

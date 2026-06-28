@@ -46,11 +46,18 @@ SMTP_USER=...
 SMTP_PASS=...
 SMTP_FROM=NanE 南易 <...>
 PUBLIC_WEB_URL=https://nane.zylatent.com
+MINIO_ENDPOINT=https://minio.example.com
+MINIO_BUCKET=nane
+MINIO_REGION=us-east-1
+MINIO_ACCESS_KEY=...
+MINIO_SECRET_KEY=...
+MINIO_PUBLIC_URL=https://static.example.com/nane
 ```
 
 注意：
 
 - `JWT_SECRET`、`ADMIN_PASSWORD`、`DATABASE_URL`、`NANNA_API_KEY`、`SMTP_PASS` 都是敏感信息。
+- `MINIO_ACCESS_KEY`、`MINIO_SECRET_KEY` 也是敏感信息。未配置 MinIO 时，图片会落到服务器本地 `uploads/` 目录，适合开发演示，不建议作为长期生产存储。
 - 不要把 `.env`、截图或日志里的敏感值提交到仓库。
 - 修改 `.env` 后需要使用 `pm2 restart nane-api --update-env`。
 
