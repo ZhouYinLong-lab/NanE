@@ -87,9 +87,162 @@ const state = {
 };
 
 const HOME_PAGE_SIZE = 20;
+const MOTION_REVEAL_SELECTOR = [
+  ".welcome-banner",
+  ".search-row",
+  ".chips",
+  ".section-head",
+  ".state-card",
+  ".form-card",
+  ".rules-card",
+  "fieldset",
+  ".profile-card",
+  ".claim-banner",
+  ".review-banner",
+  ".settings-row",
+  ".item-card",
+  ".claim-banner-row",
+  ".review-banner-row",
+  ".claim-modal-row",
+  ".review-target",
+  ".review-tags",
+  ".review-tag",
+  ".trust-card",
+  ".profile-trust-card",
+  ".detail-gallery",
+  ".detail-meta",
+  ".contact-field",
+  ".contact-box",
+  ".notice-line",
+  ".image-preview",
+  ".image-upload-progress",
+  ".image-empty",
+  ".icon-option",
+  ".empty-state"
+].join(",");
+
+let motionObserver = null;
 
 function $(id) {
   return document.getElementById(id);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+}
+
+function ensureMotionObserver() {
+  if (motionObserver || prefersReducedMotion()) {
+    return motionObserver;
+  }
+  motionObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entry.target.classList.add("motion-visible");
+      motionObserver.unobserve(entry.target);
+    }
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  return motionObserver;
+}
+
+function setMotionIndexes(root = document) {
+  const groups = [
+    [".item-list", ".item-card, .skeleton-card"],
+    [".chips", ".chip, .chip-select"],
+    [".review-tags", ".review-tag"],
+    ["#pendingClaimsList", ".claim-banner-row"],
+    ["#pendingReviewsList", ".review-banner-row"],
+    ["#claimsModalBody", ".claim-modal-row"],
+    [".claim-panel", ".claim-row"],
+    ["#iconGrid", ".icon-option"],
+    ["#imagePreviewList", ".image-preview, .image-upload-progress, .image-empty"],
+    ["#contactResult", ".contact-box, .claim-button"],
+    ["#claimResult", ".contact-box"],
+    ["#detailBody", ".detail-gallery, .detail-meta, .item-desc, .trust-card, .notice-line, #contactButton, #contactResult, #shareItemButton, .contact-box, .claim-panel, .owner-actions"]
+  ];
+  for (const [groupSelector, childSelector] of groups) {
+    root.querySelectorAll?.(groupSelector).forEach(group => {
+      [...group.querySelectorAll(childSelector)].forEach((item, index) => {
+        item.style.setProperty("--motion-index", String(Math.min(index, 8)));
+      });
+    });
+  }
+}
+
+function isMotionHidden(element) {
+  return element.hidden || Boolean(element.closest("[hidden]"));
+}
+
+function prepareMotion(root = document) {
+  setMotionIndexes(root);
+  const descendants = root.querySelectorAll ? [...root.querySelectorAll(MOTION_REVEAL_SELECTOR)] : [];
+  const elements = root.matches?.(MOTION_REVEAL_SELECTOR)
+    ? [root, ...descendants]
+    : descendants;
+  const observer = ensureMotionObserver();
+  elements.forEach(element => {
+    if (isMotionHidden(element) || element.dataset.motionReady === "1") return;
+    element.dataset.motionReady = "1";
+    element.classList.add("motion-ready");
+    if (prefersReducedMotion() || !observer) {
+      element.classList.add("motion-visible");
+      return;
+    }
+    observer.observe(element);
+  });
+}
+
+function refreshMotion(root = document) {
+  requestAnimationFrame(() => prepareMotion(root));
+}
+
+function showMotionDialog(dialog) {
+  if (!dialog) return;
+  dialog.classList.remove("is-closing");
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+  refreshMotion(dialog);
+}
+
+function animateCloseDialog(dialog, options = {}) {
+  if (!dialog) return;
+  if (prefersReducedMotion() || !dialog.open) {
+    if (dialog.open) dialog.close();
+    if (options.remove) dialog.remove();
+    return;
+  }
+  dialog.classList.add("is-closing");
+  dialog.addEventListener("animationend", () => {
+    dialog.classList.remove("is-closing");
+    dialog.close();
+    if (options.remove) dialog.remove();
+  }, { once: true });
+}
+
+function closeAndRemoveDialog(dialog) {
+  animateCloseDialog(dialog, { remove: true });
+}
+
+function pulseElement(element, className) {
+  if (!element || prefersReducedMotion()) return;
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+  element.addEventListener("animationend", () => element.classList.remove(className), { once: true });
+}
+
+function initPressFeedback() {
+  document.addEventListener("pointerdown", event => {
+    const target = event.target.closest("button, .item-card, .link-button");
+    if (!target || target.disabled) return;
+    target.classList.add("is-pressing");
+    const clear = () => target.classList.remove("is-pressing");
+    target.addEventListener("pointerup", clear, { once: true });
+    target.addEventListener("pointercancel", clear, { once: true });
+    target.addEventListener("pointerleave", clear, { once: true });
+    setTimeout(clear, 260);
+  });
 }
 
 function showToast(message, type = "info") {
@@ -453,6 +606,7 @@ function renderProfileTrust(summary) {
   } else {
     profileCard.insertAdjacentHTML("afterend", profileTrustHTML(summary));
   }
+  refreshMotion($("profileTrustCard"));
 }
 
 function itemMediaHTML(item) {
@@ -490,10 +644,12 @@ function renderImagePreviews() {
         <div class="image-progress-track"><div></div></div>
       </div>
     `;
+    refreshMotion(list);
     return;
   }
   if (!state.uploadedImageUrls.length) {
     list.innerHTML = `<div class="image-empty">暂未上传图片</div>`;
+    refreshMotion(list);
     return;
   }
   list.innerHTML = state.uploadedImageUrls.map((url, index) => `
@@ -502,6 +658,7 @@ function renderImagePreviews() {
       <button type="button" class="image-remove" data-image-index="${index}" aria-label="移除第 ${index + 1} 张图片">×</button>
     </div>
   `).join("");
+  refreshMotion(list);
 }
 
 function resetUploadedImages() {
@@ -714,6 +871,7 @@ async function loadHome() {
     }
     const list = $("itemList");
     list.innerHTML = items.map(item => renderItem(item)).join("");
+    refreshMotion(list);
     list.classList.add("list-dirty");
     list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
     updateLoadMoreButton();
@@ -743,6 +901,7 @@ async function loadMoreHome() {
 
     const list = $("itemList");
     list.insertAdjacentHTML("beforeend", data.items.map(item => renderItem(item)).join(""));
+    refreshMotion(list);
     list.classList.add("list-dirty");
     list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
     updateLoadMoreButton();
@@ -917,6 +1076,7 @@ function renderClaimsBanner(items) {
       </span>
     </div>
   `).join("");
+  refreshMotion(banner);
 }
 
 function showClaimsModal(items) {
@@ -943,7 +1103,8 @@ function showClaimsModal(items) {
       </span>
     </div>
   `).join("");
-  $("claimsModal").showModal();
+  refreshMotion($("claimsModalBody"));
+  showMotionDialog($("claimsModal"));
 }
 
 function refreshClaimsModal() {
@@ -951,7 +1112,7 @@ function refreshClaimsModal() {
   if (!modal || !modal.open) return;
   const remaining = $("claimsModalBody").querySelectorAll(".claim-modal-row").length;
   if (remaining <= 1) {
-    modal.close();
+    animateCloseDialog(modal);
     return;
   }
 }
@@ -980,6 +1141,7 @@ function renderPendingReviews(reviews) {
       </span>
     </div>
   `).join("");
+  refreshMotion(banner);
 }
 
 async function loadPendingReviews() {
@@ -1016,7 +1178,8 @@ function openReviewDialog(claimId) {
     <div class="form-message" id="reviewMessage"></div>
     <button type="button" class="primary wide" id="submitReviewButton">提交评价</button>
   `;
-  $("reviewDialog").showModal();
+  refreshMotion($("reviewDialogBody"));
+  showMotionDialog($("reviewDialog"));
 }
 
 function renderReviewTags(isIssue) {
@@ -1024,6 +1187,7 @@ function renderReviewTags(isIssue) {
   if (!list) return;
   const tags = isIssue ? ISSUE_REVIEW_TAGS : REVIEW_TAGS;
   list.innerHTML = tags.map(tag => `<button type="button" class="review-tag" data-review-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`).join("");
+  refreshMotion(list);
   const comment = $("reviewCommentInput");
   if (comment) {
     comment.placeholder = isIssue ? "可选：说明遇到的问题，便于后续改进" : "可选：补充一句对这次互助的说明";
@@ -1070,6 +1234,7 @@ async function loadMyItems() {
     container.innerHTML = emptyStateHTML("guest");
     $("pendingClaimsBanner").hidden = true;
     $("pendingReviewsBanner").hidden = true;
+    refreshMotion(container);
     return;
   }
   const skHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
@@ -1090,6 +1255,7 @@ async function loadMyItems() {
     container.innerHTML = sorted.length
       ? sorted.map(item => renderItem(item, { showRoom: true, showStatus: true, showClaims: true, showOwnerActions: true })).join("")
       : emptyStateHTML("mine");
+    refreshMotion(container);
     const hasPending = sorted.some(item => (item.pendingClaimCount || 0) > 0);
     if (hasPending && !state.claimsModalShown) {
       state.claimsModalShown = true;
@@ -1120,6 +1286,7 @@ async function openDetail(id) {
       <div id="contactResult"></div>
       <button class="secondary wide" id="shareItemButton" style="margin-top:8px">复制物品链接分享给同学</button>
     `;
+    refreshMotion($("detailBody"));
     const shareBtn = $("detailBody").querySelector("#shareItemButton");
     if (shareBtn) {
       shareBtn.addEventListener("click", () => {
@@ -1137,19 +1304,19 @@ async function openDetail(id) {
         };
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(urlStr).then(() => {
-            $("detailDialog").close();
+            animateCloseDialog($("detailDialog"));
             showToast("链接已复制，发送给同学即可快速查看", "success");
           }).catch(() => {
             if (!fallbackCopy(urlStr)) showToast("复制失败，请手动复制地址栏链接", "error");
-            else { $("detailDialog").close(); showToast("链接已复制", "success"); }
+            else { animateCloseDialog($("detailDialog")); showToast("链接已复制", "success"); }
           });
         } else {
-          if (fallbackCopy(urlStr)) { $("detailDialog").close(); showToast("链接已复制", "success"); }
+          if (fallbackCopy(urlStr)) { animateCloseDialog($("detailDialog")); showToast("链接已复制", "success"); }
           else showToast("复制失败，请手动复制地址栏链接", "error");
         }
       });
     }
-    $("detailDialog").showModal();
+    showMotionDialog($("detailDialog"));
   } catch (error) {
     showToast(errmsg(error, "详情加载失败"), "error");
   }
@@ -1197,7 +1364,8 @@ async function openMyItemDetail(id) {
       </div>
       <div id="ownerActionResult"></div>
     `;
-    $("detailDialog").showModal();
+    refreshMotion($("detailBody"));
+    showMotionDialog($("detailDialog"));
   } catch (error) {
     showToast(errmsg(error, "详情加载失败"), "error");
   }
@@ -1206,7 +1374,7 @@ async function openMyItemDetail(id) {
 function startEditItem() {
   const item = state.selectedDetail;
   if (!item) return;
-  $("detailDialog").close();
+  animateCloseDialog($("detailDialog"));
   switchView("publish");
   state.selectedPublishType = item.itemType || "consumable";
   state.selectedIcon = item.itemIcon || "plus";
@@ -1270,7 +1438,7 @@ async function takeDownMyItem() {
     const data = await api(`/me/items/${encodeURIComponent(item.id)}/delete`, { method: "POST" });
     $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "发布记录已删除。")}</div>`;
     await Promise.all([loadHome(), loadMyItems()]);
-    setTimeout(() => $("detailDialog").close(), 1200);
+    setTimeout(() => animateCloseDialog($("detailDialog")), 1200);
   } catch (error) {
     $("ownerActionResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "删除失败"))}</div>`;
   }
@@ -1304,7 +1472,7 @@ async function viewContact() {
   if (!requireVerified("请先登录并同意用户协议，再查看微信或 QQ 联系方式。", () => {
     openDetail(state.selectedDetail?.id).then(() => setTimeout(viewContact, 400));
   })) {
-    $("detailDialog").close();
+    animateCloseDialog($("detailDialog"));
     return;
   }
   if (state.contactViewedForItem === state.selectedDetail.id) return;
@@ -1326,6 +1494,7 @@ async function viewContact() {
       <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
       <div id="claimResult"></div>
     `;
+    refreshMotion($("contactResult"));
     const btn = $("contactButton");
     if (btn) {
       btn.textContent = "已查看联系方式 ✓";
@@ -1335,6 +1504,7 @@ async function viewContact() {
     loadProfile();
   } catch (error) {
     $("contactResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "查看失败"))}</div>`;
+    refreshMotion($("contactResult"));
   }
 }
 
@@ -1343,7 +1513,7 @@ async function requestClaim() {
   if (!requireVerified("请先登录并补全账号资料，再提醒发布者确认领取。", () => {
     openDetail(state.selectedDetail?.id).then(() => setTimeout(requestClaim, 400));
   })) {
-    $("detailDialog").close();
+    animateCloseDialog($("detailDialog"));
     return;
   }
   const claimBtn = $("claimButton");
@@ -1358,10 +1528,12 @@ async function requestClaim() {
     claimBtn.textContent = "您已提醒过发布者确认领取，请等待对方处理";
     claimBtn.classList.add("disabled-claim");
     $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(data.message || "已发送领取提醒")}</div>`;
+    refreshMotion($("claimResult"));
   } catch (error) {
     claimBtn.disabled = false;
     claimBtn.textContent = "我已联系并领取，提醒发布者确认";
     $("claimResult").innerHTML = `<div class="contact-box">${escapeHtml(errmsg(error, "发送领取提醒失败"))}</div>`;
+    refreshMotion($("claimResult"));
   }
 }
 
@@ -1424,6 +1596,7 @@ function renderIconGrid() {
     </div>
   ` : "";
   $("iconGrid").innerHTML = `${commonHtml}${otherHtml}${hiddenHtml}`;
+  refreshMotion($("iconGrid"));
 }
 
 function setPublishType(itemType) {
@@ -1482,6 +1655,7 @@ function renderSubChips(itemType) {
     `<button class="chip chip-sub" data-type="${itemType}" data-category="${cat}">${cat}</button>`
   ).join("");
   sub.hidden = false;
+  refreshMotion(sub);
 }
 
 function emptyStateHTML(type, detail = "") {
@@ -1502,15 +1676,6 @@ function emptyStateHTML(type, detail = "") {
   return `<div class="empty-state"><div class="empty-state-icon">${illustrations[type] || illustrations.home}</div><div class="empty-state-msg">${messages[type] || messages.home}</div></div>`;
 }
 
-function animateCloseDialog(dialog) {
-  if (!dialog) return;
-  dialog.classList.add("is-closing");
-  dialog.addEventListener("animationend", () => {
-    dialog.classList.remove("is-closing");
-    dialog.close();
-  }, { once: true });
-}
-
 function showConfirmDialog(message, confirmText = "确定", cancelText = "取消") {
   return new Promise(resolve => {
     const d = document.createElement("dialog");
@@ -1523,11 +1688,11 @@ function showConfirmDialog(message, confirmText = "确定", cancelText = "取消
       </div>
     </div>`;
     document.body.appendChild(d);
-    d.showModal();
-    d.querySelector("#confirmYesBtn").addEventListener("click", () => { d.close(); d.remove(); resolve(true); });
-    d.querySelector("#confirmNoBtn").addEventListener("click", () => { d.close(); d.remove(); resolve(false); });
-    d.addEventListener("click", e => { if (e.target === d) { d.close(); d.remove(); resolve(false); } });
-    d.addEventListener("cancel", e => { e.preventDefault(); d.close(); d.remove(); resolve(false); });
+    showMotionDialog(d);
+    d.querySelector("#confirmYesBtn").addEventListener("click", () => { closeAndRemoveDialog(d); resolve(true); });
+    d.querySelector("#confirmNoBtn").addEventListener("click", () => { closeAndRemoveDialog(d); resolve(false); });
+    d.addEventListener("click", e => { if (e.target === d) { closeAndRemoveDialog(d); resolve(false); } });
+    d.addEventListener("cancel", e => { e.preventDefault(); closeAndRemoveDialog(d); resolve(false); });
   });
 }
 
@@ -1717,12 +1882,12 @@ async function showPublishConfirmDialog(payload) {
     </div>
   `;
   document.body.appendChild(dialog);
-  dialog.showModal();
+  showMotionDialog(dialog);
   return new Promise(resolve => {
-    dialog.querySelector("#confirmSubmitBtn").addEventListener("click", () => { dialog.close(); dialog.remove(); resolve(true); });
-    dialog.querySelector("#confirmBackBtn").addEventListener("click", () => { dialog.close(); dialog.remove(); resolve(false); });
-    dialog.addEventListener("click", event => { if (event.target === dialog) { dialog.close(); dialog.remove(); resolve(false); } });
-    dialog.addEventListener("cancel", event => { event.preventDefault(); dialog.close(); dialog.remove(); resolve(false); });
+    dialog.querySelector("#confirmSubmitBtn").addEventListener("click", () => { closeAndRemoveDialog(dialog); resolve(true); });
+    dialog.querySelector("#confirmBackBtn").addEventListener("click", () => { closeAndRemoveDialog(dialog); resolve(false); });
+    dialog.addEventListener("click", event => { if (event.target === dialog) { closeAndRemoveDialog(dialog); resolve(false); } });
+    dialog.addEventListener("cancel", event => { event.preventDefault(); closeAndRemoveDialog(dialog); resolve(false); });
   });
 }
 
@@ -2157,6 +2322,7 @@ function syncPublishView() {
     form.hidden = true;
     guestCard.hidden = false;
   }
+  refreshMotion($("view-publish"));
 }
 
 function syncSettingsAccount() {
@@ -2171,6 +2337,7 @@ function syncSettingsAccount() {
     loggedInContent.hidden = true;
     syncAgreementUI();
   }
+  refreshMotion($("view-mine"));
 }
 
 function logout() {
@@ -2194,10 +2361,13 @@ function bindEvents() {
     tab.addEventListener("click", () => {
       viewButtons.forEach(item => item.classList.toggle("active", item.dataset.view === tab.dataset.view));
       document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${tab.dataset.view}`));
+      pulseElement(tab, "nav-bump");
+      refreshMotion(document.querySelector(`#view-${tab.dataset.view}`) || document);
       if (tab.dataset.view === "publish") {
         const successCard = $("publishSuccessCard");
         if (successCard) successCard.hidden = true;
         syncPublishView();
+        refreshMotion($("view-publish"));
       }
       if (tab.dataset.view === "mine") {
         loadProfile();
@@ -2422,9 +2592,9 @@ function bindEvents() {
   $("openAgreementButton").addEventListener("click", () => {
     document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
     loadAgreement();
-    $("agreementDialog").showModal();
+    showMotionDialog($("agreementDialog"));
   });
-  $("closeAgreementButton").addEventListener("click", () => $("agreementDialog").close());
+  $("closeAgreementButton").addEventListener("click", () => animateCloseDialog($("agreementDialog")));
   $("closeClaimsModalButton").addEventListener("click", () => animateCloseDialog($("claimsModal")));
   $("claimsModal").addEventListener("click", event => {
     const claimBtn = event.target.closest("[data-claim-action]");
@@ -2604,14 +2774,14 @@ function bindEvents() {
   $("settingsAgreementButton")?.addEventListener("click", () => {
     document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
     loadAgreement();
-    $("agreementDialog").showModal();
+    showMotionDialog($("agreementDialog"));
   });
   $("settingsPrivacyButton")?.addEventListener("click", async () => {
     try {
       const data = await api("/legal/privacy");
       $("agreementBody").innerHTML = markdownToHtml(data.markdown || "隐私保护指引暂不可用。");
       document.querySelector("#agreementDialog h3").textContent = "NanE 隐私保护指引";
-      $("agreementDialog").showModal();
+      showMotionDialog($("agreementDialog"));
     } catch (error) {
       showToast("隐私保护指引加载失败", "error");
     }
@@ -2619,14 +2789,14 @@ function bindEvents() {
   $("footerAgreementButton")?.addEventListener("click", async () => {
     document.querySelector("#agreementDialog h3").textContent = "NanE 南易用户协议";
     await loadAgreement();
-    $("agreementDialog").showModal();
+    showMotionDialog($("agreementDialog"));
   });
   $("footerPrivacyButton")?.addEventListener("click", async () => {
     try {
       const data = await api("/legal/privacy");
       $("agreementBody").innerHTML = markdownToHtml(data.markdown || "隐私保护指引暂不可用。");
       document.querySelector("#agreementDialog h3").textContent = "NanE 隐私保护指引";
-      $("agreementDialog").showModal();
+      showMotionDialog($("agreementDialog"));
     } catch (error) {
       showToast("隐私保护指引加载失败", "error");
     }
@@ -2662,13 +2832,16 @@ async function applyUrlParams() {
 async function init() {
   initDarkMode();
   initDateControls();
+  initPressFeedback();
   bindEvents();
+  refreshMotion(document);
   await Promise.all([loadAgreement(), loadLocations()]);
   renderIconGrid();
   setPublishType("consumable");
   renderImagePreviews();
   await Promise.all([loadHome(), loadProfile()]);
   syncPublishView();
+  refreshMotion(document);
   await applyUrlParams();
 }
 
