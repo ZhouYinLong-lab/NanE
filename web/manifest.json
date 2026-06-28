@@ -1,0 +1,13 @@
+{
+  "name": "NanE 南易",
+  "short_name": "南易",
+  "description": "南大校园免费互助平台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8fc",
+  "theme_color": "#6E0065",
+  "icons": [
+    { "src": "/assets/brand/web-logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/brand/web-logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

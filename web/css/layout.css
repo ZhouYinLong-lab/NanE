@@ -626,3 +626,33 @@
 [data-theme="dark"] .footer-slogan {
   color: #c97dc9;
 }
+
+[data-theme="dark"] .bottom-nav {
+  background: transparent;
+}
+
+[data-theme="dark"] .nav-item {
+  background: rgba(42, 42, 42, 0.55);
+  color: #a0a0a0;
+  box-shadow:
+    inset 0 0 14px rgba(255, 255, 255, 0.04),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .nav-item:hover:not(.active) {
+  background: rgba(60, 60, 60, 0.65);
+  color: #c97dc9;
+}
+
+[data-theme="dark"] .nav-item.active {
+  background: rgba(42, 42, 42, 0.55);
+  color: #c97dc9;
+}
+
+[data-theme="dark"] .brand h1 {
+  color: #b84db8;
+}
+
+[data-theme="dark"] .brand-tagline {
+  color: #888;
+}

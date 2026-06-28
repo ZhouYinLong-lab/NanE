@@ -6,10 +6,13 @@
   <title>NanE 南易</title>
   <link rel="icon" type="image/png" href="/assets/brand/web-logo.png">
   <link rel="apple-touch-icon" href="/assets/brand/web-logo.png">
+  <link rel="manifest" href="/web/manifest.json">
+  <meta name="theme-color" content="#6E0065">
   <link rel="stylesheet" href="/web/css/tokens.css">
   <link rel="stylesheet" href="/web/css/base.css">
   <link rel="stylesheet" href="/web/css/layout.css">
   <link rel="stylesheet" href="/web/css/components.css">
+  <link rel="stylesheet" href="/web/css/fa-subset.css">
 </head>
 <body>
   <a href="#main-content" class="skip-link">跳到主要内容</a>
@@ -542,6 +545,20 @@
     <article id="agreementBody" class="agreement-body">正在加载协议...</article>
   </dialog>
 
-  <script src="/web/app.js"></script>
+  <!-- Module order: utils → api → ui → views → app -->
+  <script src="/web/js/utils/escape.js"></script>
+  <script src="/web/js/utils/date.js"></script>
+  <script src="/web/js/utils/validate.js"></script>
+  <script src="/web/js/api/client.js"></script>
+  <script src="/web/js/ui/motion.js"></script>
+  <script src="/web/js/ui/toast.js"></script>
+  <script src="/web/js/ui/dialog.js"></script>
+  <script src="/web/js/ui/skeleton.js"></script>
+  <script src="/web/js/views/home.js"></script>
+  <script src="/web/js/views/publish.js"></script>
+  <script src="/web/js/views/mine.js"></script>
+  <script src="/web/js/views/settings.js"></script>
+  <script src="/web/js/app.js"></script>
+  <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/web/sw.js')</script>
 </body>
 </html>

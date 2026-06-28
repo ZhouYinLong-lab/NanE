@@ -1069,3 +1069,12 @@ textarea:focus {
 [data-theme="dark"] .batch-bar {
   background: rgba(42, 42, 42, 0.88);
 }
+
+[data-theme="dark"] .admin-row {
+  background: rgba(42, 42, 42, 0.5);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .modal-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}

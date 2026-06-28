@@ -133,6 +133,13 @@ function showDashboard() {
     byId("admin-management").style.display = "";
     loadAdmins();
   }
+  // Hide user metrics for non-super_admin (total users, banned users, new users today)
+  if (!canManageAdmins()) {
+    ["stat-total-users", "stat-banned-users", "stat-new-users"].forEach(function (id) {
+      var el = byId(id);
+      if (el) el.style.display = "none";
+    });
+  }
 }
 
 // ===== Role Helpers =====
