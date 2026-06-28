@@ -4,12 +4,20 @@
 const fs = require("fs");
 const path = require("path");
 const { json } = require("../lib/util");
+const { streamImage } = require("../service/image-upload");
 const locations = require("../../miniprogram/data/locations");
 
 const AGREEMENT_VERSION = "v1.0";
 
 async function handle(req, res, pathname, method) {
   if (method !== "GET") return false;
+
+  // Image proxy — serves MinIO/local images through NanE's own port
+  if (pathname.startsWith("/api/images/")) {
+    const key = pathname.replace(/^\/api\/images\//, "");
+    await streamImage(key, res);
+    return true;
+  }
 
   if (pathname === "/api/health") {
     json(res, 200, { ok: true, name: "NanE API", version: "0.2.0", database: "postgresql", time: new Date().toISOString() });

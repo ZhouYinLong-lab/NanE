@@ -77,7 +77,7 @@ function normalizeImageUrls(input) {
     if (!url || urls.includes(url)) {
       continue;
     }
-    if (url.startsWith("/uploads/") || /^https?:\/\//i.test(url)) {
+    if (url.startsWith("/uploads/") || url.startsWith("/api/images/") || /^https?:\/\//i.test(url)) {
       urls.push(url.slice(0, 500));
     }
   }

@@ -100,13 +100,63 @@ function putObjectToMinio(key, buffer, contentType) {
 async function uploadImageBuffer(buffer, contentType, key) {
   if (minioConfigured()) {
     await putObjectToMinio(key, buffer, contentType);
-    const baseUrl = MINIO_PUBLIC_URL || `${MINIO_ENDPOINT}/${MINIO_BUCKET}`;
-    return { url: `${baseUrl}/${key}`, key, storage: "minio" };
+    // Use NanE's own image proxy instead of exposing MinIO directly.
+    // Avoids opening extra firewall ports — all traffic goes through :37878.
+    return { url: `/api/images/${key}`, key, storage: "minio" };
   }
   const localPath = path.join(UPLOAD_DIR, key);
   await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
   await fs.promises.writeFile(localPath, buffer);
   return { url: `/uploads/${key}`, key, storage: "local" };
+}
+
+async function streamImage(key, res) {
+  if (minioConfigured()) {
+    const endpoint = new URL(MINIO_ENDPOINT);
+    const objectPath = `/${MINIO_BUCKET}/${key.split("/").map(part => encodeURIComponent(part)).join("/")}`;
+    const transport = endpoint.protocol === "https:" ? require("https") : require("http");
+    return new Promise((resolve, reject) => {
+      transport.get({
+        protocol: endpoint.protocol,
+        hostname: endpoint.hostname,
+        port: endpoint.port,
+        path: objectPath
+      }, imageRes => {
+        if (imageRes.statusCode >= 200 && imageRes.statusCode < 300) {
+          const contentType = imageRes.headers["content-type"] || "image/webp";
+          res.writeHead(200, {
+            "Content-Type": contentType,
+            "Cache-Control": "public, max-age=2592000, immutable",
+            "Content-Length": imageRes.headers["content-length"] || undefined
+          });
+          imageRes.pipe(res);
+        } else {
+          imageRes.resume();
+          res.writeHead(404, { "Content-Type": "text/plain" });
+          res.end("Image not found");
+        }
+      }).on("error", () => {
+        res.writeHead(502, { "Content-Type": "text/plain" });
+        res.end("Image unavailable");
+      });
+    });
+  }
+  // Local storage fallback
+  const localPath = path.join(UPLOAD_DIR, key);
+  try {
+    const stat = await fs.promises.stat(localPath);
+    const ext = path.extname(key).toLowerCase();
+    const mimeTypes = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
+    res.writeHead(200, {
+      "Content-Type": mimeTypes[ext] || "image/webp",
+      "Cache-Control": "public, max-age=2592000, immutable",
+      "Content-Length": stat.size
+    });
+    fs.createReadStream(localPath).pipe(res);
+  } catch {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Image not found");
+  }
 }
 
 function localUploadPathFromUrl(url) {
@@ -200,5 +250,6 @@ module.exports = {
   localUploadPathFromUrl,
   cleanupEmptyDirs,
   deleteLocalImageIfUnused,
-  cleanupLocalOrphanImages
+  cleanupLocalOrphanImages,
+  streamImage
 };
