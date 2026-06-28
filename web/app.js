@@ -94,7 +94,7 @@ const HOME_PAGE_SIZE = 20;
 // TODO: migrate to [data-motion] attribute for self-registration.
 const MOTION_CLASSES = new Set([
   "welcome-banner", "search-row", "chips", "section-head",
-  "state-card", "form-card", "rules-card", "fieldset",
+  "state-card", "form-card", "rules-card", "motion-section",
   "profile-card", "claim-banner", "review-banner", "settings-row",
   "item-card", "claim-banner-row", "review-banner-row", "claim-modal-row",
   "review-target", "review-tags", "review-tag",
