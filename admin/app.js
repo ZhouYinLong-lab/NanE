@@ -97,6 +97,13 @@ async function login() {
     });
     token = data.token;
     localStorage.setItem("nane_admin_token", token);
+    // Store admin role from JWT payload
+    try {
+      var payload = JSON.parse(atob(token.split(".")[1]));
+      localStorage.setItem("nane_admin_role", payload.adminRole || "viewer");
+    } catch (e) {
+      localStorage.setItem("nane_admin_role", "viewer");
+    }
     showDashboard();
     loadAll();
   } catch (e) {
@@ -107,14 +114,36 @@ async function login() {
 function logout() {
   token = "";
   localStorage.removeItem("nane_admin_token");
+  localStorage.removeItem("nane_admin_role");
   byId("login-section").style.display = "";
   byId("dashboard").style.display = "none";
   selectedItems.clear();
+  byId("admin-management").style.display = "none";
 }
 
 function showDashboard() {
   byId("login-section").style.display = "none";
   byId("dashboard").style.display = "block";
+  // Select-all checkbox only for roles that can modify
+  byId("select-all").closest(".select-all-label").style.display = canModify() ? "" : "none";
+  // Batch bar only for roles that can modify
+  byId("batch-bar").style.display = canModify() ? "" : "none";
+  // Show admin management section if super_admin
+  if (canManageAdmins()) {
+    byId("admin-management").style.display = "";
+    loadAdmins();
+  }
+}
+
+// ===== Role Helpers =====
+function adminRole() {
+  return localStorage.getItem("nane_admin_role") || "viewer";
+}
+function canModify() {
+  return adminRole() === "super_admin" || adminRole() === "moderator";
+}
+function canManageAdmins() {
+  return adminRole() === "super_admin";
 }
 
 // ===== Data Loading =====
@@ -131,6 +160,9 @@ async function loadStats() {
     byId("s-contact").textContent = s.contact_views_today;
     byId("s-claims").textContent = s.confirmed_claims;
     byId("s-reviews").textContent = s.fulfillment_reviews;
+    byId("s-total-users").textContent = s.total_users;
+    byId("s-banned-users").textContent = s.banned_users;
+    byId("s-new-users").textContent = s.new_users_today;
   } catch (e) {
     showToast("加载统计数据失败：" + e.message, "error");
   }
@@ -182,23 +214,28 @@ function renderItemCard(item) {
     rejectHtml = '<div class="reject-reason">驳回原因：' + escapeHtml(item.rejectReason) + "</div>";
   }
 
-  // Determine which action buttons to show
+  // Determine which action buttons to show (only for super_admin and moderator)
   var actionsHtml = "";
-  if (item.status === "reviewing") {
-    actionsHtml =
-      '<button class="primary small" onclick="reviewItem(\'' + id + "','approve')\">通过</button>" +
-      '<button class="secondary small" onclick="reviewItem(\'' + id + "','reject')\">驳回</button>";
-  } else if (item.status === "online") {
-    actionsHtml =
-      '<button class="secondary small" onclick="reviewItem(\'' + id + "','reject')\">驳回</button>" +
-      '<button class="danger small" onclick="reviewItem(\'' + id + "','take-down')\">下架</button>";
+  if (canModify()) {
+    if (item.status === "reviewing") {
+      actionsHtml =
+        '<button class="primary small" onclick="reviewItem(\'' + id + "','approve')\">通过</button>" +
+        '<button class="secondary small" onclick="reviewItem(\'' + id + "','reject')\">驳回</button>";
+    } else if (item.status === "online") {
+      actionsHtml =
+        '<button class="secondary small" onclick="reviewItem(\'' + id + "','reject')\">驳回</button>" +
+        '<button class="danger small" onclick="reviewItem(\'' + id + "','take-down')\">下架</button>";
+    }
   }
+
+  // Checkbox only for roles that can modify
+  var checkboxHtml = canModify()
+    ? '<label class="item-checkbox-label"><input type="checkbox" class="item-checkbox" data-id="' + id + '" onchange="toggleItem(\'' + id + '\')"></label>'
+    : "";
 
   return (
     '<div class="item-card" data-id="' + id + '">' +
-      '<label class="item-checkbox-label">' +
-        '<input type="checkbox" class="item-checkbox" data-id="' + id + '" onchange="toggleItem(\'' + id + '\')">' +
-      "</label>" +
+      checkboxHtml +
       '<div class="item-content">' +
         '<div class="item-header">' +
           '<h3>' + title + "</h3>" +
@@ -318,6 +355,73 @@ async function doBatchAction(ids, action, reason) {
   }
 }
 
+// ===== Admin Management =====
+async function loadAdmins() {
+  try {
+    var data = await api("/api/admin/admins");
+    var listEl = byId("admin-list");
+    if (!data.admins || data.admins.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">暂无管理员</div>';
+      return;
+    }
+    var currentUsername = "";
+    try {
+      var p = JSON.parse(atob(token.split(".")[1]));
+      currentUsername = p.username || "";
+    } catch (e) {}
+    listEl.innerHTML = data.admins.map(function (a) {
+      var roleLabel = a.role === "super_admin" ? "超级管理员" : a.role === "moderator" ? "审核员" : "观察员";
+      var isSelf = a.username === currentUsername;
+      var deleteBtn = isSelf
+        ? '<span class="admin-self-tag">当前登录</span>'
+        : '<button class="danger small" onclick="deleteAdmin(\'' + escapeHtml(a.id) + '\')">删除</button>';
+      return '<div class="admin-row">' +
+        '<span class="admin-name">' + escapeHtml(a.username) + '</span>' +
+        '<span class="admin-role-pill admin-role-' + escapeHtml(a.role) + '">' + roleLabel + '</span>' +
+        '<span class="admin-row-actions">' + deleteBtn + '</span>' +
+        '</div>';
+    }).join("");
+  } catch (e) {
+    showToast("加载管理员列表失败：" + e.message, "error");
+  }
+}
+
+async function createAdmin() {
+  var username = byId("new-admin-username").value.trim();
+  var password = byId("new-admin-password").value.trim();
+  var role = byId("new-admin-role").value;
+  if (!username || !password) {
+    showToast("请填写用户名和密码", "error");
+    return;
+  }
+  try {
+    await api("/api/admin/admins", {
+      method: "POST",
+      body: JSON.stringify({ username: username, password: password, role: role })
+    });
+    showToast("管理员添加成功", "success");
+    byId("new-admin-username").value = "";
+    byId("new-admin-password").value = "";
+    byId("new-admin-role").value = "viewer";
+    loadAdmins();
+  } catch (e) {
+    showToast("添加管理员失败：" + e.message, "error");
+  }
+}
+
+async function deleteAdmin(id) {
+  if (!confirm("确定要删除该管理员吗？")) return;
+  try {
+    await api("/api/admin/admins/" + encodeURIComponent(id), {
+      method: "DELETE"
+    });
+    showToast("管理员已删除", "success");
+    loadAdmins();
+  } catch (e) {
+    showToast("删除管理员失败：" + e.message, "error");
+  }
+}
+
 // ===== Reject Dialog =====
 function closeRejectDialog() {
   byId("rejectDialog").close();
@@ -344,10 +448,22 @@ byId("rejectDialog").addEventListener("click", function (e) {
 
 // ===== Auto-login on page load =====
 if (token) {
+  // Extract role from token if not already stored
+  if (!localStorage.getItem("nane_admin_role")) {
+    try {
+      var p = JSON.parse(atob(token.split(".")[1]));
+      localStorage.setItem("nane_admin_role", p.adminRole || "viewer");
+    } catch (e) {
+      localStorage.setItem("nane_admin_role", "viewer");
+    }
+  }
   showDashboard();
   loadAll().catch(function () {
     // Token may be expired — show login
     showToast("登录已过期，请重新登录", "error");
     logout();
   });
+  if (canManageAdmins()) {
+    loadAdmins();
+  }
 }
