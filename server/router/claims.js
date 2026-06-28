@@ -2,35 +2,11 @@
  * Claims router — item claiming, claim reviews, fulfillment reviews.
  */
 const { query, makeId } = require("../db");
-const { readBody, json } = require("../lib/util");
+const { readBody, json, REVIEW_TAGS, ISSUE_REVIEW_TAGS, normalizeReviewTags } = require("../lib/util");
 const { requireVerifiedUser } = require("../middleware/auth");
 const { sendClaimNotificationMail } = require("../service/email");
-const { emptyTrustSummary } = require("../lib/jwt");
-const { itemFromRow } = require("../lib/item-utils");
-
-const REVIEW_TAGS = ["沟通顺畅", "按约交接", "物品真实", "及时确认", "友善可信"];
-const ISSUE_REVIEW_TAGS = ["物品不符", "未按约时间", "联系方式无效", "沟通不顺", "未完成交接"];
-
-const ITEM_TYPES = {
-  consumable: {
-    text: "耗材",
-    defaultCategory: "应急耗材",
-    defaultIcon: "plus",
-    categories: ["应急耗材", "退烧降温", "消毒护理", "外伤处理", "防护用品", "其他耗材"]
-  },
-  medicine: {
-    text: "非处方药品",
-    defaultCategory: "感冒药",
-    defaultIcon: "capsules",
-    categories: ["感冒药", "退烧药", "过敏药", "肠胃药", "其他非处方药"]
-  },
-  tool: {
-    text: "工具",
-    defaultCategory: "常用工具",
-    defaultIcon: "box",
-    categories: ["常用工具", "维修工具", "手工工具", "清洁工具", "其他工具"]
-  }
-};
+const { emptyTrustSummary } = require("../lib/util");
+const { itemFromRow, trustSummariesForUsers, attachOwnerTrustSummaries, ITEM_TYPES, pendingReviewFromRow } = require("../lib/item-utils");
 
 function claimFromRow(row) {
   return {
@@ -173,24 +149,6 @@ async function reviewClaim(req, res, viewer, claimId, action) {
   });
 }
 
-function pendingReviewFromRow(row, viewer) {
-  const reviewerRole = row.owner_id === viewer.id ? "owner" : "requester";
-  return {
-    claimId: row.id,
-    itemId: row.item_id,
-    itemTitle: row.item_title,
-    itemType: row.item_type || "consumable",
-    itemTypeText: ITEM_TYPES[row.item_type]?.text || "耗材",
-    category: row.category,
-    quantity: row.quantity,
-    unit: row.unit,
-    reviewedAt: row.reviewed_at,
-    reviewerRole,
-    revieweeId: reviewerRole === "owner" ? row.requester_id : row.owner_id,
-    revieweeName: reviewerRole === "owner" ? row.requester_name : row.owner_name
-  };
-}
-
 async function submitFulfillmentReview(req, res, viewer, claimId) {
   const input = await readBody(req);
   const outcome = input.outcome === "issue" ? "issue" : "positive";
@@ -256,92 +214,6 @@ async function submitFulfillmentReview(req, res, viewer, claimId) {
     revieweeTrustSummary: summaries.get(revieweeId) || emptyTrustSummary(),
     message: "履约评价已记录，感谢你让互助更可信"
   });
-}
-
-function normalizeReviewTags(input, outcome = "positive") {
-  const allowedTags = outcome === "issue" ? ISSUE_REVIEW_TAGS : REVIEW_TAGS;
-  const rawTags = Array.isArray(input) ? input : [];
-  const unique = [];
-  for (const raw of rawTags) {
-    const tag = String(raw || "").trim();
-    if (allowedTags.includes(tag) && !unique.includes(tag)) {
-      unique.push(tag);
-    }
-  }
-  return unique.slice(0, 5);
-}
-
-async function trustSummariesForUsers(userIds) {
-  const ids = [...new Set(userIds.filter(Boolean))];
-  const summaries = new Map(ids.map(id => [id, emptyTrustSummary()]));
-  if (!ids.length) {
-    return summaries;
-  }
-
-  const completed = await query(
-    `SELECT participant_id,
-            SUM(given_count)::int AS given_count,
-            SUM(received_count)::int AS received_count
-     FROM (
-       SELECT i.owner_id AS participant_id, COUNT(DISTINCT cr.id)::int AS given_count, 0::int AS received_count
-       FROM claim_requests cr
-       JOIN items i ON i.id = cr.item_id
-       WHERE cr.status = 'confirmed' AND i.owner_id = ANY($1::text[])
-       GROUP BY i.owner_id
-       UNION ALL
-       SELECT cr.requester_id AS participant_id, 0::int AS given_count, COUNT(DISTINCT cr.id)::int AS received_count
-       FROM claim_requests cr
-       WHERE cr.status = 'confirmed' AND cr.requester_id = ANY($1::text[])
-       GROUP BY cr.requester_id
-     ) completed_claims
-     GROUP BY participant_id`,
-    [ids]
-  );
-  for (const row of completed.rows) {
-    const summary = summaries.get(row.participant_id) || emptyTrustSummary();
-    summary.givenCount = Number(row.given_count || 0);
-    summary.receivedCount = Number(row.received_count || 0);
-    summary.completedCount = summary.givenCount + summary.receivedCount;
-    summaries.set(row.participant_id, summary);
-  }
-
-  const tags = await query(
-    `SELECT reviewee_id, tag, COUNT(*)::int AS tag_count
-     FROM fulfillment_reviews fr
-     CROSS JOIN LATERAL unnest(fr.tags) AS review_tag(tag)
-     WHERE fr.outcome = 'positive' AND fr.reviewee_id = ANY($1::text[])
-     GROUP BY reviewee_id, review_tag.tag
-     ORDER BY reviewee_id, tag_count DESC, tag ASC`,
-    [ids]
-  );
-  for (const row of tags.rows) {
-    const summary = summaries.get(row.reviewee_id) || emptyTrustSummary();
-    if (summary.topTags.length < 3) {
-      summary.topTags.push(row.tag);
-    }
-    summaries.set(row.reviewee_id, summary);
-  }
-  const reviewCounts = await query(
-    `SELECT reviewee_id, COUNT(*)::int AS positive_review_count
-     FROM fulfillment_reviews
-     WHERE outcome = 'positive' AND reviewee_id = ANY($1::text[])
-     GROUP BY reviewee_id`,
-    [ids]
-  );
-  for (const row of reviewCounts.rows) {
-    const summary = summaries.get(row.reviewee_id) || emptyTrustSummary();
-    summary.positiveReviewCount = Number(row.positive_review_count || 0);
-    summaries.set(row.reviewee_id, summary);
-  }
-  return summaries;
-}
-
-async function attachOwnerTrustSummaries(items) {
-  const summaries = await trustSummariesForUsers(items.map(item => item.ownerId));
-  for (const item of items) {
-    item.ownerTrustSummary = summaries.get(item.ownerId) || emptyTrustSummary();
-  }
-  return items;
 }
 
 async function handle(req, res, pathname, method) {

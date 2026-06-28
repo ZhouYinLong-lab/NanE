@@ -1,5 +1,6 @@
 // In-memory rate limiting for password login: email → {attempts, lockedUntil}
 const loginAttempts = new Map();
+
 function recordFailedLogin(key) {
   const now = Date.now();
   const rec = loginAttempts.get(key) || { attempts: 0, lockedUntil: 0 };
@@ -10,4 +11,12 @@ function recordFailedLogin(key) {
   loginAttempts.set(key, rec);
 }
 
-module.exports = { loginAttempts, recordFailedLogin };
+function getLoginAttempts(key) {
+  return loginAttempts.get(key);
+}
+
+function resetLoginAttempts(key) {
+  loginAttempts.delete(key);
+}
+
+module.exports = { recordFailedLogin, getLoginAttempts, resetLoginAttempts };

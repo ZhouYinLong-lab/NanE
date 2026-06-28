@@ -6,15 +6,10 @@ const path = require("path");
 const { query, makeId, hashPassword, DEMO_USER_ID } = require("../db");
 const { readBody, json, html } = require("../lib/util");
 const { signToken } = require("../lib/jwt");
-const { requireAdmin } = require("../middleware/auth");
+const { requireAdmin, demoViewer } = require("../middleware/auth");
 const { itemFromRow, attachOwnerTrustSummaries } = require("../lib/item-utils");
 
 const DEBUG_MODE = String(process.env.DEBUG_MODE || "false").toLowerCase() === "true";
-
-async function demoViewer() {
-  const { rows } = await query("SELECT * FROM users WHERE id = $1", [DEMO_USER_ID]);
-  return rows[0];
-}
 
 async function adminLogin(req, res) {
   const input = await readBody(req);

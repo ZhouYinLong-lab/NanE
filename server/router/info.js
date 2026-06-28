@@ -1,14 +1,25 @@
 /**
- * Legal router — user agreement and privacy policy endpoints.
+ * Info router — health check, locations, and legal endpoints.
  */
 const fs = require("fs");
 const path = require("path");
 const { json } = require("../lib/util");
+const locations = require("../../miniprogram/data/locations");
 
 const AGREEMENT_VERSION = "v1.0";
 
 async function handle(req, res, pathname, method) {
   if (method !== "GET") return false;
+
+  if (pathname === "/api/health") {
+    json(res, 200, { ok: true, name: "NanE API", version: "0.2.0", database: "postgresql", time: new Date().toISOString() });
+    return true;
+  }
+
+  if (pathname === "/api/locations") {
+    json(res, 200, { locations });
+    return true;
+  }
 
   if (pathname === "/api/legal/agreement") {
     const markdown = fs.readFileSync(path.join(__dirname, "..", "..", "docs", "user-agreement.md"), "utf8");

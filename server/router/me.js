@@ -2,74 +2,18 @@ const path = require("path");
 const fs = require("fs");
 const { query } = require("../db");
 const { readBody, json, dateOnly, parsePgArray, normalizeImageUrls, REVIEW_TAGS, ISSUE_REVIEW_TAGS } = require("../lib/util");
+const { logError } = require("../lib/logger");
+const { deleteLocalImageIfUnused } = require("../service/image-upload");
 const { userFromRequest, requireVerifiedUser, locationExists, userHasAgreement } = require("../middleware/auth");
-const { publicUser, emptyTrustSummary } = require("../lib/jwt");
-const { trustSummariesForUsers, attachOwnerTrustSummaries, itemFromRow, claimFromRow, ITEM_TYPES } = require("../lib/item-utils");
+const { emptyTrustSummary } = require("../lib/util");
+const { publicUser } = require("../lib/jwt");
+const { trustSummariesForUsers, attachOwnerTrustSummaries, itemFromRow, claimFromRow, ITEM_TYPES, pendingReviewFromRow } = require("../lib/item-utils");
 
 const AGREEMENT_VERSION = "v1.0";
 
 // --- Local helpers (transplanted from server/index.js) ---
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads");
-
-function localUploadPathFromUrl(url) {
-  const value = String(url || "");
-  if (!value.startsWith("/uploads/")) {
-    return "";
-  }
-  const relative = value.replace(/^\/uploads\//, "");
-  const resolved = path.resolve(UPLOAD_DIR, relative);
-  const root = path.resolve(UPLOAD_DIR);
-  if (resolved === root || !resolved.startsWith(`${root}${path.sep}`)) {
-    return "";
-  }
-  return resolved;
-}
-
-async function cleanupEmptyDirs(startDir) {
-  const root = path.resolve(UPLOAD_DIR);
-  let current = path.resolve(startDir);
-  while (current.startsWith(root) && current !== root) {
-    try {
-      const entries = await fs.promises.readdir(current);
-      if (entries.length) {
-        return;
-      }
-      await fs.promises.rmdir(current);
-      current = path.dirname(current);
-    } catch {
-      return;
-    }
-  }
-}
-
-async function deleteLocalImageIfUnused(url) {
-  const target = localUploadPathFromUrl(url);
-  if (!target) {
-    return;
-  }
-  const stillUsed = await query(
-    "SELECT id FROM items WHERE $1 = ANY(image_urls) LIMIT 1",
-    [url]
-  );
-  if (stillUsed.rows[0]) {
-    return;
-  }
-  try {
-    await fs.promises.unlink(target);
-    await cleanupEmptyDirs(path.dirname(target));
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      console.error(JSON.stringify({
-        level: "warn",
-        time: new Date().toISOString(),
-        message: "deleteLocalImageIfUnused: failed to unlink",
-        url,
-        error: error.message
-      }));
-    }
-  }
-}
 
 // --- Extracted handler functions ---
 
@@ -116,24 +60,6 @@ async function expiredCount(req, res) {
     [user.id]
   );
   json(res, 200, { count: rows[0].count });
-}
-
-function pendingReviewFromRow(row, viewer) {
-  const reviewerRole = row.owner_id === viewer.id ? "owner" : "requester";
-  return {
-    claimId: row.id,
-    itemId: row.item_id,
-    itemTitle: row.item_title,
-    itemType: row.item_type || "consumable",
-    itemTypeText: ITEM_TYPES[row.item_type]?.text || "耗材",
-    category: row.category,
-    quantity: row.quantity,
-    unit: row.unit,
-    reviewedAt: row.reviewed_at,
-    reviewerRole,
-    revieweeId: reviewerRole === "owner" ? row.requester_id : row.owner_id,
-    revieweeName: reviewerRole === "owner" ? row.requester_name : row.owner_name
-  };
 }
 
 async function listPendingReviews(req, res, viewer) {

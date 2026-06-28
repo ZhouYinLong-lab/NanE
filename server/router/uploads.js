@@ -3,6 +3,7 @@
  */
 const { makeId } = require("../db");
 const { readBody, json } = require("../lib/util");
+const { logError } = require("../lib/logger");
 const { requireVerifiedUser } = require("../middleware/auth");
 const { uploadImageBuffer } = require("../service/image-upload");
 
@@ -29,13 +30,7 @@ async function uploadImage(req, res, viewer) {
     const uploaded = await uploadImageBuffer(buffer, contentType, key);
     json(res, 201, { ...uploaded, contentType, size: buffer.length });
   } catch (error) {
-    console.error(JSON.stringify({
-      level: "error",
-      time: new Date().toISOString(),
-      event: "image_upload_failed",
-      userId: viewer.id,
-      message: error.message || String(error)
-    }));
+    logError(error, { event: "image_upload_failed", userId: viewer.id });
     json(res, 502, { error: "UPLOAD_FAILED", message: "图片上传失败，请稍后重试" });
   }
 }

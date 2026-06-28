@@ -181,4 +181,22 @@ function claimFromRow(row) {
   };
 }
 
-module.exports = { ITEM_TYPES, ALLOWED_ITEM_ICONS, defaultItemIcon, normalizeItemIcon, trustSummariesForUsers, attachOwnerTrustSummaries, itemFromRow, claimFromRow };
+function pendingReviewFromRow(row, viewer) {
+  const reviewerRole = row.owner_id === viewer.id ? "owner" : "requester";
+  return {
+    claimId: row.id,
+    itemId: row.item_id,
+    itemTitle: row.item_title,
+    itemType: row.item_type || "consumable",
+    itemTypeText: ITEM_TYPES[row.item_type]?.text || "耗材",
+    category: row.category,
+    quantity: row.quantity,
+    unit: row.unit,
+    reviewedAt: row.reviewed_at,
+    reviewerRole,
+    revieweeId: reviewerRole === "owner" ? row.requester_id : row.owner_id,
+    revieweeName: reviewerRole === "owner" ? row.requester_name : row.owner_name
+  };
+}
+
+module.exports = { ITEM_TYPES, ALLOWED_ITEM_ICONS, defaultItemIcon, normalizeItemIcon, trustSummariesForUsers, attachOwnerTrustSummaries, itemFromRow, claimFromRow, pendingReviewFromRow };

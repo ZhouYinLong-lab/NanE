@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { query } = require("../db");
+const { logError } = require("../lib/logger");
 
 const MINIO_ENDPOINT = String(process.env.MINIO_ENDPOINT || "").replace(/\/+$/, "");
 const MINIO_BUCKET = process.env.MINIO_BUCKET || "";
@@ -156,13 +157,7 @@ async function deleteLocalImageIfUnused(url) {
     await cleanupEmptyDirs(path.dirname(target));
   } catch (error) {
     if (error.code !== "ENOENT") {
-      console.error(JSON.stringify({
-        level: "warn",
-        time: new Date().toISOString(),
-        event: "local_image_cleanup_failed",
-        url,
-        message: error.message
-      }));
+      logError(error, { event: "local_image_cleanup_failed", url });
     }
   }
 }

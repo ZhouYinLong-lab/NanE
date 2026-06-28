@@ -1,8 +1,8 @@
 const crypto = require("crypto");
 const { query, makeId, hashPassword, DEMO_USER_ID } = require("../db");
-const { signToken, verifyToken, publicUser, emptyTrustSummary, agreementAccepted } = require("../lib/jwt");
-const { readBody, json, pick, REVIEW_TAGS, ISSUE_REVIEW_TAGS } = require("../lib/util");
-const { recordFailedLogin, loginAttempts } = require("../middleware/rate-limit");
+const { signToken, verifyToken, publicUser, agreementAccepted } = require("../lib/jwt");
+const { readBody, json, pick, REVIEW_TAGS, ISSUE_REVIEW_TAGS, emptyTrustSummary } = require("../lib/util");
+const { recordFailedLogin, getLoginAttempts, resetLoginAttempts } = require("../middleware/rate-limit");
 const { userFromRequest, demoViewer, requireVerifiedUser } = require("../middleware/auth");
 const { nannaConfigured, callNanna, normalizeNannaIdentity, upsertNannaUser } = require("../service/nanna");
 const { sendMail } = require("../service/email");
@@ -96,7 +96,7 @@ async function passwordLogin(req, res) {
   // Rate limit: check failed attempts
   const attemptKey = `pwd:${email}`;
   const now = Date.now();
-  const record = loginAttempts.get(attemptKey);
+  const record = getLoginAttempts(attemptKey);
   if (record && record.lockedUntil > now) {
     const waitMinutes = Math.ceil((record.lockedUntil - now) / 60000);
     json(res, 429, { error: "LOGIN_RATE_LIMIT", message: `登录尝试次数过多，请 ${waitMinutes} 分钟后再试` });
@@ -123,7 +123,7 @@ async function passwordLogin(req, res) {
   }
 
   // Successful login clears failed attempts
-  loginAttempts.delete(attemptKey);
+  resetLoginAttempts(attemptKey);
   if (!user.agreement_version || user.agreement_version !== AGREEMENT_VERSION) {
     await query(
       "UPDATE users SET agreement_version = $1, agreement_accepted_at = now() WHERE id = $2",

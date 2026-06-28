@@ -4,6 +4,7 @@ const path = require("path");
 require("./env");
 const { initializeDatabase } = require("./db");
 const { json, html } = require("./lib/util");
+const { logError } = require("./lib/logger");
 
 const PORT = Number(process.env.PORT || 37878);
 
@@ -76,8 +77,7 @@ function serveStatic(req, res, pathname) {
 // ── Routers ──────────────────────────────────────────────────────
 
 const routers = [
-  require("./router/health"),
-  require("./router/legal"),
+  require("./router/info"),
   require("./router/auth"),
   require("./router/uploads"),
   require("./router/me"),
@@ -122,13 +122,7 @@ async function handle(req, res) {
 
 const server = http.createServer((req, res) => {
   handle(req, res).catch(error => {
-    console.error(JSON.stringify({
-      level: "error",
-      time: new Date().toISOString(),
-      event: "unhandled_request_error",
-      message: error.message || String(error),
-      stack: error.stack
-    }));
+    logError(error, { event: "unhandled_request_error" });
     json(res, 500, { error: "SERVER_ERROR", message: "服务器内部错误，请稍后重试" });
   });
 });
@@ -138,21 +132,11 @@ initializeDatabase()
     // Startup orphan image cleanup (best-effort)
     const { cleanupLocalOrphanImages } = require("./service/image-upload");
     cleanupLocalOrphanImages().catch(error => {
-      console.error(JSON.stringify({
-        level: "warn",
-        time: new Date().toISOString(),
-        event: "orphan_image_cleanup_failed",
-        message: error.message || String(error)
-      }));
+      logError(error, { event: "orphan_image_cleanup_failed" });
     });
     setInterval(() => {
       cleanupLocalOrphanImages().catch(error => {
-        console.error(JSON.stringify({
-          level: "warn",
-          time: new Date().toISOString(),
-          event: "orphan_image_cleanup_failed",
-          message: error.message || String(error)
-        }));
+        logError(error, { event: "orphan_image_cleanup_failed" });
       });
     }, 6 * 60 * 60 * 1000).unref();
 
