@@ -397,43 +397,47 @@ N.reportItem = async function reportItem() {
 };
 
 N.filterByBuilding = function filterByBuilding(building) {
-  const chips = document.querySelectorAll("#buildingFilterChips .chip");
-  chips.forEach(c => c.classList.remove("active"));
-  const active = document.querySelector(`#buildingFilterChips .chip[data-building="${CSS.escape(building)}"]`);
-  if (active) active.classList.add("active");
   N.state.buildingFilter = building || "";
+  N.updateBuildingFilterSelect();
   N.loadHome();
 };
 
+N.updateBuildingFilterSelect = function updateBuildingFilterSelect() {
+  const select = N.$("buildingFilterSelect");
+  if (!select) return;
+  const selected = N.state.buildingFilter || "";
+  select.classList.toggle("active", Boolean(selected));
+  select.querySelectorAll("[data-building]").forEach(option => {
+    option.classList.toggle("selected", (option.dataset.building || "") === selected);
+  });
+};
+
 N.renderBuildingChips = function renderBuildingChips() {
-  const container = N.$("buildingFilterChips");
-  if (!container) return;
+  const select = N.$("buildingFilterSelect");
+  const dropdown = N.$("buildingFilterDropdown");
+  const filterChips = N.$("filterChips");
+  if (!select || !dropdown) return;
   const user = N.state.user || {};
   const locations = N.state.locations || [];
   const campus = locations.find(c => c.name === (user.campus || "仙林校区"));
   const buildings = campus?.buildings || [];
-  if (buildings.length <= 1) { container.hidden = true; return; }
-  container.hidden = false;
-  // Keep "全部" chip, append building chips
-  const existingBuildings = container.querySelectorAll("[data-building]");
-  const existingNames = new Set([...existingBuildings].map(e => e.dataset.building).filter(Boolean));
-  for (const b of buildings) {
-    if (!existingNames.has(b.name)) {
-      const chip = document.createElement("button");
-      chip.className = "chip";
-      chip.dataset.building = b.name;
-      chip.textContent = b.name;
-      chip.addEventListener("click", () => N.filterByBuilding(b.name));
-      container.appendChild(chip);
-      existingNames.add(b.name);
-    }
+
+  if (buildings.length <= 1) {
+    select.hidden = true;
+    filterChips?.classList.remove("has-building-filter");
+    N.state.buildingFilter = "";
+    return;
   }
-  // Reactivate selected
-  const allChips = container.querySelectorAll(".chip");
-  allChips.forEach(c => c.classList.remove("active"));
-  const target = container.querySelector(`.chip[data-building="${CSS.escape(N.state.buildingFilter || "")}"]`);
-  if (target) target.classList.add("active");
-  else allChips[0]?.classList.add("active");
+
+  select.hidden = false;
+  filterChips?.classList.add("has-building-filter");
+  if (N.state.buildingFilter && !buildings.some(building => building.name === N.state.buildingFilter)) {
+    N.state.buildingFilter = "";
+  }
+  dropdown.innerHTML = `<li data-building="">全部楼栋</li>${buildings
+    .map(building => `<li data-building="${N.escapeHtml(building.name)}">${N.escapeHtml(building.name)}</li>`)
+    .join("")}`;
+  N.updateBuildingFilterSelect();
 };
 
 N.cancelClaim = async function cancelClaim() {

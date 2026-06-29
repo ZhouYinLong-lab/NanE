@@ -290,6 +290,13 @@ function bindEvents() {
     const option = event.target.closest(".chip-dropdown li");
     if (option) {
       const select = option.closest(".chip-select");
+      if (select?.dataset.filter === "building") {
+        const building = option.dataset.building || "";
+        select.querySelectorAll("li").forEach(item => item.classList.toggle("selected", item === option));
+        N.closeFilterDropdowns();
+        N.filterByBuilding(building);
+        return;
+      }
       const category = option.dataset.category || "";
       document.querySelectorAll("#filterChips .chip").forEach(c => c.classList.remove("active"));
       select.classList.add("active");
@@ -396,11 +403,6 @@ function bindEvents() {
       event.stopPropagation();
       N.reviewClaimFromButton(claimBtn);
     }
-  });
-  // Building filter "全部" chip
-  N.$("buildingFilterChips").addEventListener("click", event => {
-    const chip = event.target.closest("[data-building]");
-    if (chip && !chip.dataset.building) N.filterByBuilding(""); // "全部"
   });
   document.querySelectorAll(".segment").forEach(button => {
     button.addEventListener("click", () => N.setPublishType(button.dataset.itemType));
