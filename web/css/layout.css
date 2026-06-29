@@ -171,6 +171,66 @@
   animation: navRipple 0.42s ease-out;
 }
 
+@media (min-width: 681px) {
+  .bottom-nav {
+    bottom: 24px;
+    width: auto;
+    min-width: min(456px, calc(100% - 48px));
+    max-width: min(520px, calc(100% - 48px));
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 38px;
+    background: rgba(255, 255, 255, 0.52);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      0 18px 44px rgba(139, 111, 175, 0.18);
+    backdrop-filter: blur(22px) saturate(1.35);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  }
+
+  .nav-item {
+    flex: 1 1 0;
+    height: 56px;
+    min-width: 124px;
+    max-width: none;
+    padding: 0 18px;
+    gap: 10px;
+    border-radius: 28px;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+  }
+
+  .nav-glyph {
+    font-size: 22px;
+  }
+
+  .nav-item span:not(.nav-glyph) {
+    max-width: 72px;
+    opacity: 1;
+    margin-left: 0;
+    font-size: 14px;
+  }
+
+  .nav-item.active {
+    min-width: 138px;
+    padding: 0 20px;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.68);
+  }
+
+  .nav-item.active span:not(.nav-glyph) {
+    max-width: 72px;
+    margin-left: 0;
+  }
+
+  .nav-item:hover:not(.active) {
+    transform: translateY(-1px);
+  }
+}
+
 /* ===== Search Row ===== */
 /* Search clear button */
 .search-row {
@@ -649,7 +709,7 @@
 [data-theme="dark"] .bottom-nav {
   background: rgba(9, 7, 17, 0.78);
   border: 1px solid var(--line);
-  border-radius: 30px;
+  border-radius: 38px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 18px 48px rgba(0, 0, 0, 0.46);
