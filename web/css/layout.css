@@ -377,14 +377,22 @@
   gap: 22px;
   padding: 28px;
   margin-bottom: var(--space-xl);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xl);
   background: var(--purple);
   color: var(--on-accent);
+  box-shadow: var(--shadow);
   cursor: pointer;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.15s, transform 0.15s;
 }
 
 .profile-card:hover {
   box-shadow: 0 0 0 4px var(--purple-glow);
+  transform: translateY(-1px);
+}
+
+.profile-card h2 {
+  color: var(--on-accent);
 }
 
 .profile-card p {
@@ -395,8 +403,10 @@
   display: inline-flex;
   margin-top: 10px;
   padding: 6px var(--space-md);
+  border: 1px solid rgba(255, 250, 242, 0.18);
   border-radius: var(--radius-pill);
   background: rgba(255, 250, 242, 0.18);
+  color: var(--on-accent);
   font-weight: var(--fw-heavy);
 }
 
