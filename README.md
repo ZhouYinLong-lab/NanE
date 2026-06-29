@@ -1,189 +1,189 @@
-# NanE 南易校园互助平台
+# NanE 南易
 
-NanE（南易）是面向南京大学校园场景的免费互助信息平台，帮助同学把宿舍中临时闲置、仍可安全使用的应急耗材、非处方常见药品笼统分类物品和常用工具，共享给附近真正需要的人。平台以“同楼栋、同宿舍群、同校区优先”为核心匹配逻辑，只做校内互助信息撮合，不做买卖、不做配送，也不提供医疗建议。
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![JavaScript](https://img.shields.io/badge/Frontend-Vanilla%20JS-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![PWA](https://img.shields.io/badge/PWA-Service%20Worker-5A0FC8)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
+[![Tests](https://img.shields.io/badge/tests-242%20passing-25735A)](#testing)
 
-当前主入口：
+NanE（南易）是面向南京大学校园场景的免费互助平台。它帮助同学把宿舍里临时闲置、仍可安全使用的应急耗材、非处方常见药品笼统分类物品和常用工具，分享给附近真正需要的人。
 
-- 网页端：[https://nane.zylatent.com](https://nane.zylatent.com)
-- 管理后台：[https://nane.zylatent.com/admin](https://nane.zylatent.com/admin)
-- API 健康检查：[https://api.zylatent.com/api/health](https://api.zylatent.com/api/health)
-- 仓库地址：[ZhouYinLong-lab/NanE](https://github.com/ZhouYinLong-lab/NanE)
+平台的核心不是二手交易，而是**同楼栋、同宿舍群、同校区优先的校园互助撮合**。NanE 不做买卖、不做配送、不提供医疗建议；它只负责把可信、审核过的信息展示给合适范围内的同学，并把一次互助沉淀为可追踪的履约记录。
 
-## 一、作品介绍
+## Live Entrypoints
 
-### 1.1 项目背景
-
-大学宿舍中经常出现两类同时存在的场景：一边是创可贴、碘伏棉签、退烧贴、过敏药、螺丝刀等物品因为一次突发需求被购买，使用少量后长期闲置；另一边是同学在深夜、雨天或临时场景下急需这些物品，却只能在宿舍群、朋友圈或线下关系中低效求助。
-
-现有方案存在明显不足：
-
-- 宿舍群和朋友圈信息扩散范围有限，响应不稳定，无法沉淀为可检索资源。
-- 通用二手平台面向大众场景，不适合校内应急互助，也容易引入交易和信任成本。
-- 校园论坛、表白墙等渠道信息非结构化，难以按楼栋、校区、类型快速查找。
-
-NanE 聚焦校园近邻互助，通过结构化发布、人工审核、联系方式保护和楼栋优先排序，让临时闲置资源更快触达附近需要的同学。
-
-### 1.2 核心定位
-
-NanE 的核心定位是“校园应急物品免费互助平台”。
-
-平台支持三类物品：
-
-- 应急耗材：如创可贴、碘伏棉签、退烧贴、防护用品等，默认归类为“应急耗材”。
-- 非处方常见药品笼统分类：如感冒药、退烧药、过敏药、肠胃药等，只展示笼统分类，不提供具体用药建议。
-- 常用工具：如螺丝刀、镊子、热熔胶枪、清洁工具等，可用于临时借用或免费赠送。
-
-平台坚持以下边界：
-
-- 所有发布内容必须免费共享，禁止收费转让。
-- 严禁处方药、管制药品、拆封不明药品、危险工具和任何违规物品。
-- 平台仅提供信息展示与撮合，不参与线下交接。
-- 领取者需自行检查物品状态、包装、有效期和适用性，并自行承担使用判断。
-
-### 1.3 主要功能
-
-| 功能模块 | 功能说明 |
+| Surface | URL |
 | --- | --- |
-| 首页发现 | 展示审核通过的物品，支持关键词搜索、类型筛选和分类筛选 |
-| 近邻排序 | 按同楼栋、同宿舍群、同校区、其他校区的优先级展示物品 |
-| 物品发布 | 支持耗材、药品、工具三类发布，填写数量、有效期、位置、说明和联系方式 |
-| 人工审核 | 所有新发布和编辑后的物品进入审核流程，管理员通过后才公开展示 |
-| 联系方式保护 | 游客可浏览公开信息，但联系方式默认隐藏；登录并补全资料后需主动点击查看 |
-| 领取确认 | 领取者可提醒发布者确认领取；发布者确认后系统自动扣减数量，归零后自动下架 |
-| 我的发布 | 发布者可查看自己的发布记录、审核状态、领取提醒，并支持编辑或删除记录 |
-| 账号系统 | 支持南京大学学生邮箱验证码登录、密码登录、忘记密码重置和资料补全 |
-| 管理后台 | 管理员可审核、驳回、下架物品，并查看平台统计和完整信息 |
-| 设置页 | 支持资料管理、领取提醒邮件开关、深色模式和协议入口 |
+| Web app | [https://nane.zylatent.com](https://nane.zylatent.com) |
+| Admin console | [https://nane.zylatent.com/admin](https://nane.zylatent.com/admin) |
+| API health | [https://api.zylatent.com/api/health](https://api.zylatent.com/api/health) |
+| API reference | [docs/api/index.md](docs/api/index.md) |
 
-## 二、作品目标
+## Why It Exists
 
-### 2.1 用户目标
+宿舍生活里经常出现一个小但真实的矛盾：有人只用了一点创可贴、碘伏棉签、退烧贴、过敏药或螺丝刀，剩下的东西长期闲置；另一个同学却可能在深夜、雨天、考试周或突发场景里临时急需。
 
-- 让临时急需物品的同学可以更快找到附近资源。
-- 让宿舍中闲置但仍可使用的应急物品得到二次利用。
-- 降低校园互助的发布成本、查找成本和信任成本。
-- 在保护隐私的前提下完成线下联系和交接。
+现有渠道各有问题：
 
-### 2.2 产品目标
+- 宿舍群和朋友圈响应快，但信息很快沉底，无法沉淀为可检索资源。
+- 二手平台更适合交易，不适合低价甚至免费的应急互助，还会引入交易和陌生人信任成本。
+- 校园论坛、表白墙等渠道信息非结构化，很难按楼栋、校区、类型和有效期快速筛选。
 
-- 建立一个轻量、清晰、可演示的校园互助闭环。
-- 通过结构化分类和审核机制控制药品、工具等敏感物品风险。
-- 用楼栋优先排序替代 GPS 定位，兼顾便利性和隐私。
-- 保留 Web、小程序和后续桌面端复用同一套 API 的扩展空间。
+NanE 的解决方式是把校园互助拆成可审核、可筛选、可确认、可评价的轻量闭环。
 
-### 2.3 技术目标
+## Product Boundaries
 
-- 实现可部署的 Web 前端、Node.js API、PostgreSQL 数据库和管理后台。
-- 打通“游客浏览 -> 校园邮箱登录 -> 补全资料 -> 发布 -> 审核 -> 查看联系方式 -> 领取提醒 -> 发布者确认 -> 自动下架”的完整链路。
-- 支持生产环境 HTTPS、PM2 守护、Nginx 反向代理和数据库初始化。
-- 保持代码结构轻量，便于后续继续迭代和答辩演示。
+NanE 有三条硬边界：
 
-## 三、完成进度
+1. **只做免费互助**：禁止收费转让、变相交易和商业引流。
+2. **所有发布先审核**：物品通过人工审核后才会公开展示。
+3. **药品严格收口**：只允许常见非处方药的笼统分类，不展示处方药、管制药品或具体用药建议。
 
-当前项目已完成可部署、可演示的 Alpha/Beta 版本，核心业务闭环已经打通，主要展示形态为网页版。
+平台不会替用户判断物品是否适合使用。领取者在联系和领取前，需要自行检查包装、有效期、保存状态和适用风险。
 
-| 模块 | 完成度 | 当前状态 |
+## Current Features
+
+| Area | Status | What It Does |
 | --- | --- | --- |
-| 网页端首页 | 已完成 | 支持公开浏览、搜索、类型筛选、分类筛选、空状态和响应式布局 |
-| 账号登录 | 已完成 | 支持南大学生邮箱验证码登录、密码登录、找回密码和用户协议确认 |
-| 账号资料 | 已完成 | 支持昵称、校区、楼栋、宿舍号维护；未补全资料限制关键操作 |
-| 物品发布 | 已完成 | 支持耗材、药品、工具三类发布，包含有效期、数量、联系方式和免费互助声明 |
-| 审核流程 | 已完成 | 发布后进入审核中，管理员可通过、驳回、下架 |
-| 详情与联系方式 | 已完成 | 游客只能看公开信息，登录用户主动点击后查看联系方式，系统记录查看行为 |
-| 领取确认 | 已完成 | 领取者提醒发布者，发布者确认后自动扣减库存，数量归零自动下架 |
-| 我的发布 | 已完成 | 支持查看状态、待确认提醒、编辑、删除和下架后的记录管理 |
-| 邮件提醒 | 已完成 | 支持邮箱验证码和领取确认提醒邮件，用户可关闭领取提醒邮件 |
-| 管理后台 | 已完成 | 支持审核管理、完整信息查看和基础统计 |
-| 后端分页 | 已完成 | `GET /api/items` 支持 `limit`、`offset`、`total`、`hasMore` |
-| 小程序端 | 代码保留 | 微信小程序代码保留在 `miniprogram/`，备案完成后可继续恢复上线 |
-| 后续优化 | 规划中 | 联系方式加密存储、发布草稿、前端加载更多、自动过期定时任务等 |
+| 首页发现 | Done | 搜索、类型筛选、分类筛选、按楼栋切换浏览 |
+| 近邻排序 | Done | 同楼栋 > 同宿舍群 > 同校区 > 其他校区 |
+| 楼栋动态 | Done | 展示指定楼栋最近分享和已确认领取 |
+| 物品发布 | Done | 支持耗材、药品、工具，含图片、数量、有效期、位置和联系方式 |
+| 人工审核 | Done | 管理员可通过、驳回、下架、批量处理 |
+| 联系方式保护 | Done | 游客不可见联系方式，登录并补全资料后主动查看 |
+| 领取提醒 | Done | 领取者提醒发布者确认领取 |
+| 履约评价 | Done | 发布者和领取者各评价一次，公开展示正向可信摘要 |
+| 我的页面 | Done | 我的发布、领取记录、待评价记录、账号设置 |
+| 账号系统 | Done | NJU 邮箱验证码、密码登录、重置密码、南哪认证代理 |
+| 图片上传 | Done | 支持本地/MinIO 存储、类型校验、孤儿图片清理 |
+| 管理后台 | Done | 审核、举报、用户、管理员、楼栋动态、统计 |
+| PWA/通知 | Partial | Service Worker、manifest、Web Push 配置入口 |
+| 小程序端 | Retained | 微信小程序代码保留，当前主交付为 Web |
 
-## 四、人员分工
-
-| 成员 | 分工 |
-| --- | --- |
-|  |  |
-|  |  |
-|  |  |
-
-## 五、技术方案
-
-### 5.1 技术栈
-
-| 模块 | 技术 |
-| --- | --- |
-| 网页端 | 原生 HTML / CSS / JavaScript，无框架无构建 |
-| 小程序端 | 微信原生小程序，WXML / WXSS / JavaScript |
-| 后端 | Node.js 原生 `http` 模块 |
-| 数据库 | PostgreSQL，通过 `pg` 访问 |
-| 认证 | 南京大学学生邮箱验证码、密码登录、南哪小帮手 OAuth 备用链路、自签 JWT |
-| 管理后台 | 同一 Node 服务内置 `/admin` 页面 |
-| 邮件 | SMTP，用于验证码和领取确认提醒 |
-| 部署 | Azure VM + Ubuntu + Nginx + PM2 + Let's Encrypt |
-| 图标 | Font Awesome Free 本地字体 |
-
-### 5.2 系统架构
+## Core User Flow
 
 ```text
-浏览器 / 小程序
+游客浏览
+  -> NJU 邮箱登录 / 南哪认证
+  -> 补全昵称、校区、楼栋
+  -> 发布物品
+  -> 管理员审核
+  -> 首页公开展示
+  -> 领取者查看联系方式
+  -> 线下联系与交接
+  -> 领取者提醒已领取
+  -> 发布者确认
+  -> 双方履约评价
+  -> 可信记录沉淀
+```
+
+## Architecture
+
+NanE 是一个单进程 Node.js 服务，负责静态文件、业务 API、管理后台和数据库初始化。前端没有构建步骤，Web 端使用原生 HTML/CSS/JavaScript；后端使用 Node 内置 `http` 模块和 PostgreSQL。
+
+```text
+Browser / Mini Program
   -> Nginx HTTPS
-  -> Node.js 服务（端口 37878）
-      ├─ /           网页端静态资源
-      ├─ /api/*      业务 API
-      ├─ /admin      管理后台
-      └─ /assets/*   静态资源
+  -> Node.js service :37878
+      ├─ /                 web app
+      ├─ /web/*            web static files
+      ├─ /admin            admin console
+      ├─ /admin/*          admin static files
+      ├─ /api/*            JSON API
+      ├─ /uploads/*        local uploaded images
+      └─ /assets/*         mini-program assets
   -> PostgreSQL
 ```
 
-### 5.3 目录结构
+### Backend Layout
 
 ```text
-NanE
-├─ web/                  # 网页端：index.html, app.js, styles.css
-├─ server/               # 后端 API、管理后台、数据库初始化
-│  ├─ index.js           # 主入口，路由处理和内嵌管理后台
-│  ├─ db.js              # 数据库连接、初始化、迁移、种子数据
-│  ├─ proximity.js       # 同楼栋/宿舍群/校区排序算法
-│  ├─ env.js             # .env 加载
-│  └─ schema.sql         # 基础数据库结构
-├─ miniprogram/          # 微信小程序代码
-├─ docs/                 # 部署、测试、演示、协议、迭代文档
-├─ assets/brand/         # Logo 与品牌素材
-├─ CHANGELOG.md          # 版本变更记录
-└─ package.json          # Node.js 项目配置
+server/
+├── index.js              # HTTP server, static serving, router dispatch
+├── db.js                 # PostgreSQL pool, schema init, migrations, seed data
+├── proximity.js          # campus/building proximity ranking
+├── lib/
+│   ├── item-utils.js     # item shape, trust summary, icon normalization
+│   ├── jwt.js            # signed JWT helpers
+│   ├── logger.js         # structured logging
+│   └── util.js           # JSON, body parsing, escaping, helpers
+├── middleware/
+│   ├── auth.js           # verified user and admin guards
+│   └── rate-limit.js     # lightweight login rate limiting
+├── router/
+│   ├── auth.js           # /api/auth/*
+│   ├── items.js          # /api/items/* and /api/activity
+│   ├── claims.js         # /api/claims/*
+│   ├── me.js             # /api/me/*
+│   ├── admin.js          # /api/admin/* and /admin
+│   ├── uploads.js        # /api/uploads/images
+│   └── info.js           # health, locations, legal docs
+└── service/
+    ├── email.js          # SMTP verification and notifications
+    ├── image-upload.js   # local/MinIO image storage
+    ├── nanna.js          # 南哪 API proxy
+    └── push.js           # Web Push
 ```
 
-### 5.4 核心设计
+### Frontend Layout
 
-**近邻排序**：平台不使用 GPS，而是依据用户资料中的校区和楼栋进行排序，优先展示同楼栋物品，其次展示同宿舍群、同校区、其他校区物品。
+```text
+web/
+├── index.html
+├── manifest.json
+├── sw.js
+├── css/
+│   ├── tokens.css
+│   ├── base.css
+│   ├── layout.css
+│   ├── components.css
+│   └── fa-subset.css
+└── js/
+    ├── app.js            # app bootstrap and global state
+    ├── api/client.js
+    ├── ui/               # dialog, motion, skeleton, toast
+    ├── utils/            # date, escape, validate
+    └── views/            # home, publish, mine, settings
+```
 
-**审核机制**：所有发布内容先进入 `reviewing` 状态，管理员审核通过后变为 `online`；不符合免费互助、物品边界或信息完整性要求的内容会被驳回。
+## Tech Stack
 
-**隐私保护**：首页和详情页只展示校区、楼栋等公开信息，不展示宿舍号。宿舍号仅发布者本人和管理员可见。微信和 QQ 默认隐藏，只有登录并补全资料的用户主动点击后才展示。
+| Layer | Technology |
+| --- | --- |
+| Web client | Vanilla HTML/CSS/JavaScript |
+| Admin console | Vanilla HTML/CSS/JavaScript |
+| Mini Program | WeChat Mini Program code retained in `miniprogram/` |
+| Backend | Node.js native `http` |
+| Database | PostgreSQL via `pg` |
+| Auth | NJU email verification, password login, Nanna proxy, signed JWT |
+| Mail | SMTP |
+| Images | Local uploads or MinIO-compatible object storage |
+| Push | Web Push / VAPID |
+| Deployment | Azure VM, Ubuntu, Nginx, PM2, Let's Encrypt |
 
-**领取闭环**：领取者查看联系方式并线下联系后，可以提醒发布者确认领取。发布者确认后，系统扣减对应数量；数量归零时物品状态变为 `claimed`，不再出现在首页。
+## Getting Started
 
-**风险控制**：药品只允许非处方常见笼统分类；工具类禁止危险工具；发布页、详情页和协议中均提示免费互助、禁止收费交易和自行判断风险。
-
-## 六、部署指南
-
-完整部署与运维说明见 [docs/deployment-guide.md](docs/deployment-guide.md)。以下为项目本地启动和生产部署摘要。
-
-### 6.1 本地环境要求
+### Prerequisites
 
 - Node.js >= 18
 - PostgreSQL
 - npm
 
-### 6.2 环境变量
+### Install
 
-复制示例环境变量文件：
+```bash
+npm install
+```
+
+### Configure Environment
+
+Copy the example file and fill in local values:
 
 ```bash
 cp .env.example .env
 ```
 
-根据本地或服务器环境填写：
+Important variables:
 
 ```text
 PORT=37878
@@ -192,55 +192,67 @@ JWT_SECRET=replace-with-a-long-random-secret
 ADMIN_PASSWORD=replace-with-a-strong-admin-password
 SMTP_HOST=smtp.qq.com
 SMTP_PORT=465
-SMTP_SECURE=true
 SMTP_USER=your-qq-email@qq.com
 SMTP_PASS=replace-with-smtp-authorization-code
-SMTP_FROM=NanE 南易 <your-qq-email@qq.com>
 PUBLIC_WEB_URL=https://nane.zylatent.com
 ```
 
-`DATABASE_URL`、`JWT_SECRET`、`ADMIN_PASSWORD`、`SMTP_PASS`、`NANNA_API_KEY` 等均为敏感配置，不应提交到仓库或展示在截图中。
+Optional integrations include `NANNA_API_KEY`, MinIO settings and VAPID keys. Never commit real `.env` values.
 
-### 6.3 本地启动
+### Run Locally
 
 ```bash
-npm install
 npm start
 ```
 
-默认启动地址：
+Open:
 
 ```text
 http://localhost:37878
+http://localhost:37878/admin
+http://localhost:37878/api/health
 ```
 
-首次启动时，服务会自动初始化数据库表、执行兼容迁移并插入种子数据。默认管理员账号为 `admin`，密码取自 `.env` 中的 `ADMIN_PASSWORD`。
+On startup, the server initializes the database schema, applies compatibility migrations and inserts seed data when needed.
 
-### 6.4 生产部署
+## Testing
 
-当前生产环境：
+```bash
+npm test
+```
 
-| 项目 | 当前值 |
-| --- | --- |
-| 云服务 | Azure VM |
-| 系统 | Ubuntu 24.04 |
-| Node 服务端口 | `37878` |
-| 进程管理 | PM2，进程名 `nane-api` |
-| 数据库 | PostgreSQL |
-| HTTPS | Nginx + Let's Encrypt |
-| 网页域名 | `https://nane.zylatent.com` |
-| API 域名 | `https://api.zylatent.com/api` |
+`npm test` starts an isolated test API server and runs the Node test suite. Current suite coverage includes:
 
-服务器更新流程：
+- public health, legal and locations endpoints
+- guest browsing
+- auth validation
+- protected route boundaries
+- item list/detail flows
+- admin stats/items/activity APIs
+- trust summary and fulfillment review helpers
+- proximity ranking
+- utility functions
+
+Run tests against an already running server:
+
+```bash
+npm run test:direct
+```
+
+Use `NANE_TEST_BASE_URL` to point direct tests at another server.
+
+## Deployment
+
+Production currently runs on an Azure VM behind Nginx and PM2.
 
 ```bash
 cd ~/apps/NanE
-git pull
+git pull --ff-only
 npm install
 pm2 restart nane-api --update-env
 ```
 
-部署后检查：
+Health check:
 
 ```bash
 curl https://api.zylatent.com/api/health
@@ -248,84 +260,76 @@ pm2 status
 pm2 logs nane-api --lines 80
 ```
 
-## 七、使用指南
+Full notes are in [docs/deployment-guide.md](docs/deployment-guide.md).
 
-### 7.1 游客浏览
+## Demo Script
 
-1. 打开 [https://nane.zylatent.com](https://nane.zylatent.com)。
-2. 在首页浏览已审核上架的物品。
-3. 可通过关键词、物品类型和分类筛选查找物品。
-4. 点击物品卡片查看详情。
-5. 游客可以查看公开信息，但不能查看微信、QQ 等联系方式。
+A short demo path for product review:
 
-### 7.2 登录与补全资料
+1. Open the home page and show nearby items.
+2. Use search, category filters and "换个楼栋" to show cross-campus building browsing.
+3. Open an item detail and show that contact info is hidden for guests.
+4. Log in with a verified user and complete profile.
+5. Publish an item and show it enters review.
+6. Log into the admin console and approve it.
+7. Return to the home page, view contact info, and send a claim reminder.
+8. Confirm the claim from the publisher side.
+9. Submit fulfillment review tags.
+10. Show the trust summary and admin building activity panel.
 
-1. 进入“我的”页面。
-2. 阅读并勾选用户协议。
-3. 输入南京大学学生邮箱前缀，系统固定使用 `@smail.nju.edu.cn` 后缀。
-4. 获取邮箱验证码并完成登录。
-5. 首次登录后可设置密码，后续支持密码登录和忘记密码重置。
-6. 在账号设置中补全昵称、校区和楼栋；宿舍号为选填。
+More detailed scripts:
 
-补全校区和楼栋后，用户才能发布物品或查看联系方式。
+- [docs/demo-script.md](docs/demo-script.md)
+- [docs/full-chain-demo-script.md](docs/full-chain-demo-script.md)
 
-### 7.3 发布物品
+## Documentation
 
-1. 登录并补全资料后，进入“发布”页面。
-2. 选择物品类型：耗材、药品或工具。
-3. 填写物品名称、数量、单位、有效期或长期有效选项。
-4. 药品需选择笼统分类，例如感冒药、退烧药、过敏药、肠胃药等。
-5. 工具需选择工具分类，并说明借用或赠送方式。
-6. 填写校区、楼栋、宿舍号（可使用账号资料中的位置）。
-7. 填写微信或 QQ，二者至少填写一项。
-8. 勾选免费互助声明并提交。
-9. 提交后物品进入“审核中”，审核通过前不会出现在首页。
+| Document | Purpose |
+| --- | --- |
+| [docs/api/index.md](docs/api/index.md) | API reference |
+| [docs/deployment-guide.md](docs/deployment-guide.md) | production deployment and operations |
+| [docs/test-guide.md](docs/test-guide.md) | manual acceptance test guide |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | staged engineering roadmap |
+| [docs/iteration-fulfillment-review.md](docs/iteration-fulfillment-review.md) | fulfillment review MVP notes |
+| [docs/iteration-admin-convergence.md](docs/iteration-admin-convergence.md) | admin convergence notes |
+| [docs/user-agreement.md](docs/user-agreement.md) | user agreement |
+| [docs/privacy-guideline-draft.md](docs/privacy-guideline-draft.md) | privacy guideline draft |
+| [CHANGELOG.md](CHANGELOG.md) | historical changes |
 
-### 7.4 查看联系方式与领取
+## Security and Privacy Notes
 
-1. 登录并补全资料后，打开物品详情页。
-2. 点击“查看联系方式”。
-3. 页面展示发布者填写的微信或 QQ。
-4. 用户自行线下联系并确认物品状态、有效期和交接方式。
-5. 实际领取后，可点击“我已联系并领取，提醒发布者确认”。
-6. 发布者确认后，系统自动扣减数量；数量归零后物品自动下架。
+- Public item lists never expose WeChat, QQ or room number.
+- Contact info is returned only through the dedicated contact endpoint.
+- Admin views include sensitive details and require admin JWT.
+- Location matching uses campus/building data instead of GPS.
+- Item posts require manual review before becoming public.
+- The project currently keeps CORS permissive for mini-program compatibility; tighten this before broader production rollout.
+- `.env`, SMTP credentials, JWT secrets, MinIO keys and Nanna keys must stay out of Git.
 
-### 7.5 管理自己的发布
+## Project Status
 
-1. 进入“我的发布”。
-2. 查看自己发布的物品、审核状态和驳回原因。
-3. 有待确认领取提醒时，可选择“确认领取”或“忽略”。
-4. 对自己的发布记录可进行编辑或删除。
-5. 编辑后的物品会重新进入审核流程。
+NanE is a deployable competition MVP with several post-MVP refinements already included:
 
-### 7.6 管理员审核
+- backend router/module split
+- responsive Web UI and dark mode
+- service worker cache
+- image upload and cleanup
+- fulfillment review and trust summary
+- admin reports, users, roles and building activity
+- API smoke/regression tests
 
-1. 打开 [https://nane.zylatent.com/admin](https://nane.zylatent.com/admin)。
-2. 使用管理员账号登录。
-3. 查看待审核物品。
-4. 检查物品类型、分类、有效期、位置、联系方式和说明是否符合平台规则。
-5. 对物品执行通过、驳回或下架操作。
-6. 后台可查看发布者联系方式、宿舍号和基础统计数据。
+Next likely directions:
 
-### 7.7 验收测试
+- migrate remaining compatibility DDL into explicit migration files
+- expand item/service taxonomy with stricter review rules
+- add admin audit search for reviews and abnormal users
+- improve CORS/security headers and request body limits
+- bring mini-program release flow back after deployment constraints are cleared
 
-测试流程见 [docs/test-guide.md](docs/test-guide.md)。建议重点验证：
+## License
 
-- API 健康检查正常。
-- 游客可浏览但不能查看联系方式。
-- 邮箱验证码登录、密码登录和找回密码可用。
-- 发布后进入审核，审核通过后前台可见。
-- 查看联系方式、领取提醒、发布者确认、自动下架链路可用。
-- 管理后台审核、驳回、下架功能可用。
-- 移动端和桌面端无明显布局溢出。
+No open-source license is currently declared in this repository. Treat the code and project materials as private unless a license is added.
 
-## 八、配套文档
+## Acknowledgements
 
-- [CHANGELOG.md](CHANGELOG.md)：版本变更记录
-- [docs/deployment-guide.md](docs/deployment-guide.md)：部署与运维指南
-- [docs/test-guide.md](docs/test-guide.md)：验收测试指南
-- [docs/demo-script.md](docs/demo-script.md)：演示脚本
-- [docs/full-chain-demo-script.md](docs/full-chain-demo-script.md)：全链路展示脚本
-- [docs/user-agreement.md](docs/user-agreement.md)：用户协议
-- [docs/privacy-guideline-draft.md](docs/privacy-guideline-draft.md)：隐私保护指引草案
-- [docs/contest-materials/项目书.md](docs/contest-materials/项目书.md)：比赛项目书
+NanE is built around a simple campus idea: nearby students can help each other faster than a marketplace can. The project uses Node.js, PostgreSQL, Font Awesome Free, Web Push and the Nanjing University campus context to turn that idea into a working product loop.
