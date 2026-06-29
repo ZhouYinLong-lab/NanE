@@ -293,6 +293,8 @@ textarea:focus {
   color: var(--purple);
   font-weight: var(--fw-black);
   text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* ===== Form Card ===== */
