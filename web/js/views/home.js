@@ -5,6 +5,71 @@ const HOME_PAGE_SIZE = 20;
 
 N.HOME_PAGE_SIZE = HOME_PAGE_SIZE;
 
+function buildHomeQuery(offset) {
+  const keyword = N.$("keywordInput").value.trim();
+  const params = new URLSearchParams();
+  params.set("limit", HOME_PAGE_SIZE);
+  params.set("offset", String(offset || 0));
+  if (keyword) params.set("keyword", keyword);
+  if (N.DEBUG_MODE) params.set("debug", "true");
+
+  const activeChips = document.querySelectorAll(".chip.active");
+  const types = new Set();
+  const categories = new Set();
+  let hasAll = false;
+  activeChips.forEach(c => {
+    if (c.dataset.type === "" && c.dataset.category === "") {
+      hasAll = true;
+    } else {
+      if (c.dataset.type) types.add(c.dataset.type);
+      if (c.dataset.category) categories.add(c.dataset.category);
+    }
+  });
+
+  let clientFilter = null;
+  if (!hasAll) {
+    if (types.size === 1) {
+      params.set("itemType", [...types][0]);
+      if (categories.size === 1) {
+        params.set("category", [...categories][0]);
+      } else if (categories.size > 1) {
+        clientFilter = { categories: [...categories] };
+      }
+    } else if (types.size > 1) {
+      clientFilter = { types: [...types], categories: [...categories] };
+    }
+  }
+
+  return { keyword, params, clientFilter };
+}
+
+function applyHomeClientFilters(items, clientFilter) {
+  let filtered = Array.isArray(items) ? items : [];
+  if (clientFilter) {
+    filtered = filtered.filter(item => {
+      if (clientFilter.types?.length && clientFilter.categories?.length) {
+        return clientFilter.types.includes(item.itemType) || clientFilter.categories.includes(item.category);
+      }
+      if (clientFilter.types?.length) {
+        return clientFilter.types.includes(item.itemType);
+      }
+      if (clientFilter.categories?.length) {
+        return clientFilter.categories.includes(item.category);
+      }
+      return true;
+    });
+  }
+
+  if (N.state.buildingFilter) {
+    filtered = filtered.filter(item =>
+      item.building === N.state.buildingFilter &&
+      (!N.state.buildingCampusFilter || item.campus === N.state.buildingCampusFilter)
+    );
+  }
+
+  return filtered;
+}
+
 N.renderItem = function renderItem(item, options) {
   if (options === void 0) options = {};
   const typeClass = `badge badge-${item.itemType || "consumable"}`;
@@ -82,71 +147,12 @@ N.loadHome = async function loadHome() {
   const skeletonHTML = '<div class="skeleton-card"><div class="skeleton-icon"></div><div class="skeleton-lines"><div class="skeleton-line w-60"></div><div class="skeleton-line w-80"></div><div class="skeleton-line w-40"></div></div></div>';
   N.$("itemList").innerHTML = skeletonHTML + skeletonHTML + skeletonHTML;
   try {
-    const keyword = N.$("keywordInput").value.trim();
-    const params = new URLSearchParams();
-    params.set("limit", HOME_PAGE_SIZE);
-    params.set("offset", "0");
-    if (keyword) params.set("keyword", keyword);
-    if (N.DEBUG_MODE) params.set("debug", "true");
-
-    // Collect active filter chips
-    const activeChips = document.querySelectorAll(".chip.active");
-    const types = new Set();
-    const categories = new Set();
-    let hasAll = false;
-    activeChips.forEach(c => {
-      if (c.dataset.type === "" && c.dataset.category === "") {
-        hasAll = true;
-      } else {
-        if (c.dataset.type) types.add(c.dataset.type);
-        if (c.dataset.category) categories.add(c.dataset.category);
-      }
-    });
-
-    // Determine API params
-    let clientFilter = null;
-    if (!hasAll) {
-      if (types.size === 1) {
-        params.set("itemType", [...types][0]);
-        if (categories.size === 1) {
-          params.set("category", [...categories][0]);
-        } else if (categories.size > 1) {
-          clientFilter = { categories: [...categories] };
-        }
-      } else if (types.size > 1) {
-        clientFilter = { types: [...types], categories: [...categories] };
-      }
-    }
-
+    const { keyword, params, clientFilter } = buildHomeQuery(0);
     const data = await N.api(`/items${params.toString() ? `?${params}` : ""}`);
-    let items = data.items;
-
-    // Apply client-side filter for multi-select
-    if (clientFilter) {
-      items = items.filter(item => {
-        if (clientFilter.types?.length && clientFilter.categories?.length) {
-          return clientFilter.types.includes(item.itemType) || clientFilter.categories.includes(item.category);
-        }
-        if (clientFilter.types?.length) {
-          return clientFilter.types.includes(item.itemType);
-        }
-        if (clientFilter.categories?.length) {
-          return clientFilter.categories.includes(item.category);
-        }
-        return true;
-      });
-    }
-
-    // Apply building filter client-side
-    if (N.state.buildingFilter) {
-      items = items.filter(item =>
-        item.building === N.state.buildingFilter &&
-        (!N.state.buildingCampusFilter || item.campus === N.state.buildingCampusFilter)
-      );
-    }
+    const items = applyHomeClientFilters(data.items, clientFilter);
 
     N.state.homeHasMore = data.hasMore;
-    N.state.homeOffset = items.length;
+    N.state.homeOffset = data.items.length;
 
     const labelCampus = N.state.buildingCampusFilter || data.viewer?.campus || "当前校区";
     const labelBuilding = N.state.buildingFilter || data.viewer?.building || "当前楼栋";
@@ -177,19 +183,14 @@ N.loadMoreHome = async function loadMoreHome() {
   btn.textContent = "加载中...";
   btn.disabled = true;
   try {
-    const keyword = N.$("keywordInput").value.trim();
-    const params = new URLSearchParams();
-    params.set("limit", HOME_PAGE_SIZE);
-    params.set("offset", N.state.homeOffset);
-    if (keyword) params.set("keyword", keyword);
-    if (N.DEBUG_MODE) params.set("debug", "true");
-
+    const { params, clientFilter } = buildHomeQuery(N.state.homeOffset);
     const data = await N.api(`/items${params.toString() ? `?${params}` : ""}`);
+    const items = applyHomeClientFilters(data.items, clientFilter);
     N.state.homeHasMore = data.hasMore;
     N.state.homeOffset += data.items.length;
 
     const list = N.$("itemList");
-    list.insertAdjacentHTML("beforeend", data.items.map(item => N.renderItem(item)).join(""));
+    list.insertAdjacentHTML("beforeend", items.map(item => N.renderItem(item)).join(""));
     N.refreshMotion(list);
     list.classList.add("list-dirty");
     list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
