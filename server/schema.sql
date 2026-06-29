@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS claim_requests (
   requester_id TEXT NOT NULL REFERENCES users(id),
   requester_name TEXT NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected', 'cancelled')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   reviewed_at TIMESTAMPTZ
 );

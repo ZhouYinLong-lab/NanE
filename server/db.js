@@ -23,6 +23,18 @@ async function query(text, params = []) {
   return pool.query(text, params);
 }
 
+async function enableOptionalTrigramIndexes() {
+  try {
+    await query("CREATE EXTENSION IF NOT EXISTS pg_trgm");
+    await query("CREATE INDEX IF NOT EXISTS idx_items_title_trgm ON items USING gin (title gin_trgm_ops)");
+    await query("CREATE INDEX IF NOT EXISTS idx_items_description_trgm ON items USING gin (description gin_trgm_ops)");
+  } catch (error) {
+    console.warn(
+      `[db] pg_trgm indexes skipped: ${error.message || error}. Keyword search will continue with ILIKE.`
+    );
+  }
+}
+
 async function initializeDatabase() {
   const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
   await pool.query(schema);
@@ -77,6 +89,8 @@ async function initializeDatabase() {
     )`
   );
   await query("ALTER TABLE claim_requests ALTER COLUMN status SET DEFAULT 'pending'");
+  await query("ALTER TABLE claim_requests DROP CONSTRAINT IF EXISTS claim_requests_status_check");
+  await query("ALTER TABLE claim_requests ADD CONSTRAINT claim_requests_status_check CHECK (status IN ('pending', 'confirmed', 'rejected', 'cancelled'))");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_item_status ON claim_requests(item_id, status, created_at DESC)");
   await query("CREATE INDEX IF NOT EXISTS idx_claim_requests_requester ON claim_requests(requester_id, created_at DESC)");
   await query(
@@ -114,10 +128,7 @@ async function initializeDatabase() {
      )`
   );
   await query("CREATE UNIQUE INDEX IF NOT EXISTS idx_contact_views_unique ON contact_views(viewer_id, item_id, view_date)");
-  // Text search indexes for keyword filtering
-  await query("CREATE EXTENSION IF NOT EXISTS pg_trgm");
-  await query("CREATE INDEX IF NOT EXISTS idx_items_title_trgm ON items USING gin (title gin_trgm_ops)");
-  await query("CREATE INDEX IF NOT EXISTS idx_items_description_trgm ON items USING gin (description gin_trgm_ops)");
+  await enableOptionalTrigramIndexes();
   await query("CREATE INDEX IF NOT EXISTS idx_items_status_expiry ON items(status, no_expiry, expire_date)");
   // Web Push subscriptions
   await query(

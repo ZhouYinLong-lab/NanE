@@ -22,6 +22,16 @@ const NICKNAME_NOUNS = ["小蓝鲸", "小猫", "同学", "室友", "小南瓜", 
 
 // --- Helper functions ---
 
+function nannaErrorResponse(res, error) {
+  const status = error.statusCode && error.statusCode >= 400 && error.statusCode < 600
+    ? error.statusCode
+    : 503;
+  json(res, status, {
+    error: status === 503 ? "NANNA_NOT_CONFIGURED" : "NANNA_ERROR",
+    message: error.message || "南哪小帮手身份验证暂时不可用，请稍后再试"
+  });
+}
+
 function randomNickname() {
   const adjective = NICKNAME_ADJECTIVES[crypto.randomInt(0, NICKNAME_ADJECTIVES.length)];
   const noun = NICKNAME_NOUNS[crypto.randomInt(0, NICKNAME_NOUNS.length)];
@@ -431,11 +441,17 @@ async function nannaChallenge(req, res) {
     json(res, 400, { error: "VALIDATION_ERROR", message: "请填写邮箱或学号以接收验证码" });
     return;
   }
-  const data = await callNanna("/api/v1/oauth/challenge", {
-    email: email || undefined,
-    student_id: studentId || undefined,
-    studentId: studentId || undefined
-  });
+  let data;
+  try {
+    data = await callNanna("/api/v1/oauth/challenge", {
+      email: email || undefined,
+      student_id: studentId || undefined,
+      studentId: studentId || undefined
+    });
+  } catch (error) {
+    nannaErrorResponse(res, error);
+    return;
+  }
   json(res, 200, {
     challengeId: pick(data, ["challenge_id", "challengeId", "id"], ""),
     maskedTarget: pick(data, ["masked_target", "maskedTarget", "target"], email || studentId),
@@ -460,14 +476,20 @@ async function nannaVerify(req, res) {
     json(res, 400, { error: "VALIDATION_ERROR", message: "请填写南哪小帮手验证码" });
     return;
   }
-  const data = await callNanna("/api/v1/oauth/verify", {
-    challenge_id: challengeId || undefined,
-    challengeId: challengeId || undefined,
-    code,
-    challenge_code: code,
-    email: String(input.email || "").trim() || undefined,
-    student_id: String(input.studentId || input.student_id || "").trim() || undefined
-  });
+  let data;
+  try {
+    data = await callNanna("/api/v1/oauth/verify", {
+      challenge_id: challengeId || undefined,
+      challengeId: challengeId || undefined,
+      code,
+      challenge_code: code,
+      email: String(input.email || "").trim() || undefined,
+      student_id: String(input.studentId || input.student_id || "").trim() || undefined
+    });
+  } catch (error) {
+    nannaErrorResponse(res, error);
+    return;
+  }
   const identity = normalizeNannaIdentity(data, input);
   const user = await upsertNannaUser(identity, AGREEMENT_VERSION);
   json(res, 200, {
