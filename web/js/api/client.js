@@ -44,6 +44,10 @@ N.api = async function api(path, options) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401) {
+      N.clearSession();
+      throw new Error("登录已过期，请重新登录");
+    }
     throw new Error(data.message || "请求失败");
   }
   return data;

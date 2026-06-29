@@ -5,13 +5,14 @@ const { readBody, json, pick, REVIEW_TAGS, ISSUE_REVIEW_TAGS, emptyTrustSummary 
 const { recordFailedLogin, getLoginAttempts, resetLoginAttempts } = require("../middleware/rate-limit");
 const { userFromRequest, demoViewer, requireVerifiedUser } = require("../middleware/auth");
 const { nannaConfigured, callNanna, normalizeNannaIdentity, upsertNannaUser } = require("../service/nanna");
-const { sendMail } = require("../service/email");
+const { sendMail, emailHtml } = require("../service/email");
 const { hashEmailCode, makeEmailCode, validateStudentEmail, normalizeEmail } = require("../service/email");
 
 // --- Constants ---
 const AGREEMENT_VERSION = "v1.0";
 const NJU_STUDENT_EMAIL_SUFFIX = "@smail.nju.edu.cn";
 const EMAIL_CODE_TTL_MINUTES = 5;
+const EMAIL_CODE_DAILY_LIMIT = 20;
 const NANNA_SCOPES = ["identity:basic:read", "identity:student_id:read", "identity:campus:read", "identity:major:read"];
 const DEBUG_MODE = String(process.env.DEBUG_MODE || "false").toLowerCase() === "true";
 const TEST_USER_IDS = ["u_demo"];
@@ -154,10 +155,8 @@ async function passwordResetChallenge(req, res) {
     json(res, 200, { message: "如果该账号存在，验证码已发送至对应邮箱" });
     return;
   }
-  if (!rows[0].password_hash) {
-    json(res, 400, { error: "NO_PASSWORD", message: "该账号尚未设置密码，请使用邮箱验证码登录后设置密码" });
-    return;
-  }
+  // Always proceed to send code, even if no password set (allows setting initial password via reset).
+  // The existence of the account is no longer leaked through different error messages.
   const recent = await query(
     "SELECT created_at FROM email_challenges WHERE email = $1 AND created_at > now() - interval '60 seconds' ORDER BY created_at DESC LIMIT 1",
     [email]
@@ -180,7 +179,13 @@ async function passwordResetChallenge(req, res) {
       "",
       `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`,
       "如果这不是你本人操作，可以忽略这封邮件。"
-    ].join("\n")
+    ].join("\n"),
+    html: emailHtml(
+      "密码重置验证码",
+      [`你的验证码是：<strong style="font-size:24px;letter-spacing:4px;color:#6E0065">${code}</strong>`, `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`, "如果这不是你本人操作，可以忽略这封邮件。"],
+      "",
+      ""
+    )
   });
   json(res, 200, {
     challengeId,
@@ -295,6 +300,16 @@ async function emailChallenge(req, res) {
     return;
   }
 
+  // Daily limit check
+  const { rows: dailyCount } = await query(
+    "SELECT COUNT(*)::int AS count FROM email_challenges WHERE email = $1 AND created_at > now() - interval '24 hours'",
+    [email]
+  );
+  if (dailyCount[0]?.count >= EMAIL_CODE_DAILY_LIMIT) {
+    json(res, 429, { error: "EMAIL_DAILY_LIMIT", message: "今日验证码发送次数已达上限，请明天再试" });
+    return;
+  }
+
   const recent = await query(
     "SELECT created_at FROM email_challenges WHERE email = $1 AND created_at > now() - interval '60 seconds' ORDER BY created_at DESC LIMIT 1",
     [email]
@@ -319,7 +334,13 @@ async function emailChallenge(req, res) {
       "",
       `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`,
       "如果这不是你本人操作，可以忽略这封邮件。"
-    ].join("\n")
+    ].join("\n"),
+    html: emailHtml(
+      "登录验证码",
+      [`你的验证码是：<strong style="font-size:24px;letter-spacing:4px;color:#6E0065">${code}</strong>`, `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`, "如果这不是你本人操作，可以忽略这封邮件。"],
+      "",
+      ""
+    )
   });
 
   json(res, 200, {
