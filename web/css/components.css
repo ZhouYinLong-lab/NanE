@@ -113,9 +113,13 @@
   padding: 10px 0 var(--space-xs);
 }
 
+#filterChips {
+  z-index: 3000;
+  isolation: isolate;
+}
+
 #filterChips.has-building-filter {
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  z-index: 120;
 }
 
 .chip-group-label {
@@ -233,28 +237,30 @@
 
 .chip-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 10px);
   left: 0;
-  z-index: 1200;
+  z-index: 4000;
   width: max-content;
   min-width: max(100%, 156px);
   max-width: min(220px, calc(100vw - 44px));
+  max-height: min(320px, calc(100vh - 180px));
   list-style: none;
   margin: 0;
-  padding: 8px;
-  border: none;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(28px) saturate(1.6);
-  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  padding: 7px;
+  border: 1px solid rgba(180, 165, 210, 0.42);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
   box-shadow:
-    inset 0 0 14px rgba(255, 255, 255, 0.12),
-    0 8px 32px rgba(139, 111, 175, 0.18);
-  overflow: hidden;
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 18px 46px rgba(76, 58, 111, 0.18),
+    0 4px 12px rgba(76, 58, 111, 0.08);
+  overflow-y: auto;
 }
 
 .chip-select.open {
-  z-index: 1201;
+  z-index: 4001;
 }
 
 .chip-dropdown[hidden] {
@@ -262,14 +268,14 @@
 }
 
 .chip-dropdown li {
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  border-radius: 13px;
   font-size: 13px;
   font-weight: var(--fw-bold);
   color: var(--text-strong);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
 }
 
 .chip-building-select .chip-dropdown {
@@ -278,12 +284,12 @@
 }
 
 .chip-dropdown li:hover {
-  background: rgba(139, 111, 175, 0.12);
+  background: rgba(110, 0, 101, 0.08);
   color: var(--purple);
 }
 
 .chip-dropdown li.selected {
-  background: rgba(139, 111, 175, 0.18);
+  background: rgba(110, 0, 101, 0.12);
   color: var(--purple);
   font-weight: var(--fw-black);
 }
@@ -1189,11 +1195,14 @@
 /* ===== Confirm Dialog ===== */
 .confirm-dialog {
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: 0;
   max-width: 420px;
   width: 90vw;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 24px 70px rgba(28, 20, 44, 0.22),
+    0 4px 16px rgba(28, 20, 44, 0.08);
   animation: dialogIn var(--motion-base) var(--motion-spring);
 }
 
@@ -1206,6 +1215,37 @@
 
 .confirm-dialog-content {
   padding: var(--space-xl);
+}
+
+.confirm-dialog-content > p {
+  color: var(--text-strong);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.confirm-input {
+  width: 100%;
+  margin: 2px 0 16px;
+}
+
+.confirm-input-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: var(--fw-heavy);
+}
+
+.confirm-input input {
+  width: 100%;
+}
+
+.confirm-input-hint {
+  min-height: 18px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: var(--fw-bold);
 }
 
 .confirm-dialog-content h3 {
@@ -2278,12 +2318,16 @@ dialog.is-closing {
   animation: fadeIn .3s;
 }
 .onboarding-card {
-  background: var(--bg);
-  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 28px;
   max-width: 380px;
   width: 90vw;
-  padding: 32px 24px 24px;
+  padding: 34px 26px 24px;
   text-align: center;
+  box-shadow:
+    0 24px 70px rgba(28, 20, 44, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
   animation: slideUp .35s var(--ease);
 }
 .onboard-step { display: none; }
@@ -2296,13 +2340,27 @@ dialog.is-closing {
   color: var(--accent);
   margin-bottom: 16px;
 }
-.onboard-step h2 { margin: 0 0 8px; font-size: 20px; }
+.onboard-step h2 { margin: 0 0 8px; font-size: 20px; color: var(--text-strong); }
 .onboard-step p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
-.onboard-dots { display: flex; gap: 8px; justify-content: center; margin: 20px 0; }
-.onboard-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: background .2s; }
-.onboard-dot.active { background: var(--accent); }
-.onboard-actions { display: flex; gap: 12px; justify-content: center; }
-.onboard-actions button { min-width: 100px; }
+.onboard-dots { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 22px 0; }
+.onboard-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(123, 107, 160, 0.22); transition: width .2s, background .2s; }
+.onboard-dot.active { width: 22px; background: var(--purple); }
+.onboard-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: center;
+}
+.onboard-actions button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+.onboard-actions .secondary {
+  border: 1px solid rgba(180, 165, 210, 0.34);
+  background: rgba(255, 255, 255, 0.72);
+}
 
 /* ===== PWA Install banner ===== */
 .install-banner {
