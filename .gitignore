@@ -11,9 +11,7 @@ project.private.config.json
 
 # Development tooling
 .playwright-mcp/
-.claude/iteration-log.md
-.claude/settings.local.json
-.claude/ralph-loop.local.md
+.claude/
 
 # Local debug snapshots
 *-snap.txt
