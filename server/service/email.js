@@ -78,6 +78,36 @@ async function smtpCommand(socket, command) {
   return smtpResponse(socket);
 }
 
+function emailHtml(title, bodyLines, actionUrl, actionText) {
+  const safeTitle = escapeHtml(title);
+  const safeBody = bodyLines.map(line => escapeHtml(line)).join('<br>');
+  const safeActionUrl = escapeHtml(actionUrl || "");
+  const safeActionText = escapeHtml(actionText || "");
+  const actionBlock = actionUrl
+    ? `<a href="${safeActionUrl}" style="display:inline-block;padding:14px 32px;background:#6E0065;color:#fffaf2;border-radius:999px;font-weight:900;text-decoration:none;font-size:16px;margin:12px 0">${safeActionText}</a>`
+    : "";
+  const linkNote = actionUrl
+    ? `<p style="color:#a09b91;font-size:12px;margin-top:16px">如果按钮无法点击，请复制以下链接到浏览器：<br>${safeActionUrl}</p>`
+    : "";
+  return [
+    '<!doctype html>',
+    '<html lang="zh-CN">',
+    '<head><meta charset="utf-8"></head>',
+    '<body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#1f1f1f;max-width:560px;margin:0 auto;padding:24px;background:#fffaf2">',
+    '  <table style="width:100%;margin-bottom:20px">',
+    '    <tr><td style="font-size:20px;font-weight:900;color:#6E0065">NanE <span style="font-weight:400;color:#6f6a61">南易</span></td></tr>',
+    '  </table>',
+    `  <p style="font-size:16px;line-height:1.6;margin:0 0 8px"><strong>${safeTitle}</strong></p>`,
+    `  <p style="font-size:15px;line-height:1.7;color:#3f3a31;margin:0 0 16px">${safeBody}</p>`,
+    `  ${actionBlock}`,
+    `  ${linkNote}`,
+    '  <hr style="border:none;border-top:1px solid #e4ded3;margin:24px 0 12px">',
+    '  <p style="color:#a09b91;font-size:11px">NanE 南易 · 南大校园免费互助平台<br>这是一封系统自动发送的邮件，请勿回复。</p>',
+    '</body>',
+    '</html>'
+  ].join("\n");
+}
+
 async function sendMail({ to, subject, text, html }) {
   if (!smtpConfigured()) {
     throw new Error("服务器尚未配置 SMTP 发信参数");
@@ -214,4 +244,4 @@ async function sendClaimNotificationMail(ownerEmail, item, claim) {
   }
 }
 
-module.exports = { smtpConfigured, sendMail, hashEmailCode, makeEmailCode, validateStudentEmail, normalizeEmail, sendClaimNotificationMail };
+module.exports = { smtpConfigured, sendMail, emailHtml, hashEmailCode, makeEmailCode, validateStudentEmail, normalizeEmail, sendClaimNotificationMail };

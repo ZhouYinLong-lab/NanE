@@ -114,6 +114,36 @@ async function initializeDatabase() {
      )`
   );
   await query("CREATE UNIQUE INDEX IF NOT EXISTS idx_contact_views_unique ON contact_views(viewer_id, item_id, view_date)");
+  // Text search indexes for keyword filtering
+  await query("CREATE EXTENSION IF NOT EXISTS pg_trgm");
+  await query("CREATE INDEX IF NOT EXISTS idx_items_title_trgm ON items USING gin (title gin_trgm_ops)");
+  await query("CREATE INDEX IF NOT EXISTS idx_items_description_trgm ON items USING gin (description gin_trgm_ops)");
+  await query("CREATE INDEX IF NOT EXISTS idx_items_status_expiry ON items(status, no_expiry, expire_date)");
+  // Web Push subscriptions
+  await query(
+    `CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      endpoint TEXT NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(user_id, endpoint)
+    )`
+  );
+  await query("CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id)");
+  // Item reports
+  await query(
+    `CREATE TABLE IF NOT EXISTS item_reports (
+      id TEXT PRIMARY KEY,
+      item_id TEXT NOT NULL REFERENCES items(id),
+      reporter_id TEXT NOT NULL REFERENCES users(id),
+      reason TEXT NOT NULL,
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      reviewed_at TIMESTAMPTZ
+    )`
+  );
 
   await query(
     `INSERT INTO users (id, name, campus, building, wechat, qq, openid)
