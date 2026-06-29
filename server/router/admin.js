@@ -135,6 +135,86 @@ async function adminStats(req, res) {
   json(res, 200, rows[0]);
 }
 
+async function adminActivity(req, res) {
+  const url = new URL(req.url, "http://localhost");
+  const campus = String(url.searchParams.get("campus") || "").trim();
+  const building = String(url.searchParams.get("building") || "").trim();
+  const limit = Math.max(1, Math.min(50, parseInt(url.searchParams.get("limit")) || 20));
+  if (!campus || !building) {
+    json(res, 400, { error: "VALIDATION_ERROR", message: "请选择校区和楼栋" });
+    return;
+  }
+
+  const eventParams = [campus, building, limit];
+  let eventOwnerClause = "";
+  if (!DEBUG_MODE) {
+    eventParams.push(DEMO_USER_ID);
+    eventOwnerClause = `AND i.owner_id <> $${eventParams.length}`;
+  }
+  const { rows: eventRows } = await query(
+    `SELECT 'new_item' AS event_type, i.id AS item_id, i.title AS item_title,
+            i.status AS item_status, i.owner_name, i.item_type, i.category,
+            i.created_at AS event_time, NULL AS claimer_name
+     FROM items i
+     WHERE i.campus = $1 AND i.building = $2 AND i.status = 'online' ${eventOwnerClause}
+     UNION ALL
+     SELECT 'claimed' AS event_type, i.id AS item_id, i.title AS item_title,
+            i.status AS item_status, i.owner_name, i.item_type, i.category,
+            cr.created_at AS event_time, cr.requester_name AS claimer_name
+     FROM claim_requests cr
+     JOIN items i ON i.id = cr.item_id
+     WHERE i.campus = $1 AND i.building = $2 AND cr.status = 'confirmed' ${eventOwnerClause}
+     ORDER BY event_time DESC
+     LIMIT $3`,
+    eventParams
+  );
+
+  const summaryParams = [campus, building];
+  let summaryOwnerClause = "";
+  if (!DEBUG_MODE) {
+    summaryParams.push(DEMO_USER_ID);
+    summaryOwnerClause = `AND i.owner_id <> $${summaryParams.length}`;
+  }
+  const { rows: summaryRows } = await query(
+    `SELECT
+       (SELECT COUNT(*)::int FROM items i
+        WHERE i.campus = $1 AND i.building = $2 AND i.status = 'online' ${summaryOwnerClause}) AS online_items,
+       (SELECT COUNT(*)::int
+        FROM claim_requests cr
+        JOIN items i ON i.id = cr.item_id
+        WHERE i.campus = $1 AND i.building = $2 AND cr.status = 'confirmed' ${summaryOwnerClause}) AS confirmed_claims,
+       (SELECT COUNT(DISTINCT i.owner_id)::int FROM items i
+        WHERE i.campus = $1 AND i.building = $2 ${summaryOwnerClause}) AS active_owners`,
+    summaryParams
+  );
+
+  const activities = eventRows.map(row => ({
+    eventType: row.event_type,
+    itemId: row.item_id,
+    itemTitle: row.item_title,
+    itemStatus: row.item_status,
+    ownerName: row.owner_name,
+    claimerName: row.claimer_name,
+    itemType: row.item_type,
+    category: row.category,
+    eventTime: row.event_time
+  }));
+  const summary = summaryRows[0] || {};
+  json(res, 200, {
+    campus,
+    building,
+    limit,
+    summary: {
+      onlineItems: summary.online_items || 0,
+      confirmedClaims: summary.confirmed_claims || 0,
+      activeOwners: summary.active_owners || 0,
+      recentActivities: activities.length,
+      lastActivityAt: activities[0]?.eventTime || null
+    },
+    activities
+  });
+}
+
 async function batchReviewItems(req, res) {
   const admin = await requireAdmin(req, res, "moderator");
   if (!admin) return;
@@ -354,6 +434,10 @@ async function handle(req, res, pathname, method) {
     }
     if (method === "GET" && pathname === "/api/admin/stats") {
       await adminStats(req, res);
+      return true;
+    }
+    if (method === "GET" && pathname === "/api/admin/activity") {
+      await adminActivity(req, res);
       return true;
     }
     const reviewMatch = pathname.match(/^\/api\/admin\/items\/([^/]+)\/(approve|reject|take-down)$/);

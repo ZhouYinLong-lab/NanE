@@ -6,6 +6,7 @@
 let token = localStorage.getItem("nane_admin_token") || "";
 let selectedItems = new Set();
 let pendingRejectAction = null; // { type: "single", id } | { type: "batch", ids: [...] }
+let adminLocations = [];
 
 // ===== DOM helpers =====
 function byId(id) { return document.getElementById(id); }
@@ -84,6 +85,15 @@ var STATUS_CLASSES = {
   claimed: "badge-info",
   expired: "badge-muted"
 };
+
+function formatDateTime(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleString("zh-CN");
+  } catch (e) {
+    return "";
+  }
+}
 
 // ===== Reports =====
 async function loadReports() {
@@ -211,7 +221,8 @@ function canManageAdmins() {
 
 // ===== Data Loading =====
 async function loadAll() {
-  await Promise.all([loadStats(), loadItems(), loadReports()]);
+  await ensureActivityLocations();
+  await Promise.all([loadStats(), loadItems(), loadReports(), loadActivityAdmin()]);
 }
 
 async function loadStats() {
@@ -251,6 +262,118 @@ async function loadItems() {
     }
   } catch (e) {
     container.innerHTML = '<div class="empty-state">加载失败：' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+// ===== Building Activity =====
+async function ensureActivityLocations() {
+  if (adminLocations.length > 0) return;
+  var campusSelect = byId("activity-campus");
+  var buildingSelect = byId("activity-building");
+  if (!campusSelect || !buildingSelect) return;
+  try {
+    var data = await api("/api/locations");
+    adminLocations = Array.isArray(data.locations) ? data.locations : [];
+    campusSelect.innerHTML = adminLocations.map(function (campus, index) {
+      return '<option value="' + index + '">' + escapeHtml(campus.name) + '</option>';
+    }).join("");
+    var defaultIndex = adminLocations.findIndex(function (campus) { return campus.name === "仙林校区"; });
+    campusSelect.value = String(defaultIndex >= 0 ? defaultIndex : 0);
+    onActivityCampusChange(false);
+  } catch (e) {
+    var list = byId("activity-admin-list");
+    if (list) list.innerHTML = '<div class="empty-state">楼栋数据加载失败：' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function onActivityCampusChange(shouldLoad) {
+  if (shouldLoad === undefined) shouldLoad = true;
+  var campusSelect = byId("activity-campus");
+  var buildingSelect = byId("activity-building");
+  if (!campusSelect || !buildingSelect) return;
+  var campus = adminLocations[Number(campusSelect.value)] || adminLocations[0];
+  var buildings = campus && Array.isArray(campus.buildings) ? campus.buildings : [];
+  buildingSelect.innerHTML = buildings.map(function (building, index) {
+    return '<option value="' + index + '">' + escapeHtml(building.name) + '</option>';
+  }).join("");
+  if (buildings.length) buildingSelect.value = "0";
+  if (shouldLoad) loadActivityAdmin();
+}
+
+async function loadActivityAdmin() {
+  var list = byId("activity-admin-list");
+  var campusSelect = byId("activity-campus");
+  var buildingSelect = byId("activity-building");
+  if (!list || !campusSelect || !buildingSelect) return;
+  if (!adminLocations.length) {
+    list.innerHTML = '<div class="empty-state">正在加载楼栋数据...</div>';
+    return;
+  }
+  var campus = adminLocations[Number(campusSelect.value)] || adminLocations[0];
+  var building = campus && campus.buildings ? campus.buildings[Number(buildingSelect.value)] : null;
+  if (!campus || !building) {
+    list.innerHTML = '<div class="empty-state">请选择校区和楼栋</div>';
+    return;
+  }
+  var limit = (byId("activity-limit") && byId("activity-limit").value) || "20";
+  try {
+    var data = await api(
+      "/api/admin/activity?campus=" + encodeURIComponent(campus.name) +
+      "&building=" + encodeURIComponent(building.name) +
+      "&limit=" + encodeURIComponent(limit)
+    );
+    renderActivitySummary(data.summary || {});
+    if (data.activities && data.activities.length > 0) {
+      list.innerHTML = data.activities.map(renderActivityRow).join("");
+    } else {
+      list.innerHTML = '<div class="empty-state">该楼栋暂无动态</div>';
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="empty-state">动态加载失败：' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function renderActivitySummary(summary) {
+  byId("activity-online").textContent = summary.onlineItems || 0;
+  byId("activity-claims").textContent = summary.confirmedClaims || 0;
+  byId("activity-owners").textContent = summary.activeOwners || 0;
+  byId("activity-recent").textContent = summary.recentActivities || 0;
+  byId("activity-last").textContent = summary.lastActivityAt
+    ? "最近动态：" + formatDateTime(summary.lastActivityAt)
+    : "暂无最近动态";
+}
+
+function renderActivityRow(activity) {
+  var isClaimed = activity.eventType === "claimed";
+  var eventLabel = isClaimed ? "已领取" : "新分享";
+  var eventClass = isClaimed ? "badge-info" : "badge-success";
+  var actor = isClaimed
+    ? escapeHtml(activity.claimerName || "同学") + " 领取了 " + escapeHtml(activity.ownerName || "同学") + " 的物品"
+    : escapeHtml(activity.ownerName || "同学") + " 分享了物品";
+  return '<div class="activity-admin-row">' +
+    '<span class="badge ' + eventClass + '">' + eventLabel + '</span>' +
+    '<div class="activity-admin-main">' +
+      '<strong>' + escapeHtml(activity.itemTitle || "未命名物品") + '</strong>' +
+      '<span>' + actor + '</span>' +
+      '<small>' + escapeHtml(activity.category || "") + ' · ' + escapeHtml(STATUS_LABELS[activity.itemStatus] || activity.itemStatus || "") + ' · ' + escapeHtml(formatDateTime(activity.eventTime)) + '</small>' +
+    '</div>' +
+    '<button class="secondary small" onclick="focusAdminItem(\'' + escapeHtml(activity.itemId) + '\')">定位物品</button>' +
+  '</div>';
+}
+
+async function focusAdminItem(itemId) {
+  var statusSelect = byId("item-status");
+  if (statusSelect) statusSelect.value = "all";
+  await loadItems();
+  var card = Array.prototype.find.call(document.querySelectorAll(".item-card"), function (item) {
+    return item.getAttribute("data-id") === itemId;
+  });
+  if (card) {
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("item-card-focus");
+    setTimeout(function () { card.classList.remove("item-card-focus"); }, 1600);
+  } else {
+    showToast("已切换到全部物品，但当前列表中未找到该物品", "info");
   }
 }
 

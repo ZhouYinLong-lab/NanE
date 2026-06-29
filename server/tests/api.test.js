@@ -542,6 +542,12 @@ describe("NanE API — Protected Endpoints (401 without auth)", () => {
     assert.strictEqual(status, 401);
     assert.strictEqual(data.error, "UNAUTHORIZED");
   });
+
+  it("GET /api/admin/activity requires admin auth", async () => {
+    const { status, data } = await request("/api/admin/activity?campus=仙林校区&building=南苑%20A%20栋");
+    assert.strictEqual(status, 401);
+    assert.strictEqual(data.error, "UNAUTHORIZED");
+  });
 });
 
 describe("NanE API — Item Detail and Lookup", () => {
@@ -639,6 +645,21 @@ describe("NanE API — Admin Authentication", () => {
       assert.ok(item.contact, "admin view should include contact info");
       assert.ok(typeof item.contact.wechat === "string");
     }
+  });
+
+  it("GET /api/admin/activity with admin token returns building activity", async () => {
+    assert.ok(adminToken);
+    const { status, data } = await request("/api/admin/activity?campus=仙林校区&building=南苑%20A%20栋&limit=5", {
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+    assert.strictEqual(status, 200);
+    assert.strictEqual(data.campus, "仙林校区");
+    assert.strictEqual(data.building, "南苑 A 栋");
+    assert.ok(data.summary);
+    assert.ok(typeof data.summary.onlineItems === "number");
+    assert.ok(typeof data.summary.confirmedClaims === "number");
+    assert.ok(Array.isArray(data.activities));
+    assert.ok(data.activities.length <= 5);
   });
 
   it("GET /api/admin/items?status=reviewing filters by status", async () => {
