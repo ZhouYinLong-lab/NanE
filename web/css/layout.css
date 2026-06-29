@@ -355,7 +355,6 @@
   margin-bottom: var(--space-xs);
   font-size: 18px;
   font-weight: var(--fw-black);
-  color: var(--purple);
 }
 
 .welcome-banner p {
@@ -366,17 +365,16 @@
 }
 
 .welcome-lottie {
-  flex: 0 0 104px;
-  width: 104px;
-  height: 78px;
+  flex: 0 0 108px;
+  width: 108px;
+  height: 82px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(110, 0, 101, 0.08);
-  border-radius: 22px;
+  border-radius: 24px;
   background:
-    radial-gradient(circle at 45% 38%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.32) 52%, transparent 76%),
-    rgba(255, 255, 255, 0.36);
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3) 48%, transparent 70%),
+    rgba(255, 255, 255, 0.48);
   color: var(--purple);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
@@ -653,14 +651,8 @@
 
 /* ===== Dark Mode (layout) ===== */
 [data-theme="dark"] .welcome-banner {
-  background:
-    linear-gradient(135deg, rgba(216, 140, 232, 0.16), rgba(31, 28, 45, 0.9)),
-    var(--card-strong);
+  background: linear-gradient(135deg, rgba(141, 43, 147, 0.24), rgba(31, 28, 45, 0.88));
   border-color: var(--purple-glow);
-}
-
-[data-theme="dark"] .welcome-banner strong {
-  color: var(--text-strong);
 }
 
 [data-theme="dark"] .welcome-banner p {
@@ -669,17 +661,11 @@
 
 [data-theme="dark"] .welcome-lottie {
   background:
-    radial-gradient(circle at 45% 38%, rgba(216, 140, 232, 0.16), rgba(255, 255, 255, 0.055) 52%, transparent 76%),
-    rgba(255, 255, 255, 0.045);
-  border-color: rgba(216, 140, 232, 0.12);
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.12), rgba(216, 140, 232, 0.1) 48%, transparent 70%),
+    rgba(255, 255, 255, 0.06);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 14px 34px rgba(0, 0, 0, 0.28);
-}
-
-[data-theme="dark"] .welcome-lottie svg,
-[data-theme="dark"] .onboard-lottie svg {
-  filter: brightness(1.24) saturate(1.12);
 }
 
 [data-theme="dark"] .tabs {
@@ -799,9 +785,9 @@
   }
 
   .welcome-lottie {
-    flex-basis: 88px;
-    width: 88px;
-    height: 68px;
+    flex-basis: 92px;
+    width: 92px;
+    height: 72px;
     border-radius: 20px;
   }
 }
