@@ -453,9 +453,63 @@ N.logout = function logout() {
   N.loadMyItems();
 };
 
+N.exportData = async function exportData() {
+  try {
+    N.showToast("正在导出数据...", "info");
+    const data = await N.api("/me/export");
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `nane-data-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    N.showToast("数据已下载", "success");
+  } catch (error) {
+    N.showToast(N.errmsg(error, "导出失败"), "error");
+  }
+};
+
+N.deleteAccount = async function deleteAccount() {
+  const ok = await N.showConfirmDialog("确定要注销账号吗？此操作不可撤销。你的发布记录将被隐藏，个人信息将被清除。请输入"确认删除"以继续。");
+  if (!ok) return;
+  try {
+    const data = await N.api("/me/delete", {
+      method: "POST",
+      body: JSON.stringify({ confirm: "确认删除" })
+    });
+    N.showToast(data.message || "账号已注销", "success");
+    N.clearSession();
+    N.syncSettingsAccount();
+    N.syncPublishView();
+    N.loadProfile();
+    N.loadMyItems();
+  } catch (error) {
+    N.showToast(N.errmsg(error, "注销失败"), "error");
+  }
+};
+
+N.togglePush = async function togglePush() {
+  const enabled = N.$("pushToggle").checked;
+  if (enabled) {
+    await N.enablePush();
+    if (localStorage.getItem("nane_push_enabled") !== "1") {
+      N.$("pushToggle").checked = false;
+    }
+  } else {
+    await N.disablePush();
+  }
+};
+
 N.loadSettings = async function loadSettings() {
   N.syncSettingsAccount();
   await N.loadNotificationPrefs();
+  // Sync push toggle
+  if (N.$("pushToggle")) {
+    N.$("pushToggle").checked = localStorage.getItem("nane_push_enabled") === "1";
+  }
 };
 
 })(window.NanE);

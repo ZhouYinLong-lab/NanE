@@ -86,3 +86,10 @@ PostgreSQL accessed via `pg` Pool. Key tables: `users`, `items`, `contact_views`
 - Contact info (wechat/QQ) is never included in public item responses — only in the dedicated `/api/items/:id/contact` endpoint and owner/admin views.
 - Expiry dates use `YYYY-MM-DD` format. Items can set `no_expiry=true` except for medicines (validated in update handler).
 - New DB columns are added in `db.js` via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, not by editing `schema.sql`.
+
+## Security notes
+
+- **JWT storage**: Tokens are stored in `localStorage` (see `web/js/api/client.js:22`). This is acceptable for the current campus-scale MVP but is vulnerable to XSS-based exfiltration. If the app grows beyond campus or handles sensitive data beyond contact info, migrate to `httpOnly` cookies with CSRF protection.
+- **401 handling**: The client now clears session and shows "登录已过期，请重新登录" on 401 responses. The server middleware (`server/middleware/auth.js`) enforces `is_banned` checks in both `userFromRequest` and `requireVerifiedUser`.
+- **Rate limiting**: Email verification codes have a 60-second cooldown and a 20/day limit per email. Password login uses in-memory rate limiting (resets on PM2 restart — acceptable for current scale).
+- **Contact views**: Daily limit of 5 views enforced server-side in `viewContact()` (`server/router/items.js`).

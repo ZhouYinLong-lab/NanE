@@ -1,13 +1,13 @@
 /* NanE Service Worker — offline support via cache-first strategy */
 
-const CACHE_VERSION = "nane-v1";
+const CACHE_VERSION = "nane-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const APP_SHELL = [
   "/",
   "/web/index.html",
   "/web/manifest.json",
-  "/web/app.js",
+  "/web/js/app.js",
   "/web/js/utils/escape.js",
   "/web/js/utils/date.js",
   "/web/js/utils/validate.js",
@@ -85,6 +85,46 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(event.request).catch(() => {
     return caches.match("/");
   }));
+});
+
+// ── Push notifications ────────────────────────────────────────────
+
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  try {
+    const payload = event.data.json();
+    const title = payload.title || "NanE 南易";
+    const options = {
+      body: payload.body || "",
+      icon: payload.icon || "/assets/brand/web-logo.png",
+      badge: payload.badge || "/assets/brand/nane-logo.png",
+      data: payload.data || {},
+      requireInteraction: false,
+      tag: payload.tag || "nane-default"
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (_) {
+    // Ignore malformed push payloads
+  }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const itemId = data.itemId || "";
+  const url = itemId ? `/web/?item=${itemId}` : "/web/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("/web/") && "focus" in client) {
+          client.focus();
+          if (itemId) client.postMessage({ type: "navigate", itemId });
+          return;
+        }
+      }
+      return clients.openWindow(url);
+    })
+  );
 });
 
 // ── Strategies ────────────────────────────────────────────────────

@@ -8,6 +8,8 @@ const { readBody, json, html } = require("../lib/util");
 const { signToken } = require("../lib/jwt");
 const { requireAdmin, demoViewer } = require("../middleware/auth");
 const { itemFromRow, attachOwnerTrustSummaries } = require("../lib/item-utils");
+const { sendMail, emailHtml } = require("../service/email");
+const { sendToUser } = require("../service/push");
 
 const DEBUG_MODE = String(process.env.DEBUG_MODE || "false").toLowerCase() === "true";
 
@@ -69,6 +71,39 @@ async function reviewItem(req, res, itemId, action) {
     "INSERT INTO review_logs (id, item_id, admin_id, action, reason) VALUES ($1, $2, $3, $4, $5)",
     [makeId("log"), itemId, admin.sub, action, reason || null]
   );
+
+  // Send approval notification email to item owner
+  if (action === "approve") {
+    const { rows: ownerRows } = await query("SELECT email FROM users WHERE id = $1", [rows[0].owner_id]);
+    const ownerEmail = ownerRows[0]?.email;
+    if (ownerEmail) {
+      const itemTitle = rows[0].title;
+      const appUrl = (process.env.PUBLIC_WEB_URL || "https://nane.zylatent.com").replace(/\/+$/, "");
+      sendMail({
+        to: ownerEmail,
+        subject: "NanE 南易 — 你的物品已通过审核",
+        text: [
+          `你发布的「${itemTitle}」已通过审核，现在同楼同学可以在首页看到并联系你了。`,
+          "",
+          "请留意领取提醒，及时确认领取。",
+          "— NanE 南易"
+        ].join("\n"),
+        html: emailHtml(
+          "你的物品已通过审核 🎉",
+          [`你发布的「${itemTitle}」已通过审核，现在同楼同学可以在首页看到并联系你了。`, "请留意领取提醒，及时确认领取。"],
+          `${appUrl}?view=mine`,
+          "查看我的发布"
+        )
+      }).catch(() => {}); // Best-effort; don't block the response
+    }
+    // Push notification
+    sendToUser(rows[0].owner_id, {
+      title: "你的物品已通过审核",
+      body: `「${rows[0].title}」已上线，同楼同学可以看到啦`,
+      data: { itemId }
+    });
+  }
+
   const viewer = await demoViewer();
   const [item] = await attachOwnerTrustSummaries([itemFromRow(rows[0], viewer, { includeContact: true, includeRoom: true })]);
   json(res, 200, { item });
@@ -93,7 +128,8 @@ async function adminStats(req, res) {
         WHERE true ${claimFilter}) AS fulfillment_reviews,
        (SELECT COUNT(*)::int FROM users) AS total_users,
        (SELECT COUNT(*)::int FROM users WHERE is_banned = true) AS banned_users,
-       (SELECT COUNT(*)::int FROM users WHERE created_at >= CURRENT_DATE) AS new_users_today
+       (SELECT COUNT(*)::int FROM users WHERE created_at >= CURRENT_DATE) AS new_users_today,
+       (SELECT COUNT(*)::int FROM item_reports WHERE reviewed_at IS NULL) AS pending_reports
      FROM items ${testFilter}`
   );
   json(res, 200, rows[0]);
@@ -323,6 +359,54 @@ async function handle(req, res, pathname, method) {
     const reviewMatch = pathname.match(/^\/api\/admin\/items\/([^/]+)\/(approve|reject|take-down)$/);
     if (method === "POST" && reviewMatch) {
       await reviewItem(req, res, reviewMatch[1], reviewMatch[2].replace("take-down", "take_down"));
+      return true;
+    }
+
+    // GET /api/admin/reports — list item reports
+    if (method === "GET" && pathname === "/api/admin/reports") {
+      const admin = await requireAdmin(req, res, "moderator");
+      if (!admin) return true;
+      const url = new URL(req.url, "http://localhost");
+      const status = url.searchParams.get("status") || "pending"; // pending | reviewed
+      const limit = Math.max(1, Math.min(50, parseInt(url.searchParams.get("limit")) || 30));
+      const whereReviewed = status === "reviewed" ? "AND r.reviewed_at IS NOT NULL" : "AND r.reviewed_at IS NULL";
+      const { rows } = await query(
+        `SELECT r.*, i.title AS item_title, i.status AS item_status,
+                u.name AS reporter_name
+         FROM item_reports r
+         JOIN items i ON i.id = r.item_id
+         JOIN users u ON u.id = r.reporter_id
+         WHERE true ${whereReviewed}
+         ORDER BY r.created_at DESC
+         LIMIT $1`,
+        [limit]
+      );
+      json(res, 200, {
+        reports: rows.map(r => ({
+          id: r.id,
+          itemId: r.item_id,
+          itemTitle: r.item_title,
+          itemStatus: r.item_status,
+          reporterName: r.reporter_name,
+          reason: r.reason,
+          comment: r.comment,
+          createdAt: r.created_at,
+          reviewedAt: r.reviewed_at
+        }))
+      });
+      return true;
+    }
+
+    // POST /api/admin/reports/:id/review — mark report as reviewed
+    const reportReviewMatch = pathname.match(/^\/api\/admin\/reports\/([^/]+)\/review$/);
+    if (method === "POST" && reportReviewMatch) {
+      const admin = await requireAdmin(req, res, "moderator");
+      if (!admin) return true;
+      await query(
+        "UPDATE item_reports SET reviewed_at = now() WHERE id = $1",
+        [reportReviewMatch[1]]
+      );
+      json(res, 200, { message: "已标记为已处理" });
       return true;
     }
   }

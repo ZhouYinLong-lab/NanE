@@ -85,6 +85,49 @@ var STATUS_CLASSES = {
   expired: "badge-muted"
 };
 
+// ===== Reports =====
+async function loadReports() {
+  var container = byId("reports-list");
+  if (!container) return;
+  var statusVal = (byId("report-status") && byId("report-status").value) || "pending";
+  try {
+    var data = await api("/api/admin/reports?status=" + encodeURIComponent(statusVal));
+    if (data.reports && data.reports.length > 0) {
+      container.innerHTML = data.reports.map(renderReportCard).join("");
+    } else {
+      container.innerHTML = '<div class="empty-state">' + (statusVal === "pending" ? "暂无待处理举报" : "暂无已处理举报") + '</div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="empty-state">加载失败：' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function renderReportCard(r) {
+  var reasons = { "虚假信息": "#b3261e", "违禁物品": "#c83c1e", "涉及收费": "#b8860b", "骚扰信息": "#6E0065", "其他问题": "#666" };
+  var reasonColor = reasons[r.reason] || "#666";
+  return '<div class="report-card glass" style="padding:16px;margin-bottom:10px;border-radius:10px;display:flex;gap:12px;align-items:flex-start">' +
+    '<span style="background:' + reasonColor + ';color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;white-space:nowrap">' + escapeHtml(r.reason) + '</span>' +
+    '<div style="flex:1;min-width:0">' +
+      '<div style="font-weight:600;margin-bottom:2px">' + escapeHtml(r.itemTitle) + '</div>' +
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">举报人：' + escapeHtml(r.reporterName) + ' · ' + escapeHtml(r.createdAt ? new Date(r.createdAt).toLocaleString("zh-CN") : "") + '</div>' +
+      (r.comment ? '<div style="font-size:13px;margin-bottom:4px">' + escapeHtml(r.comment) + '</div>' : '') +
+      '<div style="font-size:12px;color:var(--muted)">物品状态：' + escapeHtml(STATUS_LABELS[r.itemStatus] || r.itemStatus) + '</div>' +
+    '</div>' +
+    (r.reviewedAt ? '' : '<button class="secondary small" onclick="reviewReport(\'' + escapeHtml(r.id) + '\')">已处理</button>') +
+  '</div>';
+}
+
+async function reviewReport(reportId) {
+  try {
+    await api("/api/admin/reports/" + encodeURIComponent(reportId) + "/review", { method: "POST" });
+    showToast("已标记为已处理", "success");
+    loadReports();
+    loadStats();
+  } catch (e) {
+    showToast("操作失败：" + e.message, "error");
+  }
+}
+
 // ===== Auth =====
 async function login() {
   try {
@@ -133,9 +176,12 @@ function showDashboard() {
     byId("admin-management").style.display = "";
     loadAdmins();
   }
-  // Hide user metrics for non-super_admin (total users, banned users, new users today)
+  // Reports section always visible for moderator+
+  var reportsSection = byId("reports-section");
+  if (reportsSection && !canModify()) reportsSection.style.display = "none";
+  // Hide user metrics for non-super_admin
   if (!canManageAdmins()) {
-    ["stat-total-users", "stat-banned-users", "stat-new-users"].forEach(function (id) {
+    ["stat-total-users", "stat-banned-users", "stat-new-users", "stat-reports"].forEach(function (id) {
       var el = byId(id);
       if (el) el.style.display = "none";
     });
@@ -165,7 +211,7 @@ function canManageAdmins() {
 
 // ===== Data Loading =====
 async function loadAll() {
-  await Promise.all([loadStats(), loadItems()]);
+  await Promise.all([loadStats(), loadItems(), loadReports()]);
 }
 
 async function loadStats() {
@@ -180,6 +226,8 @@ async function loadStats() {
     byId("s-total-users").textContent = s.total_users;
     byId("s-banned-users").textContent = s.banned_users;
     byId("s-new-users").textContent = s.new_users_today;
+    var reportsEl = byId("s-pending-reports");
+    if (reportsEl) reportsEl.textContent = s.pending_reports || 0;
   } catch (e) {
     showToast("加载统计数据失败：" + e.message, "error");
   }

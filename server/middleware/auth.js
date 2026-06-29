@@ -15,7 +15,7 @@ async function userFromRequest(req) {
   const payload = verifyToken(auth.replace(/^Bearer\s+/i, ""));
   if (payload?.role === "user" && payload.sub) {
     const { rows } = await query("SELECT * FROM users WHERE id = $1", [payload.sub]);
-    if (rows[0]) {
+    if (rows[0] && !rows[0].is_banned) {
       return rows[0];
     }
   }
@@ -45,6 +45,10 @@ async function requireVerifiedUser(req, res) {
   const user = await userFromRequest(req);
   if (!user || !user.is_verified) {
     json(res, 401, { error: "AUTH_REQUIRED", message: "请先登录或使用南哪小帮手完成校园身份验证" });
+    return null;
+  }
+  if (user.is_banned) {
+    json(res, 403, { error: "ACCOUNT_BANNED", message: "账号已被限制使用，如有疑问请联系管理员" });
     return null;
   }
   if (!userHasAgreement(user)) {

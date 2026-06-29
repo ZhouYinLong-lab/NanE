@@ -8,6 +8,13 @@
   <link rel="apple-touch-icon" href="/assets/brand/web-logo.png">
   <link rel="manifest" href="/web/manifest.json">
   <meta name="theme-color" content="#6E0065">
+  <meta property="og:title" content="NanE 南易 — 南大校园免费互助平台">
+  <meta property="og:description" content="将闲置的创可贴、感冒药、体温计等分享给同楼同学。免费共享，同楼互助。">
+  <meta property="og:image" content="/assets/brand/web-logo.png">
+  <meta property="og:url" content="https://nane.zylatent.com">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NanE 南易">
+  <meta name="description" content="南大校园免费互助平台 — 将闲置的创可贴、感冒药、体温计等分享给同楼同学。免费共享，同楼互助。">
   <link rel="stylesheet" href="/web/css/tokens.css">
   <link rel="stylesheet" href="/web/css/base.css">
   <link rel="stylesheet" href="/web/css/layout.css">
@@ -29,6 +36,10 @@
         </div>
       </div>
       <button class="icon-button" id="refreshButton" title="刷新"></button>
+      <button class="icon-button" id="notificationBell" title="通知" style="position:relative">
+        
+        <span id="notificationBadge" class="notif-badge" hidden>0</span>
+      </button>
     </header>
 
     <main id="main-content">
@@ -82,12 +93,23 @@
           </div>
         </div>
         <div class="chips chips-sub" id="subFilterChips" hidden></div>
+        <div class="chips chips-building" id="buildingFilterChips" hidden>
+          <span style="font-size:12px;color:var(--muted);padding:6px 4px">楼栋：</span>
+          <button class="chip active" data-building="">全部</button>
+        </div>
         <div class="section-head">
           <div>
             <h2>附近物品</h2>
             <p id="viewerLabel">同楼栋/同宿舍群优先展示</p>
           </div>
         </div>
+        <div class="section-head" id="activitySectionHead" hidden>
+          <div>
+            <h2>楼栋动态</h2>
+            <p id="activityLabel">最近分享与互助</p>
+          </div>
+        </div>
+        <div class="activity-feed" id="activityFeed"></div>
         <div class="state-card" id="homeState">正在加载...</div>
         <div class="item-list" id="itemList"></div>
         <button class="secondary wide load-more-btn" id="homeLoadMore" hidden>加载更多</button>
@@ -384,7 +406,7 @@
           <div class="section-head">
             <div>
               <h2>我的发布</h2>
-              <p>审核中、上架中、已驳回都会显示在这里。</p>
+              <p>审核中、上架中、已驳回都会显示在这里。新发布物品通常 1-2 小时内审核完成。</p>
             </div>
             <button class="primary small" id="loadMineButton">刷新</button>
           </div>
@@ -413,6 +435,10 @@
               </div>
               <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line)">
                 <button class="danger wide" id="settingsLogoutButton">登出</button>
+              </div>
+              <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+                <button class="secondary wide" id="settingsExportDataButton" style="margin-bottom:8px">导出我的数据</button>
+                <button class="danger wide" id="settingsDeleteAccountButton" style="background:transparent;color:var(--muted)">注销账号</button>
               </div>
               <div id="changePasswordForm" hidden style="margin-top:16px">
                 <h4>修改密码</h4>
@@ -460,6 +486,16 @@
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="claimEmailToggle" checked aria-label="领取提醒邮件">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="settings-row">
+              <div>
+                <strong>浏览器推送通知</strong>
+                <p class="hint">物品审核通过、有人领取时，浏览器推送提醒</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="pushToggle" aria-label="浏览器推送">
                 <span class="toggle-slider"></span>
               </label>
             </div>
@@ -544,6 +580,45 @@
     </div>
     <article id="agreementBody" class="agreement-body">正在加载协议...</article>
   </dialog>
+
+  <dialog id="notificationPanel" class="notification-panel">
+    <div class="dialog-head">
+      <h3>消息中心</h3>
+      <button id="closeNotificationPanel" class="icon-button" aria-label="关闭"></button>
+    </div>
+    <div id="notificationList" class="notif-list">暂无新消息</div>
+  </dialog>
+
+  <div id="onboardingOverlay" class="onboarding-overlay" hidden>
+    <div class="onboarding-card">
+      <div class="onboarding-steps">
+        <div class="onboard-step active" data-onboard="0">
+          <div class="onboard-icon"></div>
+          <h2>欢迎来到 NanE 南易</h2>
+          <p>南大校园免费互助平台 — 将闲置的创可贴、感冒药、体温计等分享给同楼同学。</p>
+        </div>
+        <div class="onboard-step" data-onboard="1">
+          <div class="onboard-icon"></div>
+          <h2>发现身边的互助</h2>
+          <p>首页按楼栋距离排序，优先展示同楼同学的分享。搜一搜、筛一筛，找到你需要的。</p>
+        </div>
+        <div class="onboard-step" data-onboard="2">
+          <div class="onboard-icon"></div>
+          <h2>发布你的闲置</h2>
+          <p>登录南大学生邮箱，即可发布闲置的应急物品。所有发布经人工审核，保障安全。</p>
+        </div>
+      </div>
+      <div class="onboard-dots">
+        <span class="onboard-dot active" data-dot="0"></span>
+        <span class="onboard-dot" data-dot="1"></span>
+        <span class="onboard-dot" data-dot="2"></span>
+      </div>
+      <div class="onboard-actions">
+        <button class="secondary" id="onboardSkip">跳过</button>
+        <button class="primary" id="onboardNext">下一步</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Module order: utils → api → ui → views → app -->
   <script src="/web/js/utils/escape.js"></script>

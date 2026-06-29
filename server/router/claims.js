@@ -5,6 +5,7 @@ const { query, makeId } = require("../db");
 const { readBody, json, REVIEW_TAGS, ISSUE_REVIEW_TAGS, normalizeReviewTags } = require("../lib/util");
 const { requireVerifiedUser } = require("../middleware/auth");
 const { sendClaimNotificationMail } = require("../service/email");
+const { sendToUser } = require("../service/push");
 const { emptyTrustSummary } = require("../lib/util");
 const { itemFromRow, trustSummariesForUsers, attachOwnerTrustSummaries, ITEM_TYPES, pendingReviewFromRow } = require("../lib/item-utils");
 
@@ -75,6 +76,12 @@ async function requestClaim(req, res, viewer, itemId) {
   const claimRequest = claimFromRow(created.rows[0]);
   const shouldSendEmail = item.owner_claim_email_enabled !== false;
   const emailSent = shouldSendEmail ? await sendClaimNotificationMail(item.owner_email, item, claimRequest) : false;
+  // Push to item owner
+  sendToUser(item.owner_id, {
+    title: "有人想领取你的物品",
+    body: `${viewer.name} 想领取「${item.title}」${quantity}${item.unit}`,
+    data: { itemId }
+  });
   json(res, 201, {
     claimRequest,
     emailSent,
@@ -142,6 +149,12 @@ async function reviewClaim(req, res, viewer, claimId, action) {
 
   const updatedItem = item.rows[0];
   const [responseItem] = await attachOwnerTrustSummaries([itemFromRow(updatedItem, viewer, { includeRoom: true })]);
+  // Push to claimer
+  sendToUser(claim.requester_id, {
+    title: "领取已被确认",
+    body: `「${updatedItem.title}」的发布者已确认你的领取`,
+    data: { itemId: claim.item_id, claimId }
+  });
   json(res, 200, {
     claimRequest: claimFromRow(reviewed.rows[0]),
     item: responseItem,
@@ -241,6 +254,39 @@ async function handle(req, res, pathname, method) {
     const viewer = await requireVerifiedUser(req, res);
     if (!viewer) return true;
     await submitFulfillmentReview(req, res, viewer, fulfillmentReviewMatch[1]);
+    return true;
+  }
+
+  // POST /api/claims/:id/cancel — claimer cancels a pending claim
+  const cancelClaimMatch = pathname.match(/^\/api\/claims\/([^/]+)\/cancel$/);
+  if (method === "POST" && cancelClaimMatch) {
+    const viewer = await requireVerifiedUser(req, res);
+    if (!viewer) return true;
+    const { rows } = await query(
+      "SELECT * FROM claim_requests WHERE id = $1",
+      [cancelClaimMatch[1]]
+    );
+    const claim = rows[0];
+    if (!claim) {
+      json(res, 404, { error: "CLAIM_NOT_FOUND", message: "领取提醒不存在" });
+      return true;
+    }
+    if (claim.requester_id !== viewer.id) {
+      json(res, 403, { error: "FORBIDDEN", message: "只能取消自己的领取提醒" });
+      return true;
+    }
+    if (claim.status !== "pending") {
+      json(res, 409, { error: "CLAIM_NOT_PENDING", message: "只能取消待处理的领取提醒" });
+      return true;
+    }
+    const cancelled = await query(
+      "UPDATE claim_requests SET status = 'rejected', reviewed_at = now() WHERE id = $1 RETURNING *",
+      [cancelClaimMatch[1]]
+    );
+    json(res, 200, {
+      claimRequest: claimFromRow(cancelled.rows[0]),
+      message: "已取消领取提醒"
+    });
     return true;
   }
 

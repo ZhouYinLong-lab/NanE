@@ -420,7 +420,7 @@ N.handleListDelete = async function handleListDelete(itemId, button) {
     if (card) {
       card.classList.add("card-removing");
       card.addEventListener("animationend", () => {
-        Promise.all([N.loadHome(), N.loadMyItems()]);
+        Promise.all([N.loadHome(), N.loadMyItems()]).catch(() => {});
       }, { once: true });
     } else {
       await Promise.all([N.loadHome(), N.loadMyItems()]);
@@ -446,9 +446,10 @@ N.reviewClaimFromButton = async function reviewClaimFromButton(button) {
       const card = button.closest(".item-card");
       if (card) {
         setTimeout(() => {
+          if (!card.isConnected) return;
           card.classList.add("card-removing");
           card.addEventListener("animationend", () => {
-            Promise.all([N.loadHome(), N.loadProfile(), N.loadMyItems()]);
+            Promise.all([N.loadHome(), N.loadProfile(), N.loadMyItems()]).catch(() => {});
           }, { once: true });
         }, 1200);
       }
