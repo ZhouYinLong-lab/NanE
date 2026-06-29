@@ -733,7 +733,6 @@ async function init() {
   N.initPressFeedback();
   bindEvents();
   N.refreshMotion(document);
-  N.initLottieAnimations(document);
   await Promise.all([N.loadAgreement(), N.loadLocations()]);
   N.renderIconGrid();
   N.setPublishType("consumable");

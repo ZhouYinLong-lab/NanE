@@ -1,6 +1,6 @@
 /* NanE Service Worker — offline support via cache-first strategy */
 
-const CACHE_VERSION = "nane-v3";
+const CACHE_VERSION = "nane-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const APP_SHELL = [
@@ -12,9 +12,7 @@ const APP_SHELL = [
   "/web/js/utils/date.js",
   "/web/js/utils/validate.js",
   "/web/js/api/client.js",
-  "/web/js/vendor/lottie_light.min.js",
   "/web/js/ui/motion.js",
-  "/web/js/ui/lottie.js",
   "/web/js/ui/toast.js",
   "/web/js/ui/dialog.js",
   "/web/js/ui/skeleton.js",
@@ -27,7 +25,6 @@ const APP_SHELL = [
   "/web/css/layout.css",
   "/web/css/components.css",
   "/web/css/fa-subset.css",
-  "/web/assets/lottie/nane-mutual-aid-loop.json",
   "/web/NanE-logo.svg",
   "/assets/brand/web-logo.png",
   "/assets/brand/nane-logo.png",
