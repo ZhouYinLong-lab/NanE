@@ -229,6 +229,11 @@ N.submitPublish = async function submitPublish(event) {
   N.clearFieldErrors();
   message.textContent = "";
 
+  if (N.state.imageUploading) {
+    message.textContent = "图片正在上传中，请稍后提交";
+    return;
+  }
+
   if (!N.isVerifiedUser()) {
     message.textContent = "请先在「我的」页登录并同意用户协议，再发布互助。";
     N.requireVerified(message.textContent);
@@ -349,13 +354,16 @@ N.submitPublish = async function submitPublish(event) {
         form.hidden = true;
         successCard.hidden = false;
         N.$("publishSuccessTitle").textContent = "发布成功";
-        N.$("publishSuccessDesc").textContent = "你的「" + payload.title + "」已提交确认，通过后同楼同学就能看到了";
+        N.$("publishSuccessDesc").textContent = "你的「" + payload.title + "」已提交确认，审核通常需要 1-2 小时，通过后同楼同学就能看到了";
         successCard.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
     N.loadMyItems();
   } catch (error) {
     message.textContent = N.errmsg(error, "提交失败");
+    if (isEdit) {
+      N.state.editingItemId = ""; // Clear stuck edit state on failure
+    }
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "提交审核"; }
   }

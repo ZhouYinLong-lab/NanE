@@ -53,7 +53,7 @@ N.renderItem = function renderItem(item, options) {
           <div class="item-location">${N.escapeHtml(item.campus)} · ${N.escapeHtml(item.building)}${options.showRoom && item.room ? ` · ${N.escapeHtml(item.room)}` : ""}</div>
         </div>
         <p class="item-desc">${N.escapeHtml(item.description || "暂未填写补充信息")}</p>
-        <div class="badges">${badges.join("")}</div>
+        <div class="badges">${badges.join("")}${item.quantity > 1 ? `<span class="badge badge-qty">剩 ${N.escapeHtml(item.quantity)}${N.escapeHtml(item.unit || "件")}</span>` : ""}</div>
         <div class="item-footer">
           <span class="owner-mini">
             <span class="owner-avatar">${N.avatarInitial(item.ownerName)}</span>
@@ -63,6 +63,7 @@ N.renderItem = function renderItem(item, options) {
           ${created ? `<time datetime="${N.escapeHtml(item.createdAt)}">${N.escapeHtml(created)}</time>` : ""}
         </div>
         ${item.rejectReason ? `<p class="item-desc">驳回原因：${N.escapeHtml(item.rejectReason)}</p>` : ""}
+        ${item.status === "rejected" && options.showOwnerActions ? `<button type="button" class="primary small" data-owner-action="resubmit" data-item-id="${N.escapeHtml(item.id)}" style="margin-top:8px">重新发布</button>` : ""}
         ${claimPanel}
         ${ownerActions}
       </div>
@@ -136,6 +137,11 @@ N.loadHome = async function loadHome() {
       });
     }
 
+    // Apply building filter client-side
+    if (N.state.buildingFilter) {
+      items = items.filter(item => item.building === N.state.buildingFilter);
+    }
+
     N.state.homeHasMore = data.hasMore;
     N.state.homeOffset = items.length;
 
@@ -151,6 +157,7 @@ N.loadHome = async function loadHome() {
     list.classList.add("list-dirty");
     list.addEventListener("animationend", () => list.classList.remove("list-dirty"), { once: true });
     N.updateLoadMoreButton();
+    N.loadActivity();
   } catch (error) {
     N.$("viewerLabel").textContent = "API 未连接";
     N.$("homeState").innerHTML = N.emptyStateHTML("error", N.errmsg(error, "网络连接失败"));
@@ -217,6 +224,7 @@ N.openDetail = async function openDetail(id) {
       <button class="primary wide" id="contactButton">${N.isVerifiedUser() && N.profileComplete() ? "查看联系方式" : "登录并完善资料后查看联系方式"}</button>
       <div id="contactResult"></div>
       <button class="secondary wide" id="shareItemButton" style="margin-top:8px">复制物品链接分享给同学</button>
+      <button class="secondary wide" id="reportItemButton" style="margin-top:4px;color:var(--muted)">举报此物品</button>
     `;
     N.refreshMotion(N.$("detailBody"));
     const shareBtn = N.$("detailBody").querySelector("#shareItemButton");
@@ -273,12 +281,20 @@ N.viewContact = async function viewContact() {
     if (data.contact?.wechat) fields.push(`<div class="contact-field"><span class="contact-label">微信</span><span class="contact-value">${N.escapeHtml(data.contact.wechat)}</span></div>`);
     if (data.contact?.qq) fields.push(`<div class="contact-field"><span class="contact-label">QQ</span><span class="contact-value">${N.escapeHtml(data.contact.qq)}</span></div>`);
     if (!fields.length) fields.push(`<div class="contact-field"><span class="contact-value">暂未填写联系方式</span></div>`);
+    const remainingNote = data.remainingViews !== undefined
+      ? ` · 今日还可查看 ${N.escapeHtml(data.remainingViews)} 次`
+      : "";
     N.$("contactResult").innerHTML = `
       <div class="contact-box">
         ${fields.join("")}
-        <span class="contact-note">${noteText}</span>
+        <span class="contact-note">${noteText}${remainingNote}</span>
       </div>
-      <button class="primary wide claim-button" id="claimButton">我已联系并领取，提醒发布者确认</button>
+      <div class="claim-quantity-row" style="display:flex;align-items:center;gap:8px;margin-top:12px">
+        <label for="claimQuantityInput" style="white-space:nowrap;font-size:14px">领取数量</label>
+        <input id="claimQuantityInput" type="number" min="1" max="${N.escapeHtml(N.state.selectedDetail.quantity)}" value="1" style="width:70px;text-align:center">
+        <span style="font-size:13px;color:var(--muted)">/ ${N.escapeHtml(N.state.selectedDetail.quantity)} ${N.escapeHtml(N.state.selectedDetail.unit || "件")}</span>
+      </div>
+      <button class="primary wide claim-button" id="claimButton">提醒发布者确认</button>
       <div id="claimResult"></div>
     `;
     N.refreshMotion(N.$("contactResult"));
@@ -305,22 +321,181 @@ N.requestClaim = async function requestClaim() {
   }
   const claimBtn = N.$("claimButton");
   if (!claimBtn) return;
+  const qtyInput = N.$("claimQuantityInput");
+  const claimQuantity = qtyInput ? Math.max(1, Math.min(parseInt(qtyInput.value) || 1, N.state.selectedDetail?.quantity || 1)) : 1;
   claimBtn.disabled = true;
   claimBtn.textContent = "正在发送提醒...";
   try {
     const data = await N.api(`/items/${encodeURIComponent(N.state.selectedDetail.id)}/claim`, {
       method: "POST",
-      body: JSON.stringify({ quantity: 1 })
+      body: JSON.stringify({ quantity: claimQuantity })
     });
     claimBtn.textContent = "您已提醒过发布者确认领取，请等待对方处理";
     claimBtn.classList.add("disabled-claim");
-    N.$("claimResult").innerHTML = `<div class="contact-box">${N.escapeHtml(data.message || "已发送领取提醒")}</div>`;
+    N.state.activeClaimId = data.claimRequest?.id || "";
+    N.$("claimResult").innerHTML = `
+      <div class="contact-box">${N.escapeHtml(data.message || "已发送领取提醒")}</div>
+      <button class="secondary wide" id="cancelClaimButton" style="margin-top:8px">取消提醒</button>
+    `;
     N.refreshMotion(N.$("claimResult"));
   } catch (error) {
     claimBtn.disabled = false;
-    claimBtn.textContent = "我已联系并领取，提醒发布者确认";
+    claimBtn.textContent = "提醒发布者确认";
     N.$("claimResult").innerHTML = `<div class="contact-box">${N.escapeHtml(N.errmsg(error, "发送领取提醒失败"))}</div>`;
     N.refreshMotion(N.$("claimResult"));
+  }
+};
+
+N.reportItem = async function reportItem() {
+  if (!N.state.selectedDetail) return;
+  if (!N.requireVerified("请先登录后再举报。")) return;
+  const reasons = ["虚假信息", "违禁物品", "涉及收费", "骚扰信息", "其他问题"];
+  const dialog = document.createElement("dialog");
+  dialog.className = "confirm-dialog";
+  dialog.innerHTML = `
+    <div class="confirm-dialog-content" style="max-width:360px">
+      <h3>举报物品</h3>
+      <p style="margin:0 0 12px;font-size:14px">「${N.escapeHtml(N.state.selectedDetail.title)}」</p>
+      <div id="reportReasons" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+        ${reasons.map(r => `<button type="button" class="chip" data-reason="${r}">${r}</button>`).join("")}
+      </div>
+      <textarea id="reportComment" rows="2" maxlength="200" placeholder="可选：补充说明（200字以内）" style="width:100%;margin-bottom:12px"></textarea>
+      <div class="confirm-actions">
+        <button class="primary wide" id="submitReportBtn" type="button">提交举报</button>
+        <button class="secondary wide" id="cancelReportBtn" type="button">取消</button>
+      </div>
+      <div class="form-message" id="reportMessage"></div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  N.showMotionDialog(dialog);
+  let selectedReason = "";
+
+  dialog.querySelector("#reportReasons").addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-reason]");
+    if (!chip) return;
+    dialog.querySelectorAll("#reportReasons .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    selectedReason = chip.dataset.reason;
+  });
+
+  dialog.querySelector("#cancelReportBtn").addEventListener("click", () => N.closeAndRemoveDialog(dialog));
+  dialog.querySelector("#submitReportBtn").addEventListener("click", async () => {
+    const msg = dialog.querySelector("#reportMessage");
+    if (!selectedReason) { msg.textContent = "请选择举报原因"; return; }
+    try {
+      await N.api(`/items/${encodeURIComponent(N.state.selectedDetail.id)}/report`, {
+        method: "POST",
+        body: JSON.stringify({ reason: selectedReason, comment: dialog.querySelector("#reportComment").value.trim() })
+      });
+      N.closeAndRemoveDialog(dialog);
+      N.showToast("举报已提交，管理员会尽快处理", "success");
+    } catch (error) {
+      msg.textContent = N.errmsg(error, "举报提交失败");
+    }
+  });
+};
+
+N.filterByBuilding = function filterByBuilding(building) {
+  const chips = document.querySelectorAll("#buildingFilterChips .chip");
+  chips.forEach(c => c.classList.remove("active"));
+  const active = document.querySelector(`#buildingFilterChips .chip[data-building="${CSS.escape(building)}"]`);
+  if (active) active.classList.add("active");
+  N.state.buildingFilter = building || "";
+  N.loadHome();
+};
+
+N.renderBuildingChips = function renderBuildingChips() {
+  const container = N.$("buildingFilterChips");
+  if (!container) return;
+  const user = N.state.user || {};
+  const locations = N.state.locations || [];
+  const campus = locations.find(c => c.name === (user.campus || "仙林校区"));
+  const buildings = campus?.buildings || [];
+  if (buildings.length <= 1) { container.hidden = true; return; }
+  container.hidden = false;
+  // Keep "全部" chip, append building chips
+  const existingBuildings = container.querySelectorAll("[data-building]");
+  const existingNames = new Set([...existingBuildings].map(e => e.dataset.building).filter(Boolean));
+  for (const b of buildings) {
+    if (!existingNames.has(b.name)) {
+      const chip = document.createElement("button");
+      chip.className = "chip";
+      chip.dataset.building = b.name;
+      chip.textContent = b.name;
+      chip.addEventListener("click", () => N.filterByBuilding(b.name));
+      container.appendChild(chip);
+      existingNames.add(b.name);
+    }
+  }
+  // Reactivate selected
+  const allChips = container.querySelectorAll(".chip");
+  allChips.forEach(c => c.classList.remove("active"));
+  const target = container.querySelector(`.chip[data-building="${CSS.escape(N.state.buildingFilter || "")}"]`);
+  if (target) target.classList.add("active");
+  else allChips[0]?.classList.add("active");
+};
+
+N.cancelClaim = async function cancelClaim() {
+  const cancelBtn = N.$("cancelClaimButton");
+  if (!cancelBtn) return;
+  const claimId = N.state.activeClaimId;
+  if (!claimId) {
+    N.showToast("未找到待取消的领取提醒", "info");
+    return;
+  }
+  cancelBtn.disabled = true;
+  cancelBtn.textContent = "取消中...";
+  try {
+    await N.api(`/claims/${encodeURIComponent(claimId)}/cancel`, { method: "POST" });
+    N.state.activeClaimId = "";
+    N.$("claimResult").innerHTML = `<div class="contact-box">已取消领取提醒</div>`;
+    N.showToast("已取消领取提醒", "success");
+  } catch (error) {
+    N.showToast(N.errmsg(error, "取消失败"), "error");
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = "取消提醒";
+  }
+};
+
+N.loadActivity = async function loadActivity() {
+  const feed = N.$("activityFeed");
+  const head = N.$("activitySectionHead");
+  if (!feed || !head) return;
+  const user = N.state.user;
+  const campus = user?.campus || "仙林校区";
+  const building = user?.building || "";
+  if (!building || building === "未设置楼栋") {
+    feed.innerHTML = "";
+    head.hidden = true;
+    return;
+  }
+  try {
+    const data = await N.api(`/activity?campus=${encodeURIComponent(campus)}&building=${encodeURIComponent(building)}&limit=10`);
+    N.$("activityLabel").textContent = `${data.campus} · ${data.building} · 最近分享与互助`;
+    if (!data.activities?.length) {
+      feed.innerHTML = "";
+      head.hidden = true;
+      return;
+    }
+    head.hidden = false;
+    feed.innerHTML = data.activities.map(a => {
+      const icon = a.eventType === "claimed" ? "" : "";
+      const text = a.eventType === "claimed"
+        ? `${N.escapeHtml(a.claimerName || "同学")} 领了 ${N.escapeHtml(a.ownerName || "同学")} 的「${N.escapeHtml(a.itemTitle)}」`
+        : `${N.escapeHtml(a.ownerName || "同学")} 分享了「${N.escapeHtml(a.itemTitle)}」`;
+      return `
+        <div class="activity-item" data-item-id="${N.escapeHtml(a.itemId)}">
+          <div class="act-icon">${icon}</div>
+          <div class="act-title">${text}</div>
+          <div class="act-meta">${N.escapeHtml(N.compactDate(a.eventTime) || "")}</div>
+        </div>
+      `;
+    }).join("");
+    N.refreshMotion(feed);
+  } catch (error) {
+    feed.innerHTML = "";
+    head.hidden = true;
   }
 };
 
