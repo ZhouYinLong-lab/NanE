@@ -3104,6 +3104,12 @@ dialog::backdrop {
     gap: 10px;
   }
 
+  .review-banner-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   /* Footer compact */
   .app-footer {
     padding: var(--space-lg) var(--space-md);
