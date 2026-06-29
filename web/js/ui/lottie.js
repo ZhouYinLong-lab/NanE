@@ -7,13 +7,18 @@ function fallbackGraphic(container) {
   container.classList.add("lottie-fallback");
   container.innerHTML = `
     <svg viewBox="0 0 320 240" role="img" aria-label="南易互助流转动画静帧">
-      <ellipse cx="160" cy="120" rx="116" ry="83" fill="currentColor" opacity="0.08"/>
-      <ellipse cx="160" cy="120" rx="107" ry="67" fill="none" stroke="#25735a" stroke-width="3" opacity="0.42"/>
-      <circle cx="160" cy="120" r="35" fill="#6E0065"/>
-      <path d="M146 118l12 12 25-29" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="40" y="48" width="78" height="48" rx="14" fill="#fff" opacity="0.94"/>
-      <rect x="206" y="48" width="74" height="44" rx="13" fill="#e5f8f3"/>
-      <rect x="122" y="174" width="78" height="46" rx="14" fill="#fff" opacity="0.94"/>
+      <ellipse cx="160" cy="120" rx="110" ry="77" fill="currentColor" opacity="0.08"/>
+      <path d="M89 86L160 120L233 86M160 120V186" fill="none" stroke="#25735a" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+      <circle cx="160" cy="120" r="29" fill="#6E0065"/>
+      <path d="M146 125l11 9 18-27" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="89" cy="86" r="19" fill="#fff" opacity="0.96"/>
+      <path d="M81 86h16M89 78v16" stroke="#6E0065" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="233" cy="86" r="19" fill="#e5f8f3"/>
+      <path d="M224 88l7 7 13-18" fill="none" stroke="#25735a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="160" cy="186" r="19" fill="#fff" opacity="0.96"/>
+      <circle cx="160" cy="186" r="5" fill="#6E0065" opacity="0.72"/>
+      <circle cx="151" cy="186" r="2.8" fill="#6E0065" opacity="0.5"/>
+      <circle cx="169" cy="186" r="2.8" fill="#6E0065" opacity="0.5"/>
     </svg>`;
 }
 
