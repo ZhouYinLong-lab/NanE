@@ -1534,6 +1534,84 @@ dialog.is-closing {
   color: #fff;
 }
 
+/* Notification center */
+[data-theme="dark"] .notification-panel {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+}
+[data-theme="dark"] .notification-panel .dialog-head {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+}
+[data-theme="dark"] .notif-badge {
+  background: #dc3545;
+  color: #fff;
+}
+[data-theme="dark"] .notif-item {
+  border-color: #3a3a3a;
+}
+[data-theme="dark"] .notif-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+[data-theme="dark"] .notif-body strong {
+  color: #e8e8e8;
+}
+[data-theme="dark"] .notif-empty {
+  color: #777;
+}
+
+/* Activity feed */
+[data-theme="dark"] .activity-item {
+  background: var(--card);
+  border-color: #3a3a3a;
+}
+[data-theme="dark"] .activity-item:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] .activity-item .act-title {
+  color: #e8e8e8;
+}
+
+/* Onboarding */
+[data-theme="dark"] .onboarding-card {
+  background: #2a2a2a;
+  color: #e8e8e8;
+}
+[data-theme="dark"] .onboard-step p {
+  color: #a0a0a0;
+}
+[data-theme="dark"] .onboard-dot {
+  background: #555;
+}
+[data-theme="dark"] .onboard-dot.active {
+  background: var(--accent);
+}
+
+/* PWA install banner */
+[data-theme="dark"] .install-banner {
+  background: #2a2a2a;
+  border-color: #3a3a3a;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
+}
+
+/* Quantity badge */
+[data-theme="dark"] .badge-qty {
+  background: rgba(110, 0, 101, 0.12);
+  border-color: rgba(186, 130, 182, 0.4);
+  color: #c5a3c3;
+}
+
+/* Building filter chips */
+[data-theme="dark"] .chips-building .chip {
+  border-color: #3a3a3a;
+  color: #a0a0a0;
+}
+[data-theme="dark"] .chips-building .chip.active {
+  background: var(--purple-soft);
+  border-color: rgba(186, 130, 182, 0.3);
+  color: #d4bfd2;
+}
+
 /* ===== Responsive: ≤680px ===== */
 @media (max-width: 680px) {
   .app-shell {
