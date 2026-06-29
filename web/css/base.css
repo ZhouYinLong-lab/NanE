@@ -35,6 +35,13 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
 }
 
+[data-theme="dark"] body,
+body[data-theme="dark"] {
+  background:
+    linear-gradient(180deg, #130d1c 0%, #090711 46%, #07060d 100%);
+  background-attachment: fixed;
+}
+
 button,
 input,
 select,
@@ -534,41 +541,52 @@ legend {
 [data-theme="dark"] input,
 [data-theme="dark"] select,
 [data-theme="dark"] textarea {
-  background: var(--card-strong);
+  background: rgba(255, 255, 255, 0.055);
   color: var(--text);
   border-color: var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: rgba(244, 240, 255, 0.42);
 }
 
 [data-theme="dark"] .email-combo {
-  background: var(--card-strong);
+  background: rgba(255, 255, 255, 0.055);
   border-color: var(--line);
 }
 
 [data-theme="dark"] .secondary {
-  background: rgba(42, 42, 42, 0.6);
-  color: #d8d8d8;
-  border-color: transparent;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-strong);
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.24);
 }
 
 [data-theme="dark"] .secondary:hover:not(:disabled) {
-  background: rgba(60, 60, 60, 0.7);
+  background: var(--hover);
+  border-color: var(--purple-glow);
 }
 
 [data-theme="dark"] .icon-button {
-  background: rgba(42, 42, 42, 0.55);
-  border-color: transparent;
-  color: #c97dc9;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
+  color: var(--accent);
   box-shadow:
-    inset 0 0 20px rgba(255, 255, 255, 0.04),
-    0 4px 16px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.34);
 }
 
 [data-theme="dark"] .icon-button:hover {
-  background: rgba(60, 60, 60, 0.65);
+  background: var(--hover);
+  border-color: var(--purple-glow);
 }
 
 [data-theme="dark"] .form-message {
-  color: #c97dc9;
+  color: var(--accent);
 }
 
 [data-theme="dark"] .field-error {
@@ -580,24 +598,26 @@ legend {
 }
 
 [data-theme="dark"] .link-button {
-  color: #c97dc9;
+  color: var(--accent);
 }
 
 [data-theme="dark"] .rules-card {
   background: var(--purple-soft);
-  color: #d4a0d4;
+  color: var(--text-strong);
+  border-color: var(--purple-glow);
 }
 
 [data-theme="dark"] .state-card {
   background: var(--card);
+  border-color: var(--line);
 }
 
 [data-theme="dark"] fieldset {
-  border-color: #3a3a3a;
+  border-color: var(--line);
 }
 
 [data-theme="dark"] legend {
-  color: var(--purple);
+  color: var(--accent);
 }
 
 [data-theme="dark"] .icon-option {
@@ -606,24 +626,25 @@ legend {
 
 [data-theme="dark"] .icon-option.active {
   background: var(--purple-soft);
+  border-color: var(--purple-glow);
 }
 
 [data-theme="dark"] .primary {
-  background: rgba(110, 0, 101, 0.55);
+  background: linear-gradient(135deg, #74207b 0%, #9b3da3 100%);
   box-shadow:
-    inset 0 0 14px rgba(255, 255, 255, 0.04),
-    0 6px 20px rgba(0, 0, 0, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 30px rgba(0, 0, 0, 0.36);
 }
 
 [data-theme="dark"] .primary:hover:not(:disabled) {
-  background: rgba(110, 0, 101, 0.68);
+  background: linear-gradient(135deg, #87288f 0%, #ad4ab4 100%);
   box-shadow:
-    inset 0 0 18px rgba(255, 255, 255, 0.08),
-    0 10px 28px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 16px 36px rgba(0, 0, 0, 0.42);
 }
 
 [data-theme="dark"] .toggle-slider {
-  background: #444;
+  background: var(--toggle-off);
 }
 
 /* ===== Mobile optimizations ===== */
