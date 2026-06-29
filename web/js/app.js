@@ -31,6 +31,7 @@ N.state = {
   pendingReviews: [],
   activeReviewClaimId: "",
   activeClaimId: "",
+  buildingCampusFilter: "",
   buildingFilter: "",
   uploadedImageUrls: [],
   imageUploading: false
@@ -287,14 +288,15 @@ function bindEvents() {
       return;
     }
 
-    const option = event.target.closest(".chip-dropdown li");
+    const option = event.target.closest(".chip-dropdown [data-building], .chip-dropdown [data-category]");
     if (option) {
       const select = option.closest(".chip-select");
       if (select?.dataset.filter === "building") {
+        const campus = option.dataset.campus || "";
         const building = option.dataset.building || "";
-        select.querySelectorAll("li").forEach(item => item.classList.toggle("selected", item === option));
+        select.querySelectorAll("[data-building]").forEach(item => item.classList.toggle("selected", item === option));
         N.closeFilterDropdowns();
-        N.filterByBuilding(building);
+        N.filterByBuilding(campus, building);
         return;
       }
       const category = option.dataset.category || "";

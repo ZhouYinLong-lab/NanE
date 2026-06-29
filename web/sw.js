@@ -1,6 +1,6 @@
 /* NanE Service Worker — offline support via cache-first strategy */
 
-const CACHE_VERSION = "nane-v2";
+const CACHE_VERSION = "nane-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const APP_SHELL = [

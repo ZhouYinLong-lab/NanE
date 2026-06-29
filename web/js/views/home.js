@@ -139,13 +139,19 @@ N.loadHome = async function loadHome() {
 
     // Apply building filter client-side
     if (N.state.buildingFilter) {
-      items = items.filter(item => item.building === N.state.buildingFilter);
+      items = items.filter(item =>
+        item.building === N.state.buildingFilter &&
+        (!N.state.buildingCampusFilter || item.campus === N.state.buildingCampusFilter)
+      );
     }
 
     N.state.homeHasMore = data.hasMore;
     N.state.homeOffset = items.length;
 
-    N.$("viewerLabel").textContent = `${data.viewer?.campus || "当前校区"} · ${data.viewer?.building || "当前楼栋"} · 优先展示近邻${data.total ? ` · 共 ${data.total} 件` : ""}`;
+    const labelCampus = N.state.buildingCampusFilter || data.viewer?.campus || "当前校区";
+    const labelBuilding = N.state.buildingFilter || data.viewer?.building || "当前楼栋";
+    const labelSuffix = N.state.buildingFilter ? "当前筛选" : "优先展示近邻";
+    N.$("viewerLabel").textContent = `${labelCampus} · ${labelBuilding} · ${labelSuffix}${data.total ? ` · 共 ${data.total} 件` : ""}`;
     if (!items.length) {
       N.$("homeState").innerHTML = N.emptyStateHTML(keyword ? "search" : "home");
     } else {
@@ -396,7 +402,8 @@ N.reportItem = async function reportItem() {
   });
 };
 
-N.filterByBuilding = function filterByBuilding(building) {
+N.filterByBuilding = function filterByBuilding(campus, building) {
+  N.state.buildingCampusFilter = building ? (campus || "") : "";
   N.state.buildingFilter = building || "";
   N.updateBuildingFilterSelect();
   N.loadHome();
@@ -405,10 +412,18 @@ N.filterByBuilding = function filterByBuilding(building) {
 N.updateBuildingFilterSelect = function updateBuildingFilterSelect() {
   const select = N.$("buildingFilterSelect");
   if (!select) return;
+  const selectedCampus = N.state.buildingCampusFilter || "";
   const selected = N.state.buildingFilter || "";
+  const button = select.querySelector(".chip-select-btn");
   select.classList.toggle("active", Boolean(selected));
+  if (button) {
+    button.innerHTML = `${N.escapeHtml(selected || "换个楼栋")} <span class="chip-chevron">&#9662;</span>`;
+  }
   select.querySelectorAll("[data-building]").forEach(option => {
-    option.classList.toggle("selected", (option.dataset.building || "") === selected);
+    option.classList.toggle("selected",
+      (option.dataset.building || "") === selected &&
+      (!selected || (option.dataset.campus || "") === selectedCampus)
+    );
   });
 };
 
@@ -417,26 +432,44 @@ N.renderBuildingChips = function renderBuildingChips() {
   const dropdown = N.$("buildingFilterDropdown");
   const filterChips = N.$("filterChips");
   if (!select || !dropdown) return;
-  const user = N.state.user || {};
   const locations = N.state.locations || [];
-  const campus = locations.find(c => c.name === (user.campus || "仙林校区"));
-  const buildings = campus?.buildings || [];
+  const campuses = locations.filter(campus => (campus.buildings || []).length);
+  const hasBuildings = campuses.some(campus => campus.buildings.length);
 
-  if (buildings.length <= 1) {
+  if (!hasBuildings) {
     select.hidden = true;
     filterChips?.classList.remove("has-building-filter");
+    N.state.buildingCampusFilter = "";
     N.state.buildingFilter = "";
     return;
   }
 
   select.hidden = false;
   filterChips?.classList.add("has-building-filter");
-  if (N.state.buildingFilter && !buildings.some(building => building.name === N.state.buildingFilter)) {
+  if (N.state.buildingFilter && !campuses.some(campus =>
+    campus.name === N.state.buildingCampusFilter &&
+    campus.buildings.some(building => building.name === N.state.buildingFilter)
+  )) {
+    N.state.buildingCampusFilter = "";
     N.state.buildingFilter = "";
   }
-  dropdown.innerHTML = `<li data-building="">全部楼栋</li>${buildings
-    .map(building => `<li data-building="${N.escapeHtml(building.name)}">${N.escapeHtml(building.name)}</li>`)
-    .join("")}`;
+  dropdown.innerHTML = `
+    <li class="building-campus-all" data-campus="" data-building="">全部楼栋</li>
+    ${campuses.map(campus => `
+      <li class="building-campus-group">
+        <div class="building-campus-title">${N.escapeHtml(campus.name)}</div>
+        <ul class="building-campus-list">
+          ${campus.buildings.map(building => `
+            <li
+              class="building-option"
+              data-campus="${N.escapeHtml(campus.name)}"
+              data-building="${N.escapeHtml(building.name)}"
+            >${N.escapeHtml(building.name)}</li>
+          `).join("")}
+        </ul>
+      </li>
+    `).join("")}
+  `;
   N.updateBuildingFilterSelect();
 };
 
@@ -467,8 +500,8 @@ N.loadActivity = async function loadActivity() {
   const head = N.$("activitySectionHead");
   if (!feed || !head) return;
   const user = N.state.user;
-  const campus = user?.campus || "仙林校区";
-  const building = user?.building || "";
+  const campus = N.state.buildingCampusFilter || user?.campus || "仙林校区";
+  const building = N.state.buildingFilter || user?.building || "";
   if (!building || building === "未设置楼栋") {
     feed.innerHTML = "";
     head.hidden = true;

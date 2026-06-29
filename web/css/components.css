@@ -281,6 +281,10 @@
 .chip-building-select .chip-dropdown {
   left: auto;
   right: 0;
+  width: min(640px, calc(100vw - 44px));
+  max-width: min(640px, calc(100vw - 44px));
+  max-height: min(520px, calc(100vh - 180px));
+  padding: 10px;
 }
 
 .chip-dropdown li:hover {
@@ -292,6 +296,59 @@
   background: rgba(110, 0, 101, 0.12);
   color: var(--purple);
   font-weight: var(--fw-black);
+}
+
+.chip-building-select .building-campus-all {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+}
+
+.chip-building-select .building-campus-group {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(246, 242, 249, 0.72);
+  cursor: default;
+  white-space: normal;
+}
+
+.chip-building-select .building-campus-group + .building-campus-group {
+  margin-top: 8px;
+}
+
+.chip-building-select .building-campus-group:hover {
+  background: rgba(246, 242, 249, 0.72);
+  color: var(--text-strong);
+}
+
+.building-campus-title {
+  margin: 0 0 9px;
+  color: var(--purple);
+  font-size: 12px;
+  font-weight: var(--fw-black);
+  line-height: 1.2;
+}
+
+.building-campus-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip-dropdown .building-option {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(110, 0, 101, 0.08);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.68);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ===== Notice ===== */
@@ -1576,6 +1633,25 @@ dialog.is-closing {
   color: var(--accent);
 }
 
+[data-theme="dark"] .chip-building-select .building-campus-group {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .chip-building-select .building-campus-group:hover {
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-strong);
+}
+
+[data-theme="dark"] .building-campus-title {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .chip-dropdown .building-option {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: var(--line);
+}
+
 [data-theme="dark"] .item-card:hover {
   background: var(--card-strong);
   border-color: var(--purple-glow);
@@ -1846,6 +1922,27 @@ dialog.is-closing {
 
   .chip-building-select .chip-select-btn {
     padding: 0 4px;
+  }
+
+  .chip-building-select .chip-dropdown {
+    width: calc(100vw - 28px);
+    max-width: calc(100vw - 28px);
+    max-height: min(70vh, 560px);
+    right: -6px;
+    padding: 8px;
+  }
+
+  .chip-building-select .building-campus-group {
+    padding: 10px;
+  }
+
+  .building-campus-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chip-dropdown .building-option {
+    padding: 10px 8px;
+    font-size: 12px;
   }
 
   .chips::-webkit-scrollbar {
