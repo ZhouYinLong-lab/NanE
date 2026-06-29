@@ -30,6 +30,8 @@ N.state = {
   homeHasMore: false,
   pendingReviews: [],
   activeReviewClaimId: "",
+  activeClaimId: "",
+  buildingFilter: "",
   uploadedImageUrls: [],
   imageUploading: false
 };
@@ -364,6 +366,10 @@ function bindEvents() {
       if (ownerButton.dataset.ownerAction === "edit") {
         await N.openMyItemDetail(itemId);
         N.startEditItem();
+      } else if (ownerButton.dataset.ownerAction === "resubmit") {
+        await N.openMyItemDetail(itemId);
+        N.startEditItem();
+        N.$("publishMessage").textContent = "正在重新提交被驳回的物品，修改后提交将重新进入审核";
       } else if (ownerButton.dataset.ownerAction === "delete") {
         N.handleListDelete(itemId, ownerButton);
       }
@@ -381,13 +387,20 @@ function bindEvents() {
   N.$("detailDialog").addEventListener("click", event => {
     if (event.target.closest("#contactButton")) N.viewContact();
     if (event.target.closest("#claimButton")) N.requestClaim();
+    if (event.target.closest("#cancelClaimButton")) N.cancelClaim();
     if (event.target.closest("#editItemButton")) N.startEditItem();
     if (event.target.closest("#takeDownButton")) N.takeDownMyItem();
+    if (event.target.closest("#reportItemButton")) N.reportItem();
     const claimBtn = event.target.closest("[data-claim-action]");
     if (claimBtn) {
       event.stopPropagation();
       N.reviewClaimFromButton(claimBtn);
     }
+  });
+  // Building filter "全部" chip
+  N.$("buildingFilterChips").addEventListener("click", event => {
+    const chip = event.target.closest("[data-building]");
+    if (chip && !chip.dataset.building) N.filterByBuilding(""); // "全部"
   });
   document.querySelectorAll(".segment").forEach(button => {
     button.addEventListener("click", () => N.setPublishType(button.dataset.itemType));
@@ -552,6 +565,9 @@ function bindEvents() {
     N.$("profileFormCard").scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => N.$("nicknameInput").focus(), 400);
   });
+  N.$("pushToggle").addEventListener("change", N.togglePush);
+  N.$("settingsExportDataButton").addEventListener("click", N.exportData);
+  N.$("settingsDeleteAccountButton").addEventListener("click", N.deleteAccount);
   N.$("settingsChangePasswordButton").addEventListener("click", () => {
     N.$("changePasswordForm").hidden = false;
     N.$("settingsChangePasswordButton").hidden = true;
@@ -562,6 +578,29 @@ function bindEvents() {
     N.$("changePasswordMessage").textContent = "";
   });
   N.$("changePasswordButton").addEventListener("click", N.changePassword);
+
+  // Notification bell
+  N.$("notificationBell").addEventListener("click", N.openNotificationPanel);
+  N.$("closeNotificationPanel").addEventListener("click", () => N.animateCloseDialog(N.$("notificationPanel")));
+  N.$("notificationPanel").addEventListener("click", event => {
+    const item = event.target.closest(".notif-item");
+    if (item && item.dataset.itemId) {
+      N.animateCloseDialog(N.$("notificationPanel"));
+      N.openDetail(item.dataset.itemId);
+    }
+  });
+
+  // Onboarding
+  N.$("onboardNext").addEventListener("click", N.onboardNext);
+  N.$("onboardSkip").addEventListener("click", N.finishOnboarding);
+
+  // Activity feed click
+  N.$("activityFeed").addEventListener("click", event => {
+    const item = event.target.closest(".activity-item");
+    if (item && item.dataset.itemId) {
+      N.openDetail(item.dataset.itemId);
+    }
+  });
 
   // Mine sub-tab toggle
   document.querySelectorAll(".mine-subtab").forEach(subtab => {
@@ -700,7 +739,229 @@ async function init() {
   N.syncPublishView();
   N.refreshMotion(document);
   await N.applyUrlParams();
+
+  // Start notification polling (every 30s when logged in)
+  N.pollNotifications();
+  N._notifInterval = setInterval(() => N.pollNotifications(), 30000);
+
+  // Show onboarding for first-time visitors
+  N.checkOnboarding();
+
+  // Render building filter chips after locations are loaded
+  N.renderBuildingChips();
+
+  // Set up push notifications
+  N.setupPushNotifications();
+
+  // Set up PWA install prompt
+  N.setupInstallPrompt();
 }
+
+// ── Web Push ──────────────────────────────────────────────────────
+
+N.setupPushNotifications = async function setupPushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (!N.isVerifiedUser()) return;
+  const pref = localStorage.getItem("nane_push_enabled");
+  if (pref !== "1") return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      // Need to subscribe
+      const keyData = await N.api("/me/push/public-key");
+      if (!keyData.configured || !keyData.publicKey) return;
+      const newSub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(keyData.publicKey)
+      });
+      await N.api("/me/push/subscribe", {
+        method: "POST",
+        body: JSON.stringify(newSub.toJSON())
+      });
+    }
+  } catch (_) { /* Silently fail; push is optional */ }
+};
+
+N.enablePush = async function enablePush() {
+  if (!("PushManager" in window)) {
+    N.showToast("当前浏览器不支持推送通知", "info");
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") {
+    N.showToast("需要允许通知权限才能接收推送", "info");
+    return;
+  }
+  localStorage.setItem("nane_push_enabled", "1");
+  await N.setupPushNotifications();
+  N.showToast("推送通知已开启", "success");
+};
+
+N.disablePush = async function disablePush() {
+  localStorage.removeItem("nane_push_enabled");
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await N.api("/me/push/unsubscribe", {
+        method: "POST",
+        body: JSON.stringify({ endpoint: sub.endpoint })
+      });
+      await sub.unsubscribe();
+    }
+  } catch (_) {}
+  N.showToast("推送通知已关闭", "success");
+};
+
+// ── PWA Install Prompt ────────────────────────────────────────────
+
+N._deferredPrompt = null;
+
+N.setupInstallPrompt = function setupInstallPrompt() {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    N._deferredPrompt = e;
+    if (localStorage.getItem("nane_install_dismissed")) return;
+    N.showInstallBanner();
+  });
+  window.addEventListener("appinstalled", () => {
+    N._deferredPrompt = null;
+    N.dismissInstallBanner();
+  });
+};
+
+N.showInstallBanner = function showInstallBanner() {
+  const existing = document.getElementById("installBanner");
+  if (existing) return;
+  const banner = document.createElement("div");
+  banner.id = "installBanner";
+  banner.className = "install-banner";
+  banner.innerHTML = `
+    <div class="install-banner-inner">
+      <span>📱 添加到主屏幕，使用更方便</span>
+      <div class="install-banner-actions">
+        <button class="secondary small" id="installDismiss">以后再说</button>
+        <button class="primary small" id="installNow">立即添加</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(banner);
+  banner.querySelector("#installNow").addEventListener("click", async () => {
+    if (!N._deferredPrompt) return;
+    N._deferredPrompt.prompt();
+    const { outcome } = await N._deferredPrompt.userChoice;
+    N._deferredPrompt = null;
+    N.dismissInstallBanner();
+    localStorage.setItem("nane_install_outcome", outcome);
+  });
+  banner.querySelector("#installDismiss").addEventListener("click", () => {
+    N.dismissInstallBanner();
+    localStorage.setItem("nane_install_dismissed", "1");
+  });
+};
+
+N.dismissInstallBanner = function dismissInstallBanner() {
+  const banner = document.getElementById("installBanner");
+  if (banner) banner.remove();
+};
+
+function urlB64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+// ── Notification center ──────────────────────────────────────────
+
+N._lastNotifTime = "";
+
+N.pollNotifications = async function pollNotifications() {
+  if (!N.isVerifiedUser()) {
+    N.updateNotifBadge(0);
+    return;
+  }
+  try {
+    const params = N._lastNotifTime ? `?since=${encodeURIComponent(N._lastNotifTime)}` : "";
+    const data = await N.api(`/me/notifications/feed${params}`);
+    if (data.events?.length && data.total) {
+      N.updateNotifBadge(data.total);
+      N._lastNotifTime = data.events[0]?.createdAt || N._lastNotifTime;
+      // Cache latest events for the panel
+      N._cachedNotifs = data.events.slice(0, 20);
+    }
+  } catch (error) {
+    // Silently ignore polling errors
+  }
+};
+
+N.updateNotifBadge = function updateNotifBadge(count) {
+  const badge = N.$("notificationBadge");
+  if (!badge) return;
+  const num = Number(count) || 0;
+  badge.textContent = num > 99 ? "99+" : num;
+  badge.hidden = num <= 0;
+};
+
+N.openNotificationPanel = function openNotificationPanel() {
+  N.updateNotifBadge(0);
+  const list = N.$("notificationList");
+  if (!list) return;
+  const events = N._cachedNotifs || [];
+  if (!events.length) {
+    list.innerHTML = '<div class="notif-empty">暂无新消息</div>';
+  } else {
+    list.innerHTML = events.map(e => {
+      const timeStr = N.compactDate(e.createdAt) || "";
+      const dotClass = e.type.replace(/_/g, "-");
+      return `
+        <div class="notif-item" data-item-id="${N.escapeHtml(e.itemId || "")}">
+          <span class="notif-dot ${dotClass}"></span>
+          <div class="notif-body">
+            <strong>${N.escapeHtml(e.title)}</strong>
+            <span>${N.escapeHtml(e.detail)}</span>
+          </div>
+          ${timeStr ? `<span class="notif-time">${N.escapeHtml(timeStr)}</span>` : ""}
+        </div>
+      `;
+    }).join("");
+  }
+  N.showMotionDialog(N.$("notificationPanel"));
+};
+
+// ── Onboarding ────────────────────────────────────────────────────
+
+N.checkOnboarding = function checkOnboarding() {
+  if (localStorage.getItem("nane_onboarded")) return;
+  N.$("onboardingOverlay").hidden = false;
+};
+
+N._onboardStep = 0;
+
+N.onboardNext = function onboardNext() {
+  const steps = document.querySelectorAll(".onboard-step");
+  const dots = document.querySelectorAll(".onboard-dot");
+  N._onboardStep++;
+  if (N._onboardStep >= steps.length) {
+    N.finishOnboarding();
+    return;
+  }
+  steps.forEach(s => s.classList.remove("active"));
+  dots.forEach(d => d.classList.remove("active"));
+  steps[N._onboardStep].classList.add("active");
+  dots[N._onboardStep].classList.add("active");
+  if (N._onboardStep >= steps.length - 1) {
+    N.$("onboardNext").textContent = "开始使用";
+  }
+};
+
+N.finishOnboarding = function finishOnboarding() {
+  N.$("onboardingOverlay").hidden = true;
+  localStorage.setItem("nane_onboarded", "1");
+};
 
 init();
 
