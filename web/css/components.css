@@ -856,6 +856,7 @@
 }
 
 .claim-banner-info {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -894,6 +895,10 @@
   justify-content: space-between;
   padding: var(--space-md) 0;
   border-top: 1px solid var(--line);
+}
+
+.review-banner-row .claim-actions {
+  flex: 0 0 auto;
 }
 
 .review-banner-row:first-of-type {
@@ -1742,6 +1747,28 @@ dialog.is-closing {
     min-width: 0;
   }
 
+  .review-banner {
+    padding: 20px;
+  }
+
+  .review-banner-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .review-banner-row .claim-banner-info {
+    width: 100%;
+  }
+
+  .review-banner-row .claim-actions {
+    width: 100%;
+  }
+
+  .review-banner-row .claim-actions .small {
+    width: 100%;
+  }
+
   .item-card .owner-actions {
     flex-direction: row;
     flex-wrap: wrap;
@@ -2179,6 +2206,28 @@ dialog.is-closing {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
 }
+
+#activitySectionHead h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#activitySectionHead h2::before {
+  content: "\f14e";
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  background: var(--purple-soft);
+  color: var(--purple);
+  font-family: "Font Awesome 7 Free";
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .activity-feed:empty { display: none; }
 .activity-item {
   flex: 0 0 auto;
@@ -2196,6 +2245,10 @@ dialog.is-closing {
   box-shadow: var(--shadow);
 }
 .activity-item .act-icon {
+  font-family: "Font Awesome 7 Free";
+  font-weight: 900;
+  line-height: 1;
+  color: var(--purple);
   font-size: 18px;
   margin-bottom: 6px;
 }
@@ -2236,6 +2289,9 @@ dialog.is-closing {
 .onboard-step { display: none; }
 .onboard-step.active { display: block; }
 .onboard-icon {
+  font-family: "Font Awesome 7 Free";
+  font-weight: 900;
+  line-height: 1;
   font-size: 48px;
   color: var(--accent);
   margin-bottom: 16px;
