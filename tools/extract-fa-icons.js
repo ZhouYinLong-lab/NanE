@@ -52,6 +52,8 @@ const USED_ICONS = [
   { codepoint: "f058", source: "app.js toast success",        label: "circle-check" },
   { codepoint: "f057", source: "app.js toast error",          label: "circle-xmark" },
   { codepoint: "f05a", source: "app.js toast info",           label: "circle-info" },
+  { codepoint: "f004", source: "home activity claimed",       label: "heart" },
+  { codepoint: "f002", source: "index.html onboarding search", label: "magnifying-glass" },
 
   // --- Icon grid toggle (app.js line 1573) ---
   { codepoint: "f141", source: "app.js icon toggle more",     label: "ellipsis" },

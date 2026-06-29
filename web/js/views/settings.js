@@ -473,7 +473,13 @@ N.exportData = async function exportData() {
 };
 
 N.deleteAccount = async function deleteAccount() {
-  const ok = await N.showConfirmDialog("确定要注销账号吗？此操作不可撤销。你的发布记录将被隐藏，个人信息将被清除。请输入"确认删除"以继续。");
+  const ok = await N.showTypedConfirmDialog({
+    message: "确定要注销账号吗？此操作不可撤销。你的发布记录将被隐藏，个人信息将被清除。",
+    phrase: "确认删除",
+    label: "请输入「确认删除」以继续",
+    confirmText: "确认注销",
+    cancelText: "取消"
+  });
   if (!ok) return;
   try {
     const data = await N.api("/me/delete", {

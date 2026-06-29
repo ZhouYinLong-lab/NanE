@@ -91,12 +91,14 @@
               <li data-category="其他工具">其他工具</li>
             </ul>
           </div>
+          <div class="chip chip-select chip-building-select" id="buildingFilterSelect" data-filter="building" hidden>
+            <button class="chip-select-btn" type="button">换个楼栋 <span class="chip-chevron">&#9662;</span></button>
+            <ul class="chip-dropdown" id="buildingFilterDropdown" hidden>
+              <li data-building="">全部楼栋</li>
+            </ul>
+          </div>
         </div>
         <div class="chips chips-sub" id="subFilterChips" hidden></div>
-        <div class="chips chips-building" id="buildingFilterChips" hidden>
-          <span style="font-size:12px;color:var(--muted);padding:6px 4px">楼栋：</span>
-          <button class="chip active" data-building="">全部</button>
-        </div>
         <div class="section-head">
           <div>
             <h2>附近物品</h2>

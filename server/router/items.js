@@ -96,7 +96,7 @@ async function listItems(req, res, viewer) {
     }
     // Auto-cancel stale pending claims (> 7 days)
     await query(
-      `UPDATE claim_requests SET status = 'rejected', reviewed_at = now()
+      `UPDATE claim_requests SET status = 'cancelled', reviewed_at = now()
        WHERE status = 'pending' AND created_at < now() - interval '7 days'`
     );
     lastExpiryCheck = now;

@@ -21,6 +21,9 @@
   --purple: #6E0065;
   --purple-soft: rgba(110, 0, 101, 0.1);
   --purple-glow: rgba(110, 0, 101, 0.22);
+  --accent: var(--purple);
+  --accent-soft: var(--purple-soft);
+  --hover: rgba(110, 0, 101, 0.08);
   --on-accent: #fff;
   --shadow: 0 4px 20px rgba(139, 111, 175, 0.12);
 
@@ -96,19 +99,27 @@ button:focus-visible {
 
 /* ===== Dark Mode ===== */
 [data-theme="dark"] {
-  --bg: #1a1a1a;
-  --card: #2a2a2a;
-  --card-strong: #333333;
-  --line: #3a3a3a;
-  --text: #e8e8e8;
-  --muted: #a0a0a0;
-  --text-strong: #c0b8a8;
-  --shadow: 0 14px 38px rgba(0, 0, 0, 0.3);
-  --toggle-off: #555;
-  --purple-soft: rgba(110, 0, 101, 0.2);
+  color-scheme: dark;
+  --bg: #090711;
+  --card: rgba(21, 19, 32, 0.78);
+  --card-strong: rgba(31, 28, 45, 0.92);
+  --line: rgba(214, 192, 255, 0.15);
+  --text: #f4f0ff;
+  --muted: #aaa1bc;
+  --text-strong: #e5daf7;
+  --purple: #8d2b93;
+  --purple-soft: rgba(210, 132, 228, 0.15);
+  --purple-glow: rgba(210, 132, 228, 0.3);
+  --accent: #d88ce8;
+  --accent-soft: rgba(216, 140, 232, 0.16);
+  --hover: rgba(216, 140, 232, 0.1);
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.42);
+  --toggle-off: #3b3548;
 
   --warning-bg: rgba(213, 173, 71, 0.15);
+  --warning-text: #f3d887;
   --success-bg: rgba(124, 165, 108, 0.15);
+  --success-text: #bfe4b0;
 }
 
 /* ===== Reduced Motion ===== */

@@ -34,11 +34,59 @@ function s3SigningKey(dateStamp) {
   return hmac(kService, "aws4_request");
 }
 
+function normalizeStorageKey(key) {
+  const value = String(key || "").replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!value || value.includes("\0")) return "";
+  const normalized = path.posix.normalize(value);
+  if (!normalized || normalized === "." || normalized.startsWith("../") || normalized.includes("/../")) {
+    return "";
+  }
+  return normalized;
+}
+
+function encodedObjectPath(key) {
+  return `/${MINIO_BUCKET}/${key.split("/").map(part => encodeURIComponent(part)).join("/")}`;
+}
+
+function signMinioRequest(method, objectPath, payloadHash) {
+  const endpoint = new URL(MINIO_ENDPOINT);
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+  const host = endpoint.host;
+  const canonicalHeaders = [
+    `host:${host}`,
+    `x-amz-content-sha256:${payloadHash}`,
+    `x-amz-date:${amzDate}`
+  ].join("\n") + "\n";
+  const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+  const canonicalRequest = [
+    method,
+    objectPath,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join("\n");
+  const credentialScope = `${dateStamp}/${MINIO_REGION}/s3/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    credentialScope,
+    sha256(canonicalRequest)
+  ].join("\n");
+  const signature = hmac(s3SigningKey(dateStamp), stringToSign, "hex");
+  return {
+    Authorization: `AWS4-HMAC-SHA256 Credential=${MINIO_ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate
+  };
+}
+
 function putObjectToMinio(key, buffer, contentType) {
   return new Promise((resolve, reject) => {
     const endpoint = new URL(MINIO_ENDPOINT);
-    const encodedKey = key.split("/").map(part => encodeURIComponent(part)).join("/");
-    const objectPath = `/${MINIO_BUCKET}/${encodedKey}`;
+    const objectPath = encodedObjectPath(key);
     const now = new Date();
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
@@ -98,29 +146,41 @@ function putObjectToMinio(key, buffer, contentType) {
 }
 
 async function uploadImageBuffer(buffer, contentType, key) {
+  const safeKey = normalizeStorageKey(key);
+  if (!safeKey) {
+    throw new Error("Invalid upload key");
+  }
   if (minioConfigured()) {
-    await putObjectToMinio(key, buffer, contentType);
+    await putObjectToMinio(safeKey, buffer, contentType);
     // Use NanE's own image proxy instead of exposing MinIO directly.
     // Avoids opening extra firewall ports — all traffic goes through :37878.
-    return { url: `/api/images/${key}`, key, storage: "minio" };
+    return { url: `/api/images/${safeKey}`, key: safeKey, storage: "minio" };
   }
-  const localPath = path.join(UPLOAD_DIR, key);
+  const localPath = path.join(UPLOAD_DIR, safeKey);
   await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
   await fs.promises.writeFile(localPath, buffer);
-  return { url: `/uploads/${key}`, key, storage: "local" };
+  return { url: `/uploads/${safeKey}`, key: safeKey, storage: "local" };
 }
 
 async function streamImage(key, res) {
+  const safeKey = normalizeStorageKey(key);
+  if (!safeKey) {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Image not found");
+    return;
+  }
   if (minioConfigured()) {
     const endpoint = new URL(MINIO_ENDPOINT);
-    const objectPath = `/${MINIO_BUCKET}/${key.split("/").map(part => encodeURIComponent(part)).join("/")}`;
+    const objectPath = encodedObjectPath(safeKey);
     const transport = endpoint.protocol === "https:" ? require("https") : require("http");
-    return new Promise((resolve, reject) => {
-      transport.get({
+    return new Promise(resolve => {
+      const request = transport.request({
+        method: "GET",
         protocol: endpoint.protocol,
         hostname: endpoint.hostname,
         port: endpoint.port,
-        path: objectPath
+        path: objectPath,
+        headers: signMinioRequest("GET", objectPath, "UNSIGNED-PAYLOAD")
       }, imageRes => {
         if (imageRes.statusCode >= 200 && imageRes.statusCode < 300) {
           const contentType = imageRes.headers["content-type"] || "image/webp";
@@ -129,23 +189,35 @@ async function streamImage(key, res) {
             "Cache-Control": "public, max-age=2592000, immutable",
             "Content-Length": imageRes.headers["content-length"] || undefined
           });
+          imageRes.on("end", resolve);
+          imageRes.on("error", () => {
+            if (!res.headersSent) {
+              res.writeHead(502, { "Content-Type": "text/plain" });
+            }
+            res.end("Image unavailable");
+            resolve();
+          });
           imageRes.pipe(res);
         } else {
           imageRes.resume();
           res.writeHead(404, { "Content-Type": "text/plain" });
           res.end("Image not found");
+          imageRes.on("end", resolve);
         }
-      }).on("error", () => {
+      });
+      request.on("error", () => {
         res.writeHead(502, { "Content-Type": "text/plain" });
         res.end("Image unavailable");
+        resolve();
       });
+      request.end();
     });
   }
   // Local storage fallback
-  const localPath = path.join(UPLOAD_DIR, key);
+  const localPath = path.join(UPLOAD_DIR, safeKey);
   try {
     const stat = await fs.promises.stat(localPath);
-    const ext = path.extname(key).toLowerCase();
+    const ext = path.extname(safeKey).toLowerCase();
     const mimeTypes = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
     res.writeHead(200, {
       "Content-Type": mimeTypes[ext] || "image/webp",
@@ -245,6 +317,9 @@ module.exports = {
   sha256,
   minioConfigured,
   s3SigningKey,
+  normalizeStorageKey,
+  encodedObjectPath,
+  signMinioRequest,
   putObjectToMinio,
   uploadImageBuffer,
   localUploadPathFromUrl,

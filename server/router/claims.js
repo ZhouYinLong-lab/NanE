@@ -280,7 +280,7 @@ async function handle(req, res, pathname, method) {
       return true;
     }
     const cancelled = await query(
-      "UPDATE claim_requests SET status = 'rejected', reviewed_at = now() WHERE id = $1 RETURNING *",
+      "UPDATE claim_requests SET status = 'cancelled', reviewed_at = now() WHERE id = $1 RETURNING *",
       [cancelClaimMatch[1]]
     );
     json(res, 200, {

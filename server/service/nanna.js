@@ -20,17 +20,25 @@ function nannaHeaders() {
 }
 
 async function callNanna(pathname, payload) {
-  const response = await fetch(`${NANNA_API_BASE}${pathname}`, {
-    method: "POST",
-    headers: nannaHeaders(),
-    body: JSON.stringify({
-      app_uid: NANNA_APP_UID,
-      appUid: NANNA_APP_UID,
-      scopes: NANNA_SCOPES,
-      scope: NANNA_SCOPES.join(" "),
-      ...payload
-    })
-  });
+  let response;
+  try {
+    response = await fetch(`${NANNA_API_BASE}${pathname}`, {
+      method: "POST",
+      headers: nannaHeaders(),
+      body: JSON.stringify({
+        app_uid: NANNA_APP_UID,
+        appUid: NANNA_APP_UID,
+        scopes: NANNA_SCOPES,
+        scope: NANNA_SCOPES.join(" "),
+        ...payload
+      })
+    });
+  } catch (error) {
+    const unavailable = new Error("南哪小帮手暂时不可用，请稍后再试");
+    unavailable.statusCode = 503;
+    unavailable.cause = error;
+    throw unavailable;
+  }
   const text = await response.text();
   let data = {};
   if (text) {
