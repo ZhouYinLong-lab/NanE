@@ -153,7 +153,7 @@
               <button type="button" class="segment" data-item-type="medicine">药品</button>
               <button type="button" class="segment" data-item-type="tool">工具</button>
             </div>
-            <p class="hint" id="typeHint">适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。</p>
+            <p class="hint" id="typeHint">适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，请选择最接近的分类。</p>
 
             <label for="titleInput">物品名称 * <span class="char-count" id="titleCount">0/30</span></label>
             <input id="titleInput" required placeholder="例如：碘伏棉签 10 支" maxlength="30">
@@ -169,6 +169,18 @@
                 <label for="unitInput">单位 *</label>
                 <input id="unitInput" required value="件">
               </div>
+            </div>
+
+            <div id="consumableCategoryWrap">
+              <label for="consumableCategorySelect">耗材分类 *</label>
+              <select id="consumableCategorySelect">
+                <option>应急耗材</option>
+                <option>退烧降温</option>
+                <option>消毒护理</option>
+                <option>外伤处理</option>
+                <option>防护用品</option>
+                <option>其他耗材</option>
+              </select>
             </div>
 
             <div id="medicineCategoryWrap" hidden>

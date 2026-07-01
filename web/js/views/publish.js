@@ -129,10 +129,21 @@ N.renderIconGrid = function renderIconGrid() {
   N.refreshMotion(N.$("iconGrid"));
 };
 
+N.currentPublishCategory = function currentPublishCategory() {
+  if (N.state.selectedPublishType === "medicine") {
+    return N.$("categorySelect").value;
+  }
+  if (N.state.selectedPublishType === "tool") {
+    return N.$("toolCategorySelect").value;
+  }
+  return N.$("consumableCategorySelect").value;
+};
+
 N.setPublishType = function setPublishType(itemType) {
   N.state.selectedPublishType = itemType;
   N.state.selectedIcon = itemType === "medicine" ? "capsules" : (itemType === "tool" ? "box" : "plus");
   N.state.iconOtherOpen = false;
+  N.$("consumableCategoryWrap").hidden = itemType !== "consumable";
   N.$("medicineCategoryWrap").hidden = itemType !== "medicine";
   N.$("toolCategoryWrap").hidden = itemType !== "tool";
   const today = new Date();
@@ -155,7 +166,7 @@ N.setPublishType = function setPublishType(itemType) {
     N.setExpireDate(d.toISOString().slice(0, 10));
   } else {
     N.$("publishRulesText").textContent = "应急耗材免费共享，适用于创可贴、碘伏棉签、口罩、消毒用品等低风险物品。发布后需经人工审核。";
-    N.$("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
+    N.$("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，请选择最接近的分类。";
     N.$("titleInput").placeholder = "例如：碘伏棉签 10 支";
     N.$("noExpiryWrap").hidden = false;
     N.$("noExpiryInput").checked = false;
@@ -282,7 +293,7 @@ N.submitPublish = async function submitPublish(event) {
     title,
     itemType: N.state.selectedPublishType,
     itemIcon: N.state.selectedIcon,
-    category: N.state.selectedPublishType === "medicine" ? N.$("categorySelect").value : (N.state.selectedPublishType === "tool" ? N.$("toolCategorySelect").value : "应急耗材"),
+    category: N.currentPublishCategory(),
     quantity,
     unit: N.$("unitInput").value.trim(),
     campus,
@@ -320,6 +331,7 @@ N.submitPublish = async function submitPublish(event) {
           description: payload.description,
           expireDate: payload.expireDate,
           noExpiry: payload.noExpiry,
+          category: payload.category,
           imageUrls: payload.imageUrls,
           contactWechat: payload.contactWechat,
           contactQq: payload.contactQq

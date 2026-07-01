@@ -289,8 +289,14 @@ async function handle(req, res, pathname, method) {
     const contactWechat = String(input.contactWechat ?? existing.contact_wechat).trim();
     const contactQq = String(input.contactQq ?? existing.contact_qq).trim();
     const imageUrls = input.imageUrls !== undefined ? normalizeImageUrls(input.imageUrls) : parsePgArray(existing.image_urls).slice(0, 3);
+    const typeConfig = ITEM_TYPES[existing.item_type] || ITEM_TYPES.consumable;
+    const category = String(input.category ?? existing.category ?? typeConfig.defaultCategory).trim();
     if (!title) {
       json(res, 400, { error: "VALIDATION_ERROR", message: "标题不能为空" });
+      return true;
+    }
+    if (!typeConfig.categories.includes(category)) {
+      json(res, 400, { error: "VALIDATION_ERROR", message: "分类与物品类型不匹配" });
       return true;
     }
     if (quantity <= 0) {
@@ -315,14 +321,14 @@ async function handle(req, res, pathname, method) {
     const previousImageUrls = parsePgArray(existing.image_urls).slice(0, 3);
     const updated = await query(
       `UPDATE items
-       SET title = $1, quantity = $2, unit = $3, description = $4,
-           expire_date = $5, no_expiry = $6, contact_wechat = $7, contact_qq = $8,
-           image_urls = $9::text[], status = $10,
-           reviewed_at = CASE WHEN $10 = 'reviewing' THEN NULL ELSE reviewed_at END,
-           reject_reason = CASE WHEN $10 = 'reviewing' THEN NULL ELSE reject_reason END
-       WHERE id = $11
+       SET title = $1, category = $2, quantity = $3, unit = $4, description = $5,
+           expire_date = $6, no_expiry = $7, contact_wechat = $8, contact_qq = $9,
+           image_urls = $10::text[], status = $11,
+           reviewed_at = CASE WHEN $11 = 'reviewing' THEN NULL ELSE reviewed_at END,
+           reject_reason = CASE WHEN $11 = 'reviewing' THEN NULL ELSE reject_reason END
+       WHERE id = $12
        RETURNING *`,
-      [title, quantity, unit, description, noExpiry ? null : expireDate, noExpiry, contactWechat, contactQq, imageUrls, nextStatus, existing.id]
+      [title, category, quantity, unit, description, noExpiry ? null : expireDate, noExpiry, contactWechat, contactQq, imageUrls, nextStatus, existing.id]
     );
     const removedImageUrls = previousImageUrls.filter(url => !imageUrls.includes(url));
     for (const url of removedImageUrls) {

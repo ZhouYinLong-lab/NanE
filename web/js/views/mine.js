@@ -355,24 +355,29 @@ N.startEditItem = function startEditItem() {
   N.$("qqInput").value = item.contact?.qq || "";
   N.state.uploadedImageUrls = Array.isArray(item.imageUrls) ? [...item.imageUrls].slice(0, 3) : [];
   N.renderImagePreviews();
-  N.$("medicineCategoryWrap").hidden = item.itemType !== "medicine";
-  N.$("toolCategoryWrap").hidden = item.itemType !== "tool";
-  if (item.itemType === "medicine") {
+  const editType = N.state.selectedPublishType;
+  N.$("consumableCategoryWrap").hidden = editType !== "consumable";
+  N.$("medicineCategoryWrap").hidden = editType !== "medicine";
+  N.$("toolCategoryWrap").hidden = editType !== "tool";
+  if (editType === "medicine") {
     const catSelect = N.$("categorySelect");
     if (catSelect) catSelect.value = item.category || "感冒药";
-  } else if (item.itemType === "tool") {
+  } else if (editType === "tool") {
     const toolCat = N.$("toolCategorySelect");
     if (toolCat) toolCat.value = item.category || "常用工具";
+  } else {
+    const consumableCat = N.$("consumableCategorySelect");
+    if (consumableCat) consumableCat.value = item.category || "应急耗材";
   }
-  if (item.itemType === "tool") {
+  if (editType === "tool") {
     N.$("publishRulesText").textContent = "常用工具免费借用或赠送。请注明借用时长与归还方式。禁止危险工具及任何收费转让。发布后需经人工审核。";
     N.$("typeHint").textContent = "适用于偶尔需要但不常备的小工具，如锤子、镊子、砂纸、热熔胶枪等。建议注明是借用还是赠送。";
-  } else if (item.itemType === "medicine") {
+  } else if (editType === "medicine") {
     N.$("publishRulesText").textContent = "仅限非处方常见药品，按大类笼统选择。禁止处方药、管制药品、拆封不明药品及任何收费转让。药品须填写有效期。发布后需经人工审核。";
     N.$("typeHint").textContent = "药品仅限非处方常见药品，按大类选择即可。禁止处方药、管制药品及任何收费转让。";
   } else {
     N.$("publishRulesText").textContent = "应急耗材免费共享，适用于创可贴、碘伏棉签、口罩、消毒用品等低风险物品。发布后需经人工审核。";
-    N.$("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，无需细分品类。";
+    N.$("typeHint").textContent = "适用于创可贴、碘伏棉签、口罩、消毒用品等低风险应急物品，请选择最接近的分类。";
   }
   if (item.noExpiry) {
     N.$("noExpiryInput").checked = true;
@@ -382,8 +387,8 @@ N.startEditItem = function startEditItem() {
     N.setDateRowDisabled(false);
     N.setExpireDate(item.expireDate || "");
   }
-  N.$("noExpiryWrap").hidden = item.itemType === "medicine";
-  if (item.itemType === "tool") N.$("noExpiryWrap").hidden = false;
+  N.$("noExpiryWrap").hidden = editType === "medicine";
+  if (editType === "tool") N.$("noExpiryWrap").hidden = false;
   N.$("useProfileLocationInput").checked = false;
   N.$("publishLocationFields").hidden = false;
   N.setSelectionByLocation("publish", item.campus || "仙林校区", item.building || "南苑 A 栋", item.room || "");
