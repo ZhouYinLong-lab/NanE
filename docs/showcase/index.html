@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NanE Showcase</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 32px;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #090711;
+      color: #f5efff;
+    }
+    h1 { margin: 0 0 8px; font-size: 36px; }
+    p { color: #b9adc9; font-size: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-top: 28px;
+    }
+    figure {
+      margin: 0;
+      padding: 16px;
+      border: 1px solid rgba(216, 140, 232, 0.22);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    img {
+      width: 100%;
+      border-radius: 14px;
+      display: block;
+      background: #120d1d;
+    }
+    figcaption {
+      margin-top: 12px;
+      color: #f5efff;
+      font-weight: 800;
+    }
+    .poster {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <h1>NanE 南易展示包</h1>
+  <p>包含真实产品截图式效果图，以及答辩展示长图。</p>
+  <div class="grid">
+    <figure>
+      <img src="screens/home-filter-mobile.png" alt="移动端首页筛选">
+      <figcaption>移动端首页：分类筛选下拉</figcaption>
+    </figure>
+    <figure>
+      <img src="screens/publish-form-mobile.png" alt="移动端发布页">
+      <figcaption>移动端发布页：分类发布表单</figcaption>
+    </figure>
+    <figure>
+      <img src="screens/mine-trust-mobile.png" alt="移动端我的页">
+      <figcaption>移动端我的页：履约评价入口</figcaption>
+    </figure>
+    <figure>
+      <img src="screens/home-desktop.png" alt="桌面端首页">
+      <figcaption>桌面端首页：附近物品流</figcaption>
+    </figure>
+    <figure class="poster">
+      <img src="poster/nane-pitch-poster.png" alt="答辩展示长图">
+      <figcaption>答辩展示长图：评委意见回应与演示路径</figcaption>
+    </figure>
+  </div>
+</body>
+</html>
