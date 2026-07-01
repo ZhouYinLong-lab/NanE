@@ -50,6 +50,17 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function emailHtmlLine(html) {
+  return { __naneTrustedHtml: String(html || "") };
+}
+
+function renderEmailBodyLine(line) {
+  if (line && typeof line === "object" && Object.prototype.hasOwnProperty.call(line, "__naneTrustedHtml")) {
+    return line.__naneTrustedHtml;
+  }
+  return escapeHtml(line);
+}
+
 function smtpResponse(socket) {
   return new Promise((resolve, reject) => {
     let buffer = "";
@@ -80,7 +91,7 @@ async function smtpCommand(socket, command) {
 
 function emailHtml(title, bodyLines, actionUrl, actionText) {
   const safeTitle = escapeHtml(title);
-  const safeBody = bodyLines.map(line => escapeHtml(line)).join('<br>');
+  const safeBody = (bodyLines || []).map(renderEmailBodyLine).join('<br>');
   const safeActionUrl = escapeHtml(actionUrl || "");
   const safeActionText = escapeHtml(actionText || "");
   const actionBlock = actionUrl
@@ -244,4 +255,4 @@ async function sendClaimNotificationMail(ownerEmail, item, claim) {
   }
 }
 
-module.exports = { smtpConfigured, sendMail, emailHtml, hashEmailCode, makeEmailCode, validateStudentEmail, normalizeEmail, sendClaimNotificationMail };
+module.exports = { smtpConfigured, sendMail, emailHtml, emailHtmlLine, hashEmailCode, makeEmailCode, validateStudentEmail, normalizeEmail, sendClaimNotificationMail };

@@ -5,7 +5,7 @@ const { readBody, json, pick, REVIEW_TAGS, ISSUE_REVIEW_TAGS, emptyTrustSummary 
 const { recordFailedLogin, getLoginAttempts, resetLoginAttempts } = require("../middleware/rate-limit");
 const { userFromRequest, demoViewer, requireVerifiedUser } = require("../middleware/auth");
 const { nannaConfigured, callNanna, normalizeNannaIdentity, upsertNannaUser } = require("../service/nanna");
-const { sendMail, emailHtml } = require("../service/email");
+const { sendMail, emailHtml, emailHtmlLine } = require("../service/email");
 const { hashEmailCode, makeEmailCode, validateStudentEmail, normalizeEmail } = require("../service/email");
 
 // --- Constants ---
@@ -192,7 +192,7 @@ async function passwordResetChallenge(req, res) {
     ].join("\n"),
     html: emailHtml(
       "密码重置验证码",
-      [`你的验证码是：<strong style="font-size:24px;letter-spacing:4px;color:#6E0065">${code}</strong>`, `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`, "如果这不是你本人操作，可以忽略这封邮件。"],
+      [emailHtmlLine(`你的验证码是：<strong style="font-size:24px;letter-spacing:4px;color:#6E0065">${code}</strong>`), `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`, "如果这不是你本人操作，可以忽略这封邮件。"],
       "",
       ""
     )
@@ -347,7 +347,7 @@ async function emailChallenge(req, res) {
     ].join("\n"),
     html: emailHtml(
       "登录验证码",
-      [`你的验证码是：<strong style="font-size:24px;letter-spacing:4px;color:#6E0065">${code}</strong>`, `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`, "如果这不是你本人操作，可以忽略这封邮件。"],
+      [emailHtmlLine(`你的验证码是：<strong style="font-size:24px;letter-spacing:4px;color:#6E0065">${code}</strong>`), `验证码 ${EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿转发给他人。`, "如果这不是你本人操作，可以忽略这封邮件。"],
       "",
       ""
     )
