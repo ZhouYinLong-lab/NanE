@@ -3,7 +3,7 @@
 展示包包含两类材料：
 
 - `screens/`：真实页面截图式效果图，覆盖首页筛选、发布页、我的页履约评价、桌面首页。
-- `poster/`：答辩展示长图，用于说明评委意见回应、分类体系、履约评价 MVP 和演示路径。
+- `poster/`：展示海报。`nane-final-slide.png` 为 16:9 PPT 比例最终展示图；`nane-pitch-poster.png` 为纵向答辩长图。
 
 重新生成截图：
 
@@ -15,4 +15,10 @@ powershell -ExecutionPolicy Bypass -File docs\showcase\capture-screenshots.ps1
 
 ```powershell
 & "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1600,2200 --screenshot=docs\showcase\poster\nane-pitch-poster.png docs\showcase\poster\nane-pitch-poster.html
+```
+
+生成 16:9 PPT 展示图：
+
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless=new --disable-gpu --hide-scrollbars --window-size=1920,1080 --screenshot=docs\showcase\poster\nane-final-slide.png docs\showcase\poster\nane-final-slide.html
 ```

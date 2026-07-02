@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NanE 南易 16:9 展示海报</title>
+  <style>
+    :root {
+      --bg: #090711;
+      --panel: rgba(255, 255, 255, 0.082);
+      --panel-strong: rgba(255, 255, 255, 0.13);
+      --line: rgba(216, 140, 232, 0.24);
+      --purple: #d88ce8;
+      --purple-strong: #a936b2;
+      --mint: #38b99b;
+      --text: #f8f3ff;
+      --muted: #bbb0ca;
+      --shadow: rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 11% 9%, rgba(216, 140, 232, 0.27), transparent 25%),
+        radial-gradient(circle at 82% 22%, rgba(56, 185, 155, 0.15), transparent 28%),
+        radial-gradient(circle at 52% 92%, rgba(110, 0, 101, 0.25), transparent 32%),
+        linear-gradient(135deg, #090711 0%, #151022 54%, #07060c 100%);
+    }
+
+    .slide {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      padding: 72px 86px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 54px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .mark {
+      width: 82px;
+      height: 82px;
+      border-radius: 26px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(216, 140, 232, 0.36);
+      background: rgba(216, 140, 232, 0.12);
+      box-shadow: 0 22px 60px rgba(110, 0, 101, 0.35);
+      overflow: hidden;
+    }
+
+    .mark img {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 62px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .tag {
+      padding: 16px 24px;
+      border-radius: 999px;
+      color: var(--purple);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--line);
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 780px;
+      gap: 56px;
+      align-items: start;
+    }
+
+    .hero {
+      padding-top: 26px;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--purple);
+      font-size: 30px;
+      font-weight: 950;
+    }
+
+    .hero h2 {
+      margin: 0;
+      max-width: 940px;
+      font-size: 78px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .hero .desc {
+      max-width: 900px;
+      margin: 32px 0 0;
+      color: var(--muted);
+      font-size: 32px;
+      line-height: 1.55;
+      font-weight: 760;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 34px;
+    }
+
+    .chip {
+      padding: 16px 22px;
+      border-radius: 999px;
+      color: #fff;
+      background: rgba(216, 140, 232, 0.16);
+      border: 1px solid rgba(216, 140, 232, 0.24);
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .flow {
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-top: 46px;
+      max-width: 940px;
+    }
+
+    .flow-card {
+      min-height: 160px;
+      padding: 24px;
+      border-radius: 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    .flow-card b {
+      display: block;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 18px;
+      border-radius: 999px;
+      background: var(--purple);
+      color: #180d20;
+      font-size: 18px;
+      line-height: 34px;
+      text-align: center;
+      font-weight: 950;
+    }
+
+    .flow-card strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .flow-card span {
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.38;
+      font-weight: 700;
+    }
+
+    .phone-stage {
+      position: relative;
+      height: 765px;
+    }
+
+    .halo {
+      position: absolute;
+      inset: 80px 0 40px 80px;
+      border-radius: 80px;
+      background: linear-gradient(135deg, rgba(216, 140, 232, 0.18), rgba(56, 185, 155, 0.1));
+      filter: blur(6px);
+      opacity: 0.75;
+    }
+
+    .phone {
+      position: absolute;
+      width: 330px;
+      height: 715px;
+      padding: 9px;
+      border-radius: 44px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.36), rgba(255,255,255,0.07));
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: 0 38px 100px var(--shadow);
+      overflow: hidden;
+    }
+
+    .phone img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 36px;
+    }
+
+    .phone.home {
+      left: 14px;
+      top: 62px;
+      transform: rotate(-6deg);
+      opacity: 0.72;
+    }
+
+    .phone.mine {
+      right: 0;
+      top: 0;
+      width: 382px;
+      height: 828px;
+      transform: rotate(4deg);
+      z-index: 2;
+    }
+
+    .stat-row {
+      position: absolute;
+      left: 86px;
+      right: auto;
+      bottom: 62px;
+      width: 950px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .stat {
+      min-height: 156px;
+      border-radius: 30px;
+      padding: 24px 26px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--line);
+    }
+
+    .stat strong {
+      display: block;
+      color: #d7fff5;
+      font-size: 30px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .stat p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.42;
+      font-weight: 720;
+    }
+  </style>
+</head>
+<body>
+  <main class="slide">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark"><img src="../../../web/NanE-logo.svg" alt=""></div>
+        <div>
+          <h1>NanE 南易</h1>
+          <p>南大校园 · 免费互助 · 可信履约</p>
+        </div>
+      </div>
+      <div class="tag">校园互助共享平台</div>
+    </header>
+
+    <section class="layout">
+      <div class="hero">
+        <p class="eyebrow">同楼优先，免费流转，履约可见</p>
+        <h2>把闲置应急物品<br>送到真正需要的同学手里</h2>
+        <p class="desc">NanE 面向南京大学校园场景，将耗材、非处方药品与常用工具按楼栋距离组织起来，用发布审核、领取确认和履约评价建立可信互助记录。</p>
+        <div class="chips">
+          <span class="chip">耗材细分类</span>
+          <span class="chip">药品边界审核</span>
+          <span class="chip">工具借用/赠送</span>
+          <span class="chip">正向可信标签</span>
+        </div>
+        <div class="flow">
+          <div class="flow-card"><b>1</b><strong>发现</strong><span>按同楼、宿舍群、校区排序浏览附近物品。</span></div>
+          <div class="flow-card"><b>2</b><strong>发布</strong><span>分类填写信息，提交后进入人工审核。</span></div>
+          <div class="flow-card"><b>3</b><strong>确认</strong><span>领取提醒触达发布者，确认后扣减数量。</span></div>
+          <div class="flow-card"><b>4</b><strong>评价</strong><span>双方沉淀已完成次数与正向履约标签。</span></div>
+        </div>
+      </div>
+
+      <div class="phone-stage">
+        <div class="halo"></div>
+        <div class="phone home"><img src="../screens/home-filter-mobile.png" alt=""></div>
+        <div class="phone mine"><img src="../screens/mine-trust-mobile.png" alt=""></div>
+      </div>
+    </section>
+
+    <section class="stat-row">
+      <article class="stat">
+        <strong>清晰分类</strong>
+        <p>发现页与发布页共享耗材、非处方药品、工具分类逻辑，降低搜索和审核成本。</p>
+      </article>
+      <article class="stat">
+        <strong>可信闭环</strong>
+        <p>从查看联系方式到确认领取，再到双方履约评价，形成可追踪的互助记录。</p>
+      </article>
+      <article class="stat">
+        <strong>校园友好</strong>
+        <p>公开展示正向标签和完成次数，不公开冲突性评价，适配熟人校园环境。</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
