@@ -2,13 +2,20 @@
 
 展示包包含两类材料：
 
-- `screens/`：真实页面截图式效果图，覆盖首页筛选、发布页、我的页履约评价、桌面首页。
+- `screens/`：真实页面截图式效果图，覆盖首页筛选、发布页、我的页履约评价、桌面首页；`*-light.png` 为浅色 PPT 海报使用的移动端截图。
+- `principles/`：三张白天模式电脑端原则图，分别对应近邻优先、安全边界、可信记录。
 - `poster/`：展示海报。`nane-light-slide.png` 为浅色 PPT 封面图；`nane-final-slide.png` 为 16:9 PPT 比例最终展示图；`nane-pitch-poster.png` 为纵向答辩长图。
 
 重新生成截图：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File docs\showcase\capture-screenshots.ps1
+```
+
+生成 PPT 用白天模式截图：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File docs\showcase\capture-ppt-assets.ps1
 ```
 
 生成展示长图 PNG：
