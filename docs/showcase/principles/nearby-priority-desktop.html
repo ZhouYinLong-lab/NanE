@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NanE 近邻优先简图</title>
+  <style>
+    :root {
+      --bg: #fbf8ff;
+      --ink: #24112d;
+      --muted: #7b6890;
+      --purple: #7a0074;
+      --line: #eadcf4;
+      --soft: #f4eafa;
+      --mint: #2c8a79;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      width: 1600px;
+      height: 900px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 8%, rgba(222, 201, 246, 0.78) 0 160px, transparent 162px),
+        radial-gradient(circle at 92% 96%, rgba(222, 201, 246, 0.84) 0 150px, transparent 152px),
+        linear-gradient(135deg, #fbf8ff 0%, #fffaff 58%, #f8f0ff 100%);
+    }
+
+    .page {
+      width: 1600px;
+      height: 900px;
+      padding: 70px 90px;
+    }
+
+    .panel {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 56px 62px;
+      border: 2px solid var(--line);
+      border-radius: 38px;
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: 24px 24px 0 rgba(222, 201, 246, 0.72), 0 34px 90px rgba(93, 45, 125, 0.12);
+    }
+
+    .code-shot {
+      position: absolute;
+      top: 54px;
+      right: 62px;
+      width: 360px;
+      border-radius: 18px;
+      border: 1px solid rgba(234, 220, 244, 0.86);
+      box-shadow: 0 22px 52px rgba(36, 17, 45, 0.16);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--purple);
+      font-size: 32px;
+      font-weight: 950;
+    }
+
+    .brand img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      opacity: 0.7;
+    }
+
+    h1 {
+      margin: 28px 0 10px;
+      color: var(--ink);
+      font-size: 74px;
+      line-height: 1.05;
+      letter-spacing: 0;
+      font-weight: 950;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 31px;
+      line-height: 1.35;
+      font-weight: 780;
+    }
+
+    .viewer {
+      margin-top: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      padding: 20px 26px;
+      border-radius: 24px;
+      color: #fff;
+      background: linear-gradient(135deg, #8f0087, #6e0065);
+      box-shadow: 0 22px 46px rgba(122, 0, 116, 0.18);
+      font-size: 27px;
+      font-weight: 950;
+    }
+
+    .viewer span {
+      color: rgba(255,255,255,0.82);
+      font-size: 21px;
+      font-weight: 820;
+    }
+
+    .steps {
+      margin-top: 42px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .step {
+      min-height: 245px;
+      padding: 28px 26px;
+      border: 2px solid var(--line);
+      border-radius: 30px;
+      background: linear-gradient(180deg, #fff 0%, #fcf7ff 100%);
+      box-shadow: 0 18px 44px rgba(93, 45, 125, 0.08);
+    }
+
+    .rank {
+      width: 66px;
+      height: 66px;
+      margin-bottom: 24px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #a21c9d, #7a0074);
+      box-shadow: 0 16px 30px rgba(122, 0, 116, 0.18);
+      font-size: 28px;
+      font-weight: 950;
+    }
+
+    .step strong {
+      display: block;
+      color: var(--ink);
+      font-size: 34px;
+      line-height: 1.12;
+      margin-bottom: 14px;
+      font-weight: 950;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1.35;
+      font-weight: 780;
+    }
+
+    .rule {
+      margin-top: 36px;
+      padding: 22px 28px;
+      border-radius: 24px;
+      background: var(--soft);
+      color: #59426d;
+      font-size: 30px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .rule b {
+      color: var(--mint);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <img class="code-shot" src="nearby-priority-code-snippet.png" alt="近邻优先排序代码截图">
+      <div class="brand">南易 <img src="../../../web/NanE-logo.svg" alt=""></div>
+      <h1>近邻优先</h1>
+      <p class="lead">不是全校随机展示，而是先把更容易交接的资源排到前面。</p>
+      <div class="viewer">浏览者：鼓楼校区 · 南园 2 舍 <span>当前位置</span></div>
+
+      <div class="steps" aria-label="近邻优先排序">
+        <div class="step">
+          <div class="rank">1</div>
+          <strong>同楼栋</strong>
+          <p>下楼即可交接<br>优先展示</p>
+        </div>
+        <div class="step">
+          <div class="rank">2</div>
+          <strong>同宿舍群</strong>
+          <p>步行可达<br>其次展示</p>
+        </div>
+        <div class="step">
+          <div class="rank">3</div>
+          <strong>同校区</strong>
+          <p>校区内互助<br>继续补充</p>
+        </div>
+        <div class="step">
+          <div class="rank">4</div>
+          <strong>跨校区</strong>
+          <p>距离较远<br>靠后展示</p>
+        </div>
+      </div>
+
+      <div class="rule"><b>排序规则：</b>按空间距离分层，同层再按发布时间排序</div>
+    </section>
+  </main>
+</body>
+</html>

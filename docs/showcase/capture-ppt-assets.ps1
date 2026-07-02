@@ -158,25 +158,9 @@ try {
   Save-Shot $screenDir "mine-trust-mobile-light.png"
 
   Set-DesktopViewport
-  Navigate-App
-  Eval-Js @'
-    (() => {
-      const N = window.NanE;
-      document.querySelector('#welcomeBanner')?.setAttribute('hidden', '');
-      document.querySelector('#viewerLabel').textContent = '鼓楼校区 · 南园2舍 · 优先展示近邻 · 共 20 件';
-      const building = document.querySelector('#buildingFilterSelect');
-      if (building) building.hidden = false;
-      const list = document.querySelector('#itemList');
-      if (list && list.children.length < 2 && N?.renderItem) {
-        const items = [
-          {id:'i1', title:'云南白药', campus:'鼓楼校区', building:'南园2舍', description:'发布者暂未填写补充说明。', itemType:'medicine', itemTypeText:'药品', category:'其他非处方药', quantity:1, unit:'盒', ownerName:'datvdge', createdAt:new Date().toISOString(), ownerTrustSummary:{positiveReviewCount:2,topTags:['沟通顺畅']}},
-          {id:'i2', title:'碘伏棉签 100 支', campus:'鼓楼校区', building:'南园 A 栋', description:'未拆封，可分装赠送。', itemType:'consumable', itemTypeText:'耗材', category:'消毒护理', quantity:100, unit:'支', ownerName:'热心小蓝鲸', createdAt:new Date().toISOString(), ownerTrustSummary:{positiveReviewCount:5,topTags:['按约交接']}}
-        ];
-        list.innerHTML = items.map(item => N.renderItem(item)).join('');
-      }
-      window.scrollTo(0, 0);
-    })()
-'@
+  $nearbyHtml = (Resolve-Path (Join-Path $principleDir "nearby-priority-desktop.html")).Path
+  $nearbyUrl = "file:///" + ($nearbyHtml -replace "\\", "/")
+  Invoke-Cdp "Page.navigate" @{ url = $nearbyUrl } | Out-Null
   Save-Shot $principleDir "nearby-priority-desktop.png"
 
   Navigate-App
