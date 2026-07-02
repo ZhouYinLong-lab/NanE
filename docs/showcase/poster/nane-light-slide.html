@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NanE 南易浅色 PPT 封面</title>
+  <style>
+    :root {
+      --bg: #fbf8ff;
+      --ink: #2b1234;
+      --muted: #746286;
+      --purple: #7a0074;
+      --purple-soft: #f1e5fb;
+      --purple-line: #e6d2f4;
+      --mint: #2c8a79;
+      --shadow: rgba(112, 59, 137, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    .slide {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      padding: 86px 118px 68px;
+      background:
+        radial-gradient(circle at 5% 6%, rgba(221, 199, 244, 0.88) 0 220px, transparent 222px),
+        radial-gradient(circle at 100% 100%, rgba(221, 199, 244, 0.92) 0 150px, transparent 152px),
+        linear-gradient(135deg, #fbf8ff 0%, #fffaff 48%, #faf5ff 100%);
+    }
+
+    .left-rail {
+      position: absolute;
+      left: 0;
+      top: 325px;
+      width: 22px;
+      height: 755px;
+      background: #171420;
+    }
+
+    .brand-pill {
+      position: absolute;
+      left: 124px;
+      top: 104px;
+      min-width: 390px;
+      padding: 18px 44px;
+      border: 2px solid var(--purple-line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.58);
+      color: #7550a0;
+      font-size: 27px;
+      font-weight: 950;
+      text-align: center;
+      box-shadow: 0 16px 36px rgba(122, 0, 116, 0.05);
+    }
+
+    .logo {
+      position: absolute;
+      left: 625px;
+      top: 82px;
+      width: 126px;
+      height: 126px;
+      object-fit: contain;
+    }
+
+    .copy {
+      position: absolute;
+      left: 124px;
+      top: 211px;
+      width: 620px;
+    }
+
+    .copy h1 {
+      margin: 0;
+      color: var(--purple);
+      font-size: 92px;
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 950;
+    }
+
+    .copy h2 {
+      margin: 34px 0 0;
+      color: #351542;
+      font-size: 48px;
+      line-height: 1.28;
+      letter-spacing: 0;
+      font-weight: 950;
+    }
+
+    .promise {
+      margin: 40px 0 0;
+      color: #796891;
+      font-size: 43px;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .position {
+      margin: 34px 0 0;
+      color: #32133d;
+      font-size: 45px;
+      line-height: 1.36;
+      font-weight: 950;
+    }
+
+    .cta {
+      margin-top: 56px;
+      width: 432px;
+      height: 84px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, #990f96, #780072);
+      font-size: 31px;
+      font-weight: 950;
+      box-shadow: 0 24px 48px rgba(122, 0, 116, 0.22);
+    }
+
+    .team {
+      position: absolute;
+      left: 124px;
+      bottom: 40px;
+      color: #32133d;
+      font-size: 28px;
+      line-height: 1.45;
+      font-weight: 950;
+    }
+
+    .stage {
+      position: absolute;
+      left: 760px;
+      top: 156px;
+      width: 1078px;
+      height: 784px;
+    }
+
+    .stage-shadow {
+      position: absolute;
+      left: 28px;
+      top: 48px;
+      width: 1060px;
+      height: 720px;
+      border-radius: 132px;
+      background: #eadbfb;
+      opacity: 0.92;
+    }
+
+    .stage-card {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--purple-line);
+      border-radius: 128px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 34px 90px var(--shadow);
+      overflow: hidden;
+    }
+
+    .stage-inner {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      top: 42px;
+      bottom: 148px;
+      border: 2px solid var(--purple-line);
+      border-radius: 104px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,240,255,0.94));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.94);
+      overflow: hidden;
+    }
+
+    .phone-showcase {
+      position: absolute;
+      left: 185px;
+      top: 26px;
+      width: 690px;
+      height: 658px;
+    }
+
+    .phone-halo {
+      position: absolute;
+      left: 28px;
+      right: 24px;
+      top: 90px;
+      bottom: 20px;
+      border-radius: 80px;
+      background: linear-gradient(135deg, rgba(122, 0, 116, 0.14), rgba(44, 138, 121, 0.08));
+      filter: blur(10px);
+      opacity: 0.82;
+    }
+
+    .phone {
+      position: absolute;
+      padding: 8px;
+      border-radius: 42px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(245,238,252,0.68));
+      border: 1px solid rgba(230, 210, 244, 0.96);
+      box-shadow: 0 28px 72px rgba(94, 52, 122, 0.18);
+      overflow: hidden;
+    }
+
+    .phone img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 34px;
+    }
+
+    .phone.home {
+      left: 18px;
+      top: 76px;
+      width: 268px;
+      height: 580px;
+      opacity: 0.82;
+      transform: rotate(-6deg);
+    }
+
+    .phone.mine {
+      right: 22px;
+      top: 0;
+      width: 310px;
+      height: 672px;
+      z-index: 2;
+      transform: rotate(4deg);
+    }
+
+    .product-shot {
+      position: absolute;
+      left: 132px;
+      top: 68px;
+      width: 752px;
+      height: 428px;
+      border-radius: 28px;
+      padding: 30px 40px;
+      background:
+        radial-gradient(circle at 18% 24%, rgba(230, 210, 244, 0.7), transparent 23%),
+        linear-gradient(145deg, #fff 0%, #fbf7ff 100%);
+      box-shadow: 0 18px 52px rgba(94, 52, 122, 0.16);
+      overflow: hidden;
+    }
+
+    .shot-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      color: var(--purple);
+      font-size: 19px;
+      font-weight: 950;
+    }
+
+    .shot-logo {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      opacity: 0.76;
+    }
+
+    .shot-actions {
+      position: absolute;
+      right: 40px;
+      top: 28px;
+      display: flex;
+      gap: 14px;
+    }
+
+    .shot-action {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--purple);
+      background: #fff;
+      border: 1px solid #f1e4fb;
+      box-shadow: 0 12px 24px rgba(122, 0, 116, 0.08);
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    .shot-search {
+      display: grid;
+      grid-template-columns: 1fr 74px;
+      gap: 13px;
+      margin-bottom: 13px;
+    }
+
+    .shot-input,
+    .shot-button,
+    .shot-pill {
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid #eee5f4;
+      background: #fff;
+      color: #8a779c;
+      font-size: 13px;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shot-input {
+      justify-content: flex-start;
+      padding-left: 20px;
+    }
+
+    .shot-button,
+    .shot-pill.active {
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, #a72ba5, #7a0074);
+      box-shadow: 0 10px 20px rgba(122, 0, 116, 0.16);
+    }
+
+    .shot-filters {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr 1fr 1.15fr;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .shot-title {
+      margin: 0;
+      color: #15111c;
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .shot-subtitle {
+      margin: 9px 0 19px;
+      color: #877894;
+      font-size: 15px;
+      font-weight: 760;
+    }
+
+    .activity-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 21px;
+    }
+
+    .activity-card {
+      height: 54px;
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: #f5effb;
+      border: 1px solid #e9dcf4;
+      color: #2d2036;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 900;
+    }
+
+    .activity-card span {
+      display: block;
+      margin-top: 4px;
+      color: #8f7fa0;
+      font-size: 11px;
+      font-weight: 760;
+    }
+
+    .item-row {
+      display: grid;
+      grid-template-columns: 62px 1fr auto;
+      align-items: center;
+      gap: 20px;
+      padding: 14px 0;
+      border-top: 1px solid #efe5f7;
+    }
+
+    .item-icon {
+      width: 62px;
+      height: 62px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      color: var(--purple);
+      background: #f1e5fb;
+      font-size: 24px;
+      font-weight: 950;
+    }
+
+    .item-name {
+      margin: 0;
+      color: #17101d;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    .item-meta {
+      margin: 6px 0 0;
+      color: #8a779c;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .item-tags {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .item-tags span {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f7effb;
+      color: #7a0074;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .item-date {
+      color: #8a779c;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .mock-fade {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      bottom: 148px;
+      height: 230px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.88) 72%, #fff 100%);
+      pointer-events: none;
+    }
+
+    .feature-chips {
+      position: absolute;
+      left: 142px;
+      right: 142px;
+      bottom: 44px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 104px;
+    }
+
+    .feature-chip {
+      height: 60px;
+      border: 2px solid var(--purple-line);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #7550a0;
+      background: #f6edff;
+      font-size: 28px;
+      font-weight: 950;
+    }
+
+    .note-card {
+      position: absolute;
+      left: 96px;
+      bottom: 214px;
+      width: 258px;
+      padding: 18px 22px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(230, 210, 244, 0.9);
+      box-shadow: 0 14px 40px rgba(112, 59, 137, 0.12);
+    }
+
+    .note-card strong {
+      display: block;
+      color: var(--purple);
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .note-card span {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.35;
+      font-weight: 750;
+    }
+
+    .mini-trust {
+      position: absolute;
+      right: 86px;
+      bottom: 215px;
+      width: 288px;
+      padding: 19px 22px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid rgba(230, 210, 244, 0.9);
+      box-shadow: 0 14px 40px rgba(112, 59, 137, 0.12);
+    }
+
+    .mini-trust b {
+      color: var(--mint);
+      font-size: 34px;
+      line-height: 1;
+    }
+
+    .mini-trust span {
+      margin-left: 7px;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 950;
+    }
+
+    .mini-trust p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.35;
+      font-weight: 760;
+    }
+
+    .page-no {
+      position: absolute;
+      right: 42px;
+      bottom: 33px;
+      color: #b9a0c8;
+      font-size: 23px;
+      font-weight: 900;
+    }
+  </style>
+</head>
+<body>
+  <main class="slide">
+    <div class="left-rail"></div>
+    <div class="brand-pill">南大校园 · 免费互助</div>
+    <img class="logo" src="../../../web/NanE-logo.svg" alt="NanE logo">
+
+    <section class="copy" aria-label="NanE 南易介绍">
+      <h1>NanE 南易</h1>
+      <h2>校园免费互助平台<br>设计与实现</h2>
+      <p class="promise">让宿舍里的“刚好有”<br>遇见他人的“刚好需要”</p>
+      <p class="position">不是二手交易，<br>而是校园互助。</p>
+      <div class="cta">让校园互助更近一步</div>
+    </section>
+
+    <section class="stage" aria-label="NanE 产品展示">
+      <div class="stage-shadow"></div>
+      <div class="stage-card">
+        <div class="stage-inner">
+          <div class="phone-showcase">
+            <div class="phone-halo"></div>
+            <div class="phone home">
+              <img src="../screens/home-filter-mobile.png" alt="NanE 发现页筛选手机截图">
+            </div>
+            <div class="phone mine">
+              <img src="../screens/mine-trust-mobile.png" alt="NanE 我的页履约评价手机截图">
+            </div>
+          </div>
+        </div>
+        <div class="mock-fade"></div>
+        <div class="feature-chips">
+          <div class="feature-chip">搜索筛选</div>
+          <div class="feature-chip">近邻优先</div>
+          <div class="feature-chip">可信闭环</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="team">小组：邪恶猫头鹰<br>组员：周胤龙&nbsp; 宋安琪&nbsp; 裴瑜泽&nbsp; 张林鑫</div>
+    <div class="page-no">01</div>
+  </main>
+</body>
+</html>
