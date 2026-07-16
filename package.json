@@ -11,7 +11,7 @@
     "fa:subset": "node tools/extract-fa-icons.js"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
+    "@fortawesome/fontawesome-free": "^7.3.1",
     "pg": "^8.13.1",
     "web-push": "^3.6.7"
   },
