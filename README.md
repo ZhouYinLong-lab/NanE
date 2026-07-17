@@ -10,6 +10,8 @@ NanE（南易）是面向南京大学校园场景的免费互助平台。它帮�
 
 平台的核心不是二手交易，而是**同楼栋、同宿舍群、同校区优先的校园互助撮合**。NanE 不做买卖、不做配送、不提供医疗建议；它只负责把可信、审核过的信息展示给合适范围内的同学，并把一次互助沉淀为可追踪的履约记录。
 
+![NanE Poster](poster.png)
+
 ## Live Entrypoints
 
 > **Current status:** Deployment temporarily offline. The service was previously live at the URLs below and can be restored by restarting the Azure VM (PM2 + Nginx). See [server/](server/) for deployment scripts.
