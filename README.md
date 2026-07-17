@@ -12,12 +12,14 @@ NanE（南易）是面向南京大学校园场景的免费互助平台。它帮�
 
 ## Live Entrypoints
 
-| Surface | URL |
-| --- | --- |
-| Web app | [https://nane.zylatent.com](https://nane.zylatent.com) |
-| Admin console | [https://nane.zylatent.com/admin](https://nane.zylatent.com/admin) |
-| API health | [https://api.zylatent.com/api/health](https://api.zylatent.com/api/health) |
-| API reference | [docs/api/index.md](docs/api/index.md) |
+> **Current status:** Deployment temporarily offline. The service was previously live at the URLs below and can be restored by restarting the Azure VM (PM2 + Nginx). See [server/](server/) for deployment scripts.
+
+| Surface | URL | Status |
+| --- | --- | --- |
+| Web app | [https://nane.zylatent.com](https://nane.zylatent.com) | 🔴 Offline |
+| Admin console | [https://nane.zylatent.com/admin](https://nane.zylatent.com/admin) | 🔴 Offline |
+| API health | [https://api.zylatent.com/api/health](https://api.zylatent.com/api/health) | 🔴 Offline |
+| API reference | [docs/api/index.md](docs/api/index.md) | ✅ Always available |
 
 ## Why It Exists
 
