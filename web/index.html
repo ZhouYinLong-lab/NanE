@@ -8,9 +8,11 @@
   <link rel="apple-touch-icon" href="/assets/brand/web-logo.png">
   <link rel="manifest" href="/web/manifest.json">
   <meta name="theme-color" content="#6E0065">
+  <!-- Content-Security-Policy (also set via server header for defense in depth) -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; form-action 'self'">
   <meta property="og:title" content="NanE 南易 — 南大校园免费互助平台">
   <meta property="og:description" content="将闲置的创可贴、感冒药、体温计等分享给同楼同学。免费共享，同楼互助。">
-  <meta property="og:image" content="/assets/brand/web-logo.png">
+  <meta property="og:image" content="https://nane.zylatent.com/assets/brand/web-logo.png">
   <meta property="og:url" content="https://nane.zylatent.com">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="NanE 南易">
@@ -20,8 +22,44 @@
   <link rel="stylesheet" href="/web/css/layout.css">
   <link rel="stylesheet" href="/web/css/components.css">
   <link rel="stylesheet" href="/web/css/fa-subset.css">
+  <style>
+    .demo-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #6E0065, #8B1A7B);
+      color: #fff;
+      font-size: 0.85rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .demo-banner-dismiss {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      line-height: 24px;
+      padding: 0;
+    }
+    .demo-banner-dismiss:hover {
+      background: rgba(255,255,255,0.35);
+    }
+  </style>
 </head>
 <body>
+  <div id="demoBanner" class="demo-banner">
+    <span>📢 演示版本 — 数据均为模拟，仅供展示</span>
+    <button id="demoBannerDismiss" class="demo-banner-dismiss" aria-label="关闭">✕</button>
+  </div>
   <a href="#main-content" class="skip-link">跳到主要内容</a>
   <div id="toastContainer" aria-live="polite"></div>
   <div class="app-shell">
@@ -111,9 +149,9 @@
             <p id="activityLabel">最近分享与互助</p>
           </div>
         </div>
-        <div class="activity-feed" id="activityFeed"></div>
+        <div class="activity-feed" id="activityFeed" aria-live="polite"></div>
         <div class="state-card" id="homeState">正在加载...</div>
-        <div class="item-list" id="itemList"></div>
+        <div class="item-list" id="itemList" aria-live="polite"></div>
         <button class="secondary wide load-more-btn" id="homeLoadMore" hidden>加载更多</button>
       </section>
 
@@ -285,7 +323,7 @@
 
       <section class="view" id="view-mine" role="region" aria-label="我的">
         <div class="profile-card">
-          <div class="avatar"><img src="/assets/brand/nane-logo.png" alt=""></div>
+          <div class="avatar"><img src="/assets/brand/nane-logo.png" alt="" loading="lazy"></div>
           <div>
             <h2 id="profileName">游客模式</h2>
             <p id="profileCampus">可浏览物品，登录后可发布和查看联系方式</p>
@@ -634,20 +672,22 @@
     </div>
   </div>
 
+  <!-- Demo mock API interceptor — must load before app.js -->
+  <script defer src="/web/js/mock/fetch-intercept.js"></script>
   <!-- Module order: utils → api → ui → views → app -->
-  <script src="/web/js/utils/escape.js"></script>
-  <script src="/web/js/utils/date.js"></script>
-  <script src="/web/js/utils/validate.js"></script>
-  <script src="/web/js/api/client.js"></script>
-  <script src="/web/js/ui/motion.js"></script>
-  <script src="/web/js/ui/toast.js"></script>
-  <script src="/web/js/ui/dialog.js"></script>
-  <script src="/web/js/ui/skeleton.js"></script>
-  <script src="/web/js/views/home.js"></script>
-  <script src="/web/js/views/publish.js"></script>
-  <script src="/web/js/views/mine.js"></script>
-  <script src="/web/js/views/settings.js"></script>
-  <script src="/web/js/app.js"></script>
-  <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/web/sw.js')</script>
+  <script defer src="/web/js/utils/escape.js"></script>
+  <script defer src="/web/js/utils/date.js"></script>
+  <script defer src="/web/js/utils/validate.js"></script>
+  <script defer src="/web/js/api/client.js"></script>
+  <script defer src="/web/js/ui/motion.js"></script>
+  <script defer src="/web/js/ui/toast.js"></script>
+  <script defer src="/web/js/ui/dialog.js"></script>
+  <script defer src="/web/js/ui/skeleton.js"></script>
+  <script defer src="/web/js/views/home.js"></script>
+  <script defer src="/web/js/views/publish.js"></script>
+  <script defer src="/web/js/views/mine.js"></script>
+  <script defer src="/web/js/views/settings.js"></script>
+  <script defer src="/web/js/app.js"></script>
+  <script defer src="/web/js/sw-register.js"></script>
 </body>
 </html>
