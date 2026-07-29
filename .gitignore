@@ -34,3 +34,7 @@ screenshots/
 dialog-open.txt
 snap-*.txt
 *.local.json
+
+# Backup files — should not be in version control
+*.bak
+*.backup

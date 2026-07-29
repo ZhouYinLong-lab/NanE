@@ -16,9 +16,9 @@
         <p>管理后台</p>
       </div>
       <div class="login-form">
-        <input id="username" value="admin" placeholder="用户名" autocomplete="username">
+        <input id="username" placeholder="用户名" autocomplete="username">
         <input id="password" type="password" placeholder="密码" autocomplete="current-password">
-        <button class="primary wide" onclick="login()">登录</button>
+        <button class="primary wide" id="adminLoginBtn">登录</button>
       </div>
       <p class="login-hint">默认密码来自 ADMIN_PASSWORD 环境变量</p>
     </div>
@@ -35,7 +35,7 @@
       </div>
       <div class="header-right">
         <span id="admin-info" class="header-admin"></span>
-        <button class="secondary small" onclick="logout()">退出</button>
+        <button class="secondary small" id="adminLogoutBtn">退出</button>
       </div>
     </header>
 
@@ -118,7 +118,7 @@
       <!-- Toolbar -->
       <div class="toolbar glass">
         <div class="toolbar-left">
-          <select id="item-status" onchange="loadItems()">
+          <select id="item-status">
             <option value="reviewing">待审核</option>
             <option value="online">上架中</option>
             <option value="rejected">已驳回</option>
@@ -126,10 +126,10 @@
             <option value="claimed">已领取</option>
             <option value="all">全部</option>
           </select>
-          <button class="secondary" onclick="loadAll()">刷新</button>
+          <button class="secondary" id="adminRefreshBtn">刷新</button>
         </div>
         <label class="select-all-label">
-          <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
+          <input type="checkbox" id="select-all">
           全选
         </label>
       </div>
@@ -141,7 +141,7 @@
       <div id="reports-section" class="reports-section" style="margin-top:24px">
         <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <h3>举报管理</h3>
-          <select id="report-status" onchange="loadReports()">
+          <select id="report-status">
             <option value="pending">待处理</option>
             <option value="reviewed">已处理</option>
           </select>
@@ -157,14 +157,14 @@
             <p>查看指定楼栋的最近分享与已确认领取</p>
           </div>
           <div class="activity-admin-controls">
-            <select id="activity-campus" onchange="onActivityCampusChange()"></select>
-            <select id="activity-building" onchange="loadActivityAdmin()"></select>
-            <select id="activity-limit" onchange="loadActivityAdmin()">
+            <select id="activity-campus"></select>
+            <select id="activity-building"></select>
+            <select id="activity-limit">
               <option value="10">最近 10 条</option>
               <option value="20" selected>最近 20 条</option>
               <option value="50">最近 50 条</option>
             </select>
-            <button class="secondary" onclick="loadActivityAdmin()">刷新</button>
+            <button class="secondary" id="activityRefreshBtn">刷新</button>
           </div>
         </div>
         <div class="activity-admin-stats">
@@ -184,9 +184,9 @@
   <div id="batch-bar" class="batch-bar glass" hidden>
     <span id="selected-count">已选择 0 项</span>
     <div class="batch-actions">
-      <button class="primary small" onclick="batchAction('approve')">批量通过</button>
-      <button class="secondary small" onclick="batchAction('reject')">批量驳回</button>
-      <button class="danger small" onclick="batchAction('take-down')">批量下架</button>
+      <button class="primary small" data-batch="approve">批量通过</button>
+      <button class="secondary small" data-batch="reject">批量驳回</button>
+      <button class="danger small" data-batch="take-down">批量下架</button>
     </div>
   </div>
 
@@ -204,7 +204,7 @@
         <option value="moderator">审核员</option>
         <option value="super_admin">超级管理员</option>
       </select>
-      <button class="primary" id="create-admin-btn" onclick="createAdmin()">添加管理员</button>
+      <button class="primary" id="create-admin-btn">添加管理员</button>
     </div>
   </section>
 
@@ -212,12 +212,12 @@
   <dialog id="rejectDialog" class="modal-dialog">
     <div class="dialog-head">
       <h3>驳回原因</h3>
-      <button class="dialog-close" onclick="closeRejectDialog()" aria-label="关闭">&times;</button>
+      <button class="dialog-close" aria-label="关闭">&times;</button>
     </div>
     <textarea id="reject-reason" rows="3" placeholder="请输入驳回原因..."></textarea>
     <div class="dialog-actions">
-      <button class="secondary" onclick="closeRejectDialog()">取消</button>
-      <button class="primary" onclick="submitReject()">确认驳回</button>
+      <button class="secondary" id="rejectCancelBtn">取消</button>
+      <button class="primary" id="rejectConfirmBtn">确认驳回</button>
     </div>
   </dialog>
 

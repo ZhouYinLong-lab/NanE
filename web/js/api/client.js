@@ -42,7 +42,22 @@ N.api = async function api(path, options) {
     ...options,
     headers
   });
-  const data = await response.json().catch(() => ({}));
+  let data;
+  try {
+    data = await response.json();
+  } catch (jsonError) {
+    // Differentiate between JSON parse errors and empty/success responses
+    // Server might return non-JSON for 500 errors or proxy errors
+    if (response.ok) {
+      // Server returned 2xx but body isn't JSON — treat as empty success
+      data = {};
+    } else {
+      // Server error with non-JSON body — throw a meaningful error
+      throw new Error(response.status === 500
+        ? "服务器内部错误，请稍后重试"
+        : "服务器响应异常，请刷新页面重试");
+    }
+  }
   if (!response.ok) {
     if (response.status === 401) {
       N.clearSession();

@@ -631,12 +631,83 @@ function submitReject() {
   closeRejectDialog();
 }
 
-// Close dialog on backdrop click
-byId("rejectDialog").addEventListener("click", function (e) {
-  if (e.target === byId("rejectDialog")) {
-    closeRejectDialog();
+// ===== Event Binding for CSP compatibility =====
+// Replace inline onclick handlers with event listeners so CSP doesn't require 'unsafe-inline'.
+
+function bindAdminEvents() {
+  // Login
+  var loginBtn = byId("adminLoginBtn");
+  if (loginBtn) loginBtn.addEventListener("click", login);
+
+  // Logout
+  var logoutBtn = byId("adminLogoutBtn");
+  if (logoutBtn) logoutBtn.addEventListener("click", logout);
+
+  // Status select
+  var statusSelect = byId("item-status");
+  if (statusSelect) statusSelect.addEventListener("change", loadItems);
+
+  // Refresh button
+  var refreshBtn = byId("adminRefreshBtn");
+  if (refreshBtn) refreshBtn.addEventListener("click", loadAll);
+
+  // Select all
+  var selectAll = byId("select-all");
+  if (selectAll) selectAll.addEventListener("change", toggleSelectAll);
+
+  // Batch actions
+  document.querySelectorAll("[data-batch]").forEach(function(btn) {
+    var action = btn.getAttribute("data-batch");
+    if (action) {
+      btn.addEventListener("click", function() { batchAction(action); });
+    }
+  });
+
+  // Reject dialog
+  var rejectDialog = byId("rejectDialog");
+  var dialogCancelBtn = byId("rejectCancelBtn");
+  if (dialogCancelBtn) dialogCancelBtn.addEventListener("click", closeRejectDialog);
+  var dialogCloseBtn = rejectDialog ? rejectDialog.querySelector(".dialog-close") : null;
+  if (dialogCloseBtn) dialogCloseBtn.addEventListener("click", closeRejectDialog);
+  var confirmRejectBtn = byId("rejectConfirmBtn");
+  if (confirmRejectBtn) confirmRejectBtn.addEventListener("click", submitReject);
+
+  // Report status select
+  var reportStatus = byId("report-status");
+  if (reportStatus) reportStatus.addEventListener("change", loadReports);
+
+  // Activity controls
+  var activityCampus = byId("activity-campus");
+  if (activityCampus) activityCampus.addEventListener("change", function() { onActivityCampusChange(true); });
+  var activityBuilding = byId("activity-building");
+  if (activityBuilding) activityBuilding.addEventListener("change", loadActivityAdmin);
+  var activityLimit = byId("activity-limit");
+  if (activityLimit) activityLimit.addEventListener("change", loadActivityAdmin);
+  var activityRefreshBtn = byId("activityRefreshBtn");
+  if (activityRefreshBtn) activityRefreshBtn.addEventListener("click", loadActivityAdmin);
+
+  // Admin management
+  var createAdminBtn = byId("create-admin-btn");
+  if (createAdminBtn) createAdminBtn.addEventListener("click", createAdmin);
+
+  // Reject dialog backdrop click
+  if (rejectDialog) {
+    rejectDialog.addEventListener("click", function (e) {
+      if (e.target === rejectDialog) {
+        closeRejectDialog();
+      }
+    });
   }
-});
+}
+
+// Bind events after DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bindAdminEvents);
+} else {
+  bindAdminEvents();
+}
+
+// Auto-login on page load (keep existing logic)
 
 // ===== Auto-login on page load =====
 if (token) {

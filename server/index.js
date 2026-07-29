@@ -27,7 +27,40 @@ const UPLOAD_DIR = path.join(__dirname, "..", "uploads");
 
 function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  res.writeHead(200, { "Content-Type": MIME_TYPES[ext] || "application/octet-stream" });
+  const isHtml = ext === ".html";
+  // Security headers applied to all static responses
+  const headers = {
+    "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
+    // Prevent MIME-type sniffing attacks
+    "X-Content-Type-Options": "nosniff",
+    // Prevent clickjacking
+    "X-Frame-Options": "DENY",
+    // Force HTTPS (only effective when deployed behind TLS)
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+  };
+  // Content-Security-Policy: applied to HTML pages as a server-enforced layer
+  // (also present as a <meta> tag in index.html).
+  // NOTE: 'unsafe-inline' is required for styles because of extensive inline style usage.
+  // For scripts, it's required due to inline event handlers (onerror on images, service worker registration).
+  // Future refactoring should remove inline handlers and move toward strict CSP.
+  if (isHtml) {
+    headers["Content-Security-Policy"] = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "connect-src 'self'",
+      "font-src 'self'",
+      "frame-ancestors 'none'",
+      "form-action 'self'"
+    ].join("; ");
+  }
+  // Cache static assets aggressively (1 year, immutable) for versioned files
+  // HTML is not cached to ensure fresh content
+  if (!isHtml && [".css", ".js", ".woff2", ".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(ext)) {
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(filePath).pipe(res);
 }
 
@@ -86,11 +119,66 @@ const routers = [
   require("./router/admin")
 ];
 
+// ── CSRF Protection ──────────────────────────────────────────────
+
+const ALLOWED_ORIGINS = [
+  "https://nane.zylatent.com",
+  "http://localhost:" + PORT,
+  `http://localhost:${PORT}`,
+  "http://127.0.0.1:" + PORT,
+  `http://127.0.0.1:${PORT}`
+];
+
+function csrfSafe(req) {
+  // Only check POST/PUT/DELETE/PATCH methods (state-changing requests)
+  if (!["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) return true;
+
+  const origin = req.headers["origin"];
+  const referer = req.headers["referer"];
+
+  // If Origin header is present, it must match an allowed origin
+  if (origin) {
+    const originOk = ALLOWED_ORIGINS.some(allowed =>
+      origin === allowed || origin.startsWith(allowed + "/")
+    );
+    if (!originOk) {
+      logError(new Error("CSRF: invalid Origin"), { origin, path: req.url });
+      return false;
+    }
+    return true;
+  }
+
+  // If no Origin but Referer is present, validate it
+  if (referer) {
+    const refererOk = ALLOWED_ORIGINS.some(allowed => referer.startsWith(allowed));
+    if (!refererOk) {
+      logError(new Error("CSRF: invalid Referer"), { referer, path: req.url });
+      return false;
+    }
+    return true;
+  }
+
+  // No Origin or Referer header — allow through (e.g., server-to-server API calls, CLI tools, curl)
+  return true;
+}
+
 // ── Main handler ─────────────────────────────────────────────────
 
 async function handle(req, res) {
   if (req.method === "OPTIONS") {
-    json(res, 204, {});
+    // CORS preflight — set allowed origins for future requests
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    });
+    res.end();
+    return;
+  }
+
+  // CSRF protection: validate Origin/Referer for state-changing requests
+  if (!csrfSafe(req)) {
+    json(res, 403, { error: "CSRF_REJECTED", message: "请求来源不被允许" });
     return;
   }
 

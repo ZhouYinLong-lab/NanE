@@ -4,7 +4,13 @@ const crypto = require("crypto");
 const { Pool } = require("pg");
 
 const DATABASE_URL = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/nane";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "nane-admin-demo";
+// SECURITY: ADMIN_PASSWORD must be set via environment variable in production.
+// The server will refuse to start with the hardcoded fallback.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (() => {
+  console.error("FATAL: ADMIN_PASSWORD environment variable is not set. The server will not start.");
+  console.error("Set ADMIN_PASSWORD in your .env file or environment before starting.");
+  process.exit(1);
+})();
 const DEMO_USER_ID = "u_demo";
 
 const pool = new Pool({

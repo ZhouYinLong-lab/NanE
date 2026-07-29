@@ -744,9 +744,26 @@ async function init() {
   N.refreshMotion(document);
   await N.applyUrlParams();
 
-  // Start notification polling (every 30s when logged in)
+  // Start notification polling with exponential backoff
+  // Initial interval: 60s (increased from 30s per review recommendation).
+  // On error, backoff doubles up to a max of 10 minutes.
   N.pollNotifications();
-  N._notifInterval = setInterval(() => N.pollNotifications(), 30000);
+  N._notifIntervalMs = 60000;
+  N._notifMaxBackoffMs = 600000; // 10 minutes
+  N._notifCurrentBackoff = N._notifIntervalMs;
+  N._notifInterval = setInterval(() => {
+    N.pollNotifications().then(success => {
+      if (success) {
+        N._notifCurrentBackoff = N._notifIntervalMs; // reset on success
+      } else {
+        // Exponential backoff on failure
+        N._notifCurrentBackoff = Math.min(N._notifCurrentBackoff * 2, N._notifMaxBackoffMs);
+        if (N.DEBUG_MODE) {
+          console.warn(`[Notif] poll failed, backing off to ${N._notifCurrentBackoff}ms`);
+        }
+      }
+    });
+  }, N._notifIntervalMs);
 
   // Show onboarding for first-time visitors
   N.checkOnboarding();
@@ -784,7 +801,12 @@ N.setupPushNotifications = async function setupPushNotifications() {
         body: JSON.stringify(newSub.toJSON())
       });
     }
-  } catch (_) { /* Silently fail; push is optional */ }
+  } catch (error) {
+    if (N.DEBUG_MODE) {
+      console.warn("[Push] Setup error:", error.message || error);
+    }
+    // Silently fail; push is optional
+  }
 };
 
 N.enablePush = async function enablePush() {
@@ -814,7 +836,11 @@ N.disablePush = async function disablePush() {
       });
       await sub.unsubscribe();
     }
-  } catch (_) {}
+  } catch (error) {
+    if (N.DEBUG_MODE) {
+      console.warn("[Push] Disable error:", error.message || error);
+    }
+  }
   N.showToast("推送通知已关闭", "success");
 };
 
@@ -886,7 +912,7 @@ N._lastNotifTime = "";
 N.pollNotifications = async function pollNotifications() {
   if (!N.isVerifiedUser()) {
     N.updateNotifBadge(0);
-    return;
+    return true; // not an error
   }
   try {
     const params = N._lastNotifTime ? `?since=${encodeURIComponent(N._lastNotifTime)}` : "";
@@ -897,8 +923,12 @@ N.pollNotifications = async function pollNotifications() {
       // Cache latest events for the panel
       N._cachedNotifs = data.events.slice(0, 20);
     }
+    return true; // success
   } catch (error) {
-    // Silently ignore polling errors
+    if (N.DEBUG_MODE) {
+      console.warn("[Notif] Poll error:", error.message || error);
+    }
+    return false; // failure — caller can back off
   }
 };
 
